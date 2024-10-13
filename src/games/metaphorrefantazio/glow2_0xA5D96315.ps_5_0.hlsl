@@ -54,11 +54,14 @@ void main(
   /* r0.yzw = float3(2.20000005,2.20000005,2.20000005) * r0.yzw;
   r0.yzw = exp2(r0.yzw); */
 
-  r0.yzw = renodx::color::gamma::Decode(r1.rgb);
+  float3 signs = sign(r1.rgb);  // preserve sign of r0
+  r0.yzw = renodx::color::gamma::Decode(abs(r1.rgb));
 
   r1.xyz = v2.xyz + r0.yzw;
   r1.xyzw = v3.xyzw * r1.xyzw;
   r0.x = r1.w * r0.x + 0.000500000024;
+  
+  r1.rgb = signs * r1.rgb; // add signs back/negative colors
   o0.xyz = r1.xyz;
   // o0.xyz = scaleLuminance(r1.xyz);
   o0.w = min(1, r0.x);
