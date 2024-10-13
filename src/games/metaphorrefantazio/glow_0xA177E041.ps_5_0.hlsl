@@ -28,10 +28,13 @@ void main(float4 v0
 
   /* r0.xyz = float3(2.20000005, 2.20000005, 2.20000005) * r0.xyz;
   r0.xyz = exp2(r0.xyz); */
-  r0.rgb = renodx::color::gamma::Decode(r0.rgb);
+  float3 signs = sign(r0.rgb);  // preserve sign of r0
+  r0.rgb = renodx::color::gamma::Decode(abs(r0.rgb));
 
   r0.xyz = v2.xyz + r0.xyz;
   r0.xyz = v3.xyz * r0.xyz;
+  r0.rgb = signs * r0.rgb;  // add signs back/negative colors
+
   o0.xyz = r0.xyz;
 
   // o0.xyz = scaleLuminance(r0.xyz);
