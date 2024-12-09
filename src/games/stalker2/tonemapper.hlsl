@@ -39,8 +39,7 @@ renodx::tonemap::Config getCommonConfig() {
 
 float3 correctGamma(float3 color) {
   if (injectedData.toneMapGammaCorrection == 1.f) {
-    float correctionStrength = injectedData.toneMapGammaCorrectionStrength == 1.f ? 2.2f : 2.0f;
-    color = renodx::color::correct::GammaSafe(color, false, correctionStrength);
+    color = renodx::color::correct::GammaSafe(color);
   }
   return color;
 }
