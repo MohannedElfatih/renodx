@@ -416,7 +416,11 @@ void main(
     config.hue_correction_color = ap1_aces_colored;
 
     float3 config_color = renodx::color::bt709::from::AP1(ap1_graded_color);
-
+    if (injectedData.toneMapType == 3.f) {  // Only apply hue correction if RenoDRT is selected
+      config_color = renodx::color::correct::Hue(config_color, renodx::tonemap::ACESFittedAP1(config_color));
+      config.hue_correction_color = renodx::tonemap::ACESFittedAP1(config_color);
+      config.hue_correction_strength = 1.f;
+    }
     renodx::tonemap::config::DualToneMap dual_tone_map = renodx::tonemap::config::ApplyToneMaps(config_color, config);
     hdr_color = dual_tone_map.color_hdr;
     sdr_color = dual_tone_map.color_sdr;
