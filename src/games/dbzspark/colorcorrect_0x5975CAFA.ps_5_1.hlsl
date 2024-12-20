@@ -226,6 +226,7 @@ void main(
   // r4 here has invalid colors
   r2.xyz = r4.xyz + -r1.xyz;
   r2.xyz = cb2[5].zzz * r2.xyz;
+  r2.rgb = renodx::color::bt709::clamp::AP1(r2.rgb);
   r0.xy = r0.xy * cb2[7].xy + float2(0.5, 0.5);
   r0.xy = -cb2[7].zw + r0.xy;
   r0.x = t4.Sample(s1_s, r0.xy).x;

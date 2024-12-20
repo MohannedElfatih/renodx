@@ -52,10 +52,8 @@ void main(
       injectedData.colorGradeContrast,
       1.f);  // We'll do saturation post tonemap
 
-  if (injectedData.toneMapGammaCorrection == 1.f) {
-    r0.rgb = renodx::color::correct::GammaSafe(r0.rgb);
-    r1.rgb = renodx::color::correct::GammaSafe(r1.rgb);
-  }
+  r0.rgb = correctGamma(r0.rgb);
+  r1.rgb = correctGamma(r1.rgb);
 
   r0.rgb *= injectedData.toneMapUINits / 203.f;  // Value found so it matches tonemapUINits
 
@@ -67,11 +65,11 @@ void main(
       1.f,
       injectedData.colorGradeSaturation);
 
+  r1.rgb = displayTonemap(r1.rgb);
+
   // Fix NaN
   r1.rgb = renodx::color::bt709::clamp::BT709(r1.rgb);
   r0.rgb = renodx::color::bt709::clamp::BT709(r0.rgb);
-
-  r1.rgb = displayTonemap(r1.rgb);
 
   r1.rgb = renodx::color::bt2020::from::BT709(r1.rgb);
   r1.rgb = renodx::color::pq::Encode(r1.rgb, injectedData.toneMapGameNits);

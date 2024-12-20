@@ -209,6 +209,8 @@ void main(
   }
   r3.xyz = r5.xyz + -r2.xyz;
   r3.xyz = cb2[3].xxx * r3.xyz;
+  r3.rgb = renodx::color::bt709::clamp::AP1(r3.rgb);
+
   r0.xy = r0.xy * cb2[4].zw + float2(0.5, 0.5);
   r0.xy = -cb2[5].xy + r0.xy;
   r0.x = t3.Sample(s1_s, r0.xy).x;
