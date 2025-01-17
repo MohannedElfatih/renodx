@@ -167,6 +167,8 @@ float4 main(
     nointerpolation uint SV_RenderTargetArrayIndex: SV_RenderTargetArrayIndex)
     : SV_Target {
   float4 SV_Target;
+  bool shouldTonemap = ShouldTonemap(_RootShaderParameters_040w);
+
   // texture _1 = Textures_1;
   // SamplerState _2 = Samplers_1;
   // cbuffer _3 = UniformBufferConstants_WorkingColorSpace;
@@ -1294,7 +1296,7 @@ float4 main(
   float _1062 = _1059 + _1053;
 
   float _1064 = _RootShaderParameters_040y;
-  if (injectedData.toneMapType != 0) {
+  if (shouldTonemap) {
     _1064 = DEFAULT_GAMMA;
   }
   float _1065 = max(0.0f, _1048);
@@ -1311,7 +1313,7 @@ float4 main(
   float _1076 = exp2(_1073);
 
   // CustomEdit
-  if (injectedData.toneMapType != 0) {
+  if (shouldTonemap) {
     return LutBuilderToneMap(untonemapped_ap1, float3(_1074, _1075, _1076));
   }
 
