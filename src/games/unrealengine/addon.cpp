@@ -82,6 +82,10 @@ renodx::mods::shader::CustomShaders custom_shaders = {
     // GTA: San Andreas
     TracedDualShaderEntry(0xB864B3B8),
 
+    // The First Berserker Khazan
+    TracedDualShaderEntry(0x5D7655BA),
+    TracedDualShaderEntry(0xC3126A03),
+
     // SM5 LUT Builder
     TracedDualShaderEntry(0x1DF6036B),
     TracedDualShaderEntry(0x20EAC9B6),
