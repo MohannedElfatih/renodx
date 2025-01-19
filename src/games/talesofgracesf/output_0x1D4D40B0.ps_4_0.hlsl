@@ -18,6 +18,17 @@ cbuffer cb0 : register(b0) {
 // 3Dmigoto declarations
 #define cmp -
 
+float3 PumboAutoHDR(float3 SDRColor, float _PeakWhiteNits, float _PaperWhiteNits, float ShoulderPow = 2.75f) {
+  const float SDRRatio = max(renodx::color::y::from::BT709(SDRColor), 0.f);
+  // Limit AutoHDR brightness, it won't look good beyond a certain level.
+  // The paper white multiplier is applied later so we account for that.
+  const float AutoHDRMaxWhite = max(min(_PeakWhiteNits, 1000) / _PaperWhiteNits, 1.f);
+  const float AutoHDRShoulderRatio = 1.f - max(1.f - SDRRatio, 0.f);
+  const float AutoHDRExtraRatio = pow(max(AutoHDRShoulderRatio, 0.f), ShoulderPow) * (AutoHDRMaxWhite - 1.f);
+  const float AutoHDRTotalRatio = SDRRatio + AutoHDRExtraRatio;
+  return SDRColor * renodx::math::SafeDivision(AutoHDRTotalRatio, SDRRatio, 1);  // Fallback on a value of 1 in case of division by 0
+}
+
 void main(
     float4 v0: SV_POSITION0,
     float2 v1: TEXCOORD0,
@@ -102,7 +113,7 @@ void main(
   }
   untonemapped = r0.rgb;
 
-  r0.rgb = saturate(r0.rgb); // We add it back before lut sampling
+  r0.rgb = saturate(r0.rgb);  // We add it back before lut sampling
   if (false) {
     r0.xyw = cb0[132].zzz * r0.xyz;
     r0.w = floor(r0.w);
@@ -136,16 +147,20 @@ void main(
   lut_config.scaling = 0.f;
 
   float3 outputColor = untonemapped;
+  if (RENODX_EFFECT_RANGE_BOOST) {
+    outputColor = PumboAutoHDR(outputColor, RENODX_PEAK_NITS, RENODX_DIFFUSE_WHITE_NITS);
+  }
+  
   if (RENODX_TONE_MAP_TYPE == 0.f) {
     outputColor = renodx::lut::Sample(
-        saturate(untonemapped),
+        saturate(outputColor),
         lut_config,
         t2);
   } else {
     outputColor = renodx::draw::ToneMapPass(
-        untonemapped,
+        outputColor,
         renodx::lut::Sample(
-            renodx::tonemap::renodrt::NeutralSDR(untonemapped),
+            renodx::tonemap::renodrt::NeutralSDR(outputColor),
             lut_config,
             t2));
   }

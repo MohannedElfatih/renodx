@@ -165,8 +165,17 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.02f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "fxRangeBoost",
+        .binding = &shader_injection.fxRangeBoost,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.0f,
+        .label = "Range Boost",
+        .section = "Effects",
+        .tooltip = "Uses Pumbo's AutoHDR to inverse tonemap original image for extra bright highlights",
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "RenoDX by ShortFuse, game mod by Ritsu.",
+        .label = "RenoDX by ShortFuse, game mod by Ritsu. \r\nAutoHDR powered by Pumbo.",
         .section = "About",
     },
     new renodx::utils::settings::Setting{

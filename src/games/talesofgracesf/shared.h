@@ -14,6 +14,7 @@
 #define RENODX_TONE_MAP_BLOWOUT              injectedData.colorGradeBlowout
 #define RENODX_TONE_MAP_FLARE                injectedData.colorGradeFlare
 #define RENODX_EFFECT_BLOOM                  injectedData.fxBloom
+#define RENODX_EFFECT_RANGE_BOOST            injectedData.fxRangeBoost
 #define RENODX_GAMMA_CORRECTION              1.f
 
 // Must be 32bit aligned
@@ -41,7 +42,7 @@ struct ShaderInjectData {
 
   float colorGradeFlare;
   float fxBloom;
-  float padding03;
+  float fxRangeBoost;
   float padding04;
 };
 
