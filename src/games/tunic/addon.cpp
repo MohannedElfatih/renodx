@@ -22,7 +22,6 @@ namespace {
 renodx::mods::shader::CustomShaders custom_shaders = {
     CustomShaderEntry(0xEEFE9737),  // LUT
     CustomShaderEntry(0xAA66A0B6),  // LUT + Noise
-    CustomShaderEntry(0x4AC5CC39)   // glow
 };
 
 ShaderInjectData shader_injection;
