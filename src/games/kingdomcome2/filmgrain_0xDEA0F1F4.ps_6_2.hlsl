@@ -17,8 +17,8 @@ float4 main(
   uint _41 = uint(int(SV_Position.x));
   uint _42 = uint(int(SV_Position.y));
   float4 _43 = PAAComp_CurTarg.Load(int3(uint2(_41, _42), 0u));
-  _43.rgb = renodx::color::pq::DecodeSafe(_43.rgb, RENODX_GAME_NITS) * 5;
-  return _43;
+  /* _43.rgb = renodx::color::pq::DecodeSafe(_43.rgb, RENODX_GAME_NITS) * 5;
+  return _43; */
   float _46 = _43.x;
   float _47 = _43.y;
   float _48 = _43.z;
