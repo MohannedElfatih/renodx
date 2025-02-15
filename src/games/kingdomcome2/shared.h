@@ -23,9 +23,10 @@
 #define RENODX_RENO_DRT_WHITE_CLIP           1.f */
 
 // Optiscaler?
-/* #define RENODX_INTERMEDIATE_ENCODING         4.f
-#define RENODX_SWAP_CHAIN_DECODING           2.f
-#define RENODX_SWAP_CHAIN_ENCODING           5.f */
+#define RENODX_INTERMEDIATE_ENCODING           4.f
+#define RENODX_SWAP_CHAIN_DECODING             2.f
+#define RENODX_SWAP_CHAIN_ENCODING             4.f
+#define RENODX_SWAP_CHAIN_ENCODING_COLOR_SPACE 1.f
 
 // Must be 32bit aligned
 // Should be 4x32

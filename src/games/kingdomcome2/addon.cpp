@@ -22,11 +22,16 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
+
+    // Outputs
     CustomShaderEntry(0xA18EAA6F),
     CustomShaderEntry(0x4038C56A),
     CustomShaderEntry(0xFC7BB86E),
+
+    // Film Grain
     CustomShaderEntry(0xC04583C6),
     CustomShaderEntry(0xDEA0F1F4),
+
     CustomShaderEntry(0x7D7F957B),
     CustomShaderEntry(0xD9D2ADB8),
 };
@@ -190,14 +195,9 @@ renodx::utils::settings::Settings settings = {
         .is_visible = []() { return settings[0]->GetValue() >= 1.f; },
     },
     new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "RenoDX by ShortFuse, game mod by Ritsu. Shout-out to Pumbo & Lilium for the support!",
-        .section = "About",
-    },
-    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "HDR Den Discord",
-        .section = "About",
+        .section = "Links",
         .group = "button-line-1",
         .tint = 0x5865F2,
         .on_change = []() {
@@ -208,7 +208,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Github",
-        .section = "About",
+        .section = "Links",
         .group = "button-line-1",
         .on_change = []() {
           ShellExecute(0, "open", "https://github.com/clshortfuse/renodx", 0, 0, SW_SHOW);
@@ -216,8 +216,18 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Ritsu's Ko-Fi",
+        .section = "Links",
+        .group = "button-line-1",
+        .tint = 0xFF5F5F,
+        .on_change = []() {
+          ShellExecute(0, "open", "https://ko-fi.com/ritsucecil", 0, 0, SW_SHOW);
+        },
+    },
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "ShortFuse's Ko-Fi",
-        .section = "About",
+        .section = "Links",
         .group = "button-line-1",
         .tint = 0xFF5F5F,
         .on_change = []() {
@@ -227,12 +237,17 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "HDR Den's Ko-Fi",
-        .section = "About",
+        .section = "Links",
         .group = "button-line-1",
         .tint = 0xFF5F5F,
         .on_change = []() {
           ShellExecute(0, "open", "https://ko-fi.com/hdrden", 0, 0, SW_SHOW);
         },
+    },
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .label = "Game mod by Ritsu, RenoDX Framework by ShortFuse. Shout-out to Pumbo & Lilium for the support!",
+        .section = "About",
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
@@ -299,7 +314,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       renodx::mods::shader::on_create_pipeline_layout = [](auto, auto params) {
         // We only need output shader since it's the only shader using injected data
         auto param_count = params.size();
-        if (param_count == 5 && params[0].descriptor_table.count == 6 && params[4].descriptor_table_with_static_samplers.count == 1) {  // output shader
+        if (param_count == 5 && params[0].descriptor_table.count == 6 && params[4].descriptor_table_with_static_samplers.count == 1) {  // output shaders
+          return true;
+        }
+
+        if (param_count == 3 && params[0].descriptor_table.count && params[2].descriptor_table_with_static_samplers.count == 3) {  // filmgrain shaders
           return true;
         }
 
@@ -316,11 +335,13 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       renodx::mods::swapchain::expected_constant_buffer_index = 13;
 
       renodx::mods::shader::allow_multiple_push_constants = true;
-      // renodx::mods::shader::use_pipeline_layout_cloning = true;
+      renodx::mods::shader::use_pipeline_layout_cloning = true;
       renodx::mods::swapchain::use_resource_cloning = true;
       renodx::mods::swapchain::swap_chain_proxy_vertex_shader = __swap_chain_proxy_vertex_shader;
       renodx::mods::swapchain::swap_chain_proxy_pixel_shader = __swap_chain_proxy_pixel_shader;
+      renodx::mods::swapchain::swap_chain_proxy_format = reshade::api::format::r10g10b10a2_unorm;
       renodx::mods::swapchain::swapchain_proxy_compatibility_mode = false;
+      renodx::mods::swapchain::SetUseHDR10();
 
       // renodx::mods::swapchain::use_resize_buffer = true;
       // renodx::mods::swapchain::use_resize_buffer_on_demand = true;
@@ -332,11 +353,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           .use_resource_view_cloning = true,
       }); */
 
-      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+      /* renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
           .old_format = reshade::api::format::r10g10b10a2_unorm,
           .new_format = reshade::api::format::r16g16b16a16_float,
           .use_resource_view_cloning = true,
-      });
+      }); */
 
       reshade::register_event<reshade::addon_event::init_device>(OnInitDevice);
       break;
