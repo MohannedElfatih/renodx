@@ -79,6 +79,9 @@ renodx::mods::shader::CustomShaders custom_shaders = {
     TracedDualShaderEntry(0x9081A2D8),
     TracedDualShaderEntry(0xE6B4B2E3),
 
+    // Ender Magnolia
+    TracedDualShaderEntry(0xE7BE848D),
+
     // GTA: San Andreas
     TracedDualShaderEntry(0xB864B3B8),
 
