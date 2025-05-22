@@ -817,6 +817,24 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         if (params.size() >= 20) return false;
 
         auto process_path = renodx::utils::platform::GetCurrentProcessPath();
+        auto process_version = renodx::utils::platform::GetFileVersion(process_path);
+
+        if (process_version != "") {
+          std::vector<std::string> tokens;
+          std::stringstream ss(process_version);
+          std::string token;
+
+          while (std::getline(ss, token, '.')) {
+            tokens.push_back(token);
+          }
+
+          auto major = std::stoi(tokens[0]);
+          auto minor = std::stoi(tokens[1]);
+
+          if (major == 5 && minor >= 1) {
+            return true;
+          }
+        }
 
         auto filename = process_path.filename().string();
 
