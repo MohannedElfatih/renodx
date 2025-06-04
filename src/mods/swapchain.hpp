@@ -3182,9 +3182,10 @@ static void Use(DWORD fdw_reason, T* new_injections = nullptr) {
 #endif
       reshade::register_event<reshade::addon_event::init_device>(OnInitDevice);
       reshade::register_event<reshade::addon_event::destroy_device>(OnDestroyDevice);
-      reshade::register_event<reshade::addon_event::create_swapchain>(OnCreateSwapchain);
+
+      /* reshade::register_event<reshade::addon_event::create_swapchain>(OnCreateSwapchain);
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
-      reshade::register_event<reshade::addon_event::destroy_swapchain>(OnDestroySwapchain);
+      reshade::register_event<reshade::addon_event::destroy_swapchain>(OnDestroySwapchain); */
 
       // reshade::register_event<reshade::addon_event::create_pipeline>(on_create_pipeline);
       reshade::register_event<reshade::addon_event::create_resource>(OnCreateResource);
