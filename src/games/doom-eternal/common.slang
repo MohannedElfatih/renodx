@@ -378,7 +378,10 @@ float3 ApplyACESByLum(float3 untonemapped_ap1, renodx::color::grade::Config cg_c
   float3 tonemapped_bt709 = renodx::color::bt709::from::AP1(tonemapped_ap1.rgb);
 
   if (apply_grading) {
-    tonemapped_bt709 = ApplySaturationBlowoutHueCorrectionHighlightSaturation(tonemapped_bt709, renodx::color::bt709::from::AP1(untonemapped_ap1), untonemapped_lum, cg_config);
+    float3 hue_correction_color = renodx::color::bt709::from::AP1(untonemapped_ap1);
+    hue_correction_color = renodx::tonemap::uncharted2::BT709(hue_correction_color);
+    tonemapped_bt709 = ApplySaturationBlowoutHueCorrectionHighlightSaturation(tonemapped_bt709, hue_correction_color, untonemapped_lum, cg_config);
+    // tonemapped_bt709 = hue_correction_color;
   }
 
   return tonemapped_bt709;
@@ -422,7 +425,7 @@ float3 Tonemap(float3 untonemapped_bt709) {
   grading_config.saturation = RENODX_TONE_MAP_SATURATION;
   grading_config.dechroma = RENODX_TONE_MAP_BLOWOUT;
   grading_config.blowout = -1.f * (RENODX_TONE_MAP_HIGHLIGHT_SATURATION - 1.f);
-  grading_config.hue_correction_strength = 0.f;
+  grading_config.hue_correction_strength = CUSTOM_COLOR_GRADE_HUE_SHIFT;
 
   float3 untonemapped_ap1 = renodx::color::ap1::from::BT709(color);
   color = ApplyACESByLum(untonemapped_ap1, grading_config);
