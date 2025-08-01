@@ -1,4 +1,4 @@
-#include "./common.hlsl"
+#include "../lilium_rcas.hlsl"
 
 struct FViewConstants {
   float4 TranslatedWorldToClip[4];
@@ -507,102 +507,98 @@ struct FViewConstants {
   float3 TLASPreViewTranslationLow;
 };
 
-Texture2D<float4> Material_Texture2D_0 : register(t0);
+Texture2D<float4> SceneTexturesStruct_SceneDepthTexture : register(t0);
 
-Texture2D<float4> PostProcessInput_0_Texture : register(t1);
+Texture2D<float4> SceneTexturesStruct_CustomDepthTexture : register(t1);
+
+Texture2D<uint2> SceneTexturesStruct_CustomStencilTexture : register(t2);
+
+Texture2D<float4> PostProcessInput_0_Texture : register(t3);
 
 cbuffer $Globals : register(b0) {
   float2 PostProcessInput_0_UVViewportMin : packoffset(c000.x);
   float2 PostProcessInput_0_UVViewportSize : packoffset(c000.z);
-  float2 PostProcessInput_1_UVViewportMin : packoffset(c001.x);
-  float2 PostProcessInput_1_UVViewportSize : packoffset(c001.z);
-  float2 PostProcessInput_2_UVViewportMin : packoffset(c002.x);
-  float2 PostProcessInput_2_UVViewportSize : packoffset(c002.z);
-  float2 PostProcessInput_3_UVViewportMin : packoffset(c003.x);
-  float2 PostProcessInput_3_UVViewportSize : packoffset(c003.z);
-  float2 PostProcessInput_4_UVViewportMin : packoffset(c004.x);
-  float2 PostProcessInput_4_UVViewportSize : packoffset(c004.z);
-  uint2 PostProcessOutput_ViewportMin : packoffset(c005.x);
-  float2 PostProcessOutput_ViewportSizeInverse : packoffset(c005.z);
+  float2 PostProcessInput_0_UVViewportBilinearMin : packoffset(c001.x);
+  float2 PostProcessInput_0_UVViewportBilinearMax : packoffset(c001.z);
+  float2 PostProcessInput_1_UVViewportMin : packoffset(c002.x);
+  float2 PostProcessInput_1_UVViewportSize : packoffset(c002.z);
+  float2 PostProcessInput_1_UVViewportBilinearMin : packoffset(c003.x);
+  float2 PostProcessInput_1_UVViewportBilinearMax : packoffset(c003.z);
+  float2 PostProcessInput_2_UVViewportMin : packoffset(c004.x);
+  float2 PostProcessInput_2_UVViewportSize : packoffset(c004.z);
+  float2 PostProcessInput_2_UVViewportBilinearMin : packoffset(c005.x);
+  float2 PostProcessInput_2_UVViewportBilinearMax : packoffset(c005.z);
+  float2 PostProcessInput_3_UVViewportMin : packoffset(c006.x);
+  float2 PostProcessInput_3_UVViewportSize : packoffset(c006.z);
+  float2 PostProcessInput_3_UVViewportBilinearMin : packoffset(c007.x);
+  float2 PostProcessInput_3_UVViewportBilinearMax : packoffset(c007.z);
+  float2 PostProcessInput_4_UVViewportMin : packoffset(c008.x);
+  float2 PostProcessInput_4_UVViewportSize : packoffset(c008.z);
+  float2 PostProcessInput_4_UVViewportBilinearMin : packoffset(c009.x);
+  float2 PostProcessInput_4_UVViewportBilinearMax : packoffset(c009.z);
+  uint2 PostProcessOutput_ViewportMin : packoffset(c010.x);
+  float2 PostProcessOutput_ViewportSizeInverse : packoffset(c010.z);
 };
 
 cbuffer View : register(b1) {
   FViewConstants View : packoffset(c000.x);
 };
 
-cbuffer Material : register(b2) {
+cbuffer MaterialCollection0 : register(b2) {
+  struct FMaterialCollection0Constants {
+    float4 Vectors[1];
+  }
+MaterialCollection0:
+  packoffset(c000.x);
+};
+
+cbuffer Material : register(b3) {
   struct FMaterialConstants {
-    float4 PreshaderBuffer[7];
-    uint BindlessSRV_Texture2D_0;
-    uint Padding116;
-    uint BindlessSampler_Texture2D_0Sampler;
-    uint Padding124;
+    float4 PreshaderBuffer[2];
     uint BindlessSampler_Wrap_WorldGroupSettings;
-    uint Padding132;
+    uint Padding36;
     uint BindlessSampler_Clamp_WorldGroupSettings;
   }
 Material:
   packoffset(c000.x);
 };
 
-SamplerState Material_Texture2D_0Sampler : register(s0);
+SamplerState SceneTexturesStruct_PointClampSampler : register(s0);
 
 SamplerState PostProcessInput_0_Sampler : register(s1);
 
 float4 main(
-    noperspective float4 SV_Position: SV_Position) : SV_Target {
+    noperspective float4 SV_Position: SV_Position,
+    linear float4 TEXCOORD: TEXCOORD) : SV_Target {
   float4 SV_Target;
-  float _18 = SV_Position.x - float((uint)PostProcessOutput_ViewportMin.x);
-  float _19 = SV_Position.y - float((uint)PostProcessOutput_ViewportMin.y);
-  float4 _36 = PostProcessInput_0_Texture.Sample(PostProcessInput_0_Sampler, float2((((_18 * PostProcessOutput_ViewportSizeInverse.x) * PostProcessInput_0_UVViewportSize.x) + PostProcessInput_0_UVViewportMin.x), (((_19 * PostProcessOutput_ViewportSizeInverse.y) * PostProcessInput_0_UVViewportSize.y) + PostProcessInput_0_UVViewportMin.y)));
+  float _27 = PostProcessOutput_ViewportSizeInverse.x * (SV_Position.x - float((uint)(int)(PostProcessOutput_ViewportMin.x)));
+  float _28 = PostProcessOutput_ViewportSizeInverse.y * (SV_Position.y - float((uint)(int)(PostProcessOutput_ViewportMin.y)));
+  float4 _49 = PostProcessInput_0_Texture.Sample(PostProcessInput_0_Sampler, float2(min(max(((_27 * PostProcessInput_0_UVViewportSize.x) + PostProcessInput_0_UVViewportMin.x), PostProcessInput_0_UVViewportBilinearMin.x), PostProcessInput_0_UVViewportBilinearMax.x), min(max(((_28 * PostProcessInput_0_UVViewportSize.y) + PostProcessInput_0_UVViewportMin.y), PostProcessInput_0_UVViewportBilinearMin.y), PostProcessInput_0_UVViewportBilinearMax.y)));
+  float4 _74 = PostProcessInput_0_Texture.Sample(PostProcessInput_0_Sampler, float2(min(max(((PostProcessInput_0_UVViewportSize.x * _27) + PostProcessInput_0_UVViewportMin.x), PostProcessInput_0_UVViewportBilinearMin.x), PostProcessInput_0_UVViewportBilinearMax.x), min(max(((PostProcessInput_0_UVViewportSize.y * (_28 + 0.0010000000474974513f)) + PostProcessInput_0_UVViewportMin.y), PostProcessInput_0_UVViewportBilinearMin.y), PostProcessInput_0_UVViewportBilinearMax.y)));
+  float4 _99 = PostProcessInput_0_Texture.Sample(PostProcessInput_0_Sampler, float2(min(max(((PostProcessInput_0_UVViewportSize.x * _27) + PostProcessInput_0_UVViewportMin.x), PostProcessInput_0_UVViewportBilinearMin.x), PostProcessInput_0_UVViewportBilinearMax.x), min(max(((PostProcessInput_0_UVViewportSize.y * (_28 + -0.0010000000474974513f)) + PostProcessInput_0_UVViewportMin.y), PostProcessInput_0_UVViewportBilinearMin.y), PostProcessInput_0_UVViewportBilinearMax.y)));
 
-  if (CUSTOM_ENABLE_POST_FILMGRAIN == 0.f) {
-    return float4(_36.rgb, 0.f);
-  }
+  float _109 = _49.x - ((_99.x + _74.x) * 0.5f);
+  float _110 = _49.y - ((_99.y + _74.y) * 0.5f);
+  float _111 = _49.z - ((_99.z + _74.z) * 0.5f);
+  float _116 = (Material.PreshaderBuffer[0].x) * (MaterialCollection0.Vectors[0].x);
+  float _146 = ((((SV_Position.x - float((uint)(int)(PostProcessOutput_ViewportMin.x))) * PostProcessOutput_ViewportSizeInverse.x) * View.ViewSizeAndInvSize.x) + View.ViewRectMin.x) * View.BufferSizeAndInvSize.z;
+  float _147 = ((((SV_Position.y - float((uint)(int)(PostProcessOutput_ViewportMin.y))) * PostProcessOutput_ViewportSizeInverse.y) * View.ViewSizeAndInvSize.y) + View.ViewRectMin.y) * View.BufferSizeAndInvSize.w;
+  uint2 _155 = SceneTexturesStruct_CustomStencilTexture.Load(int3((uint)(uint(_146 * View.BufferSizeAndInvSize.x)), (uint)(uint(_147 * View.BufferSizeAndInvSize.y)), 0));
+  float _157 = float((uint)(int)(_155.y));
+  float4 _160 = SceneTexturesStruct_CustomDepthTexture.SampleLevel(SceneTexturesStruct_PointClampSampler, float2(_146, _147), 0.0f);
+  float4 _172 = SceneTexturesStruct_SceneDepthTexture.SampleLevel(SceneTexturesStruct_PointClampSampler, float2(_146, _147), 0.0f);
+  float _182 = (((((View.InvDeviceZToWorldZTransform.x * _160.x) + View.InvDeviceZToWorldZTransform.y) + (1.0f / ((View.InvDeviceZToWorldZTransform.z * _160.x) - View.InvDeviceZToWorldZTransform.w))) - View.InvDeviceZToWorldZTransform.y) - (View.InvDeviceZToWorldZTransform.x * _172.x)) - (1.0f / ((View.InvDeviceZToWorldZTransform.z * _172.x) - View.InvDeviceZToWorldZTransform.w));
+  float _186 = ((1.0f - saturate(_182)) * _157) * dot(float3((_109 * _116), (_110 * _116), (_111 * _116)), float3(0.30000001192092896f, 0.5899999737739563f, 0.10999999940395355f));
+  float _191 = (Material.PreshaderBuffer[0].y) * (MaterialCollection0.Vectors[0].x);
+  float _201 = (1.0f - (saturate(1.0f - _182) * _157)) * (dot(float3((_191 * _109), (_191 * _110), (_191 * _111)), float3(0.30000001192092896f, 0.5899999737739563f, 0.10999999940395355f)) - _186);
+  float _202 = (_186 + _49.x) + _201;
+  float _203 = (_186 + _49.y) + _201;
+  float _204 = (_186 + _49.z) + _201;
+  SV_Target.x = max(((((Material.PreshaderBuffer[1].x) - _202) * (Material.PreshaderBuffer[0].z)) + _202), 0.0f);
+  SV_Target.y = max(((((Material.PreshaderBuffer[1].y) - _203) * (Material.PreshaderBuffer[0].z)) + _203), 0.0f);
+  SV_Target.z = max(((((Material.PreshaderBuffer[1].z) - _204) * (Material.PreshaderBuffer[0].z)) + _204), 0.0f);
 
-  float _40 = dot(float3(_36.x, _36.y, _36.z), float3(0.33333298563957214f, 0.33333298563957214f, 0.33333298563957214f));
-  float _54 = (Material.PreshaderBuffer[0].y) * View.GameTime;
-  float _57 = ((Material.PreshaderBuffer[0].z) * 0.25f) * _54;
-  float _58 = cos(_57);
-  float _59 = sin(_57);
-  float _62 = _18 * (Material.PreshaderBuffer[0].w);
-  float _63 = _19 * (Material.PreshaderBuffer[0].w);
-  float4 _71 = Material_Texture2D_0.Sample(Material_Texture2D_0Sampler, float2((_62 * (Material.PreshaderBuffer[1].x)), (_63 * (Material.PreshaderBuffer[1].y))));
-  float _75 = _71.x + -0.5f;
-  float _76 = _71.y + -0.5f;
-  float _81 = _54 * 0.25f;
-  float _82 = _81 * (Material.PreshaderBuffer[1].z);
-  float _83 = cos(_82);
-  float _84 = sin(_82);
-  float4 _97 = Material_Texture2D_0.Sample(Material_Texture2D_0Sampler, float2((((Material.PreshaderBuffer[2].x) + _62) * (Material.PreshaderBuffer[1].x)), (((Material.PreshaderBuffer[2].y) + _63) * (Material.PreshaderBuffer[1].y))));
-  float _101 = _97.y + -0.5f;
-  float _102 = _97.w + -0.5f;
-  float _108 = _81 * (Material.PreshaderBuffer[2].z);
-  float _109 = cos(_108);
-  float _110 = sin(_108);
-  float4 _124 = Material_Texture2D_0.Sample(Material_Texture2D_0Sampler, float2((((Material.PreshaderBuffer[3].x) + _62) * (Material.PreshaderBuffer[1].x)), (((Material.PreshaderBuffer[3].y) + _63) * (Material.PreshaderBuffer[1].y))));
-  float _128 = _124.y + -0.5f;
-  float _129 = _124.z + -0.5f;
-  float _135 = _81 * (Material.PreshaderBuffer[3].z);
-  float _136 = cos(_135);
-  float _137 = sin(_135);
-  float4 _151 = Material_Texture2D_0.Sample(Material_Texture2D_0Sampler, float2((((Material.PreshaderBuffer[4].x) + _62) * (Material.PreshaderBuffer[1].x)), (((Material.PreshaderBuffer[4].y) + _63) * (Material.PreshaderBuffer[1].y))));
-  float _155 = _151.w + -0.5f;
-  float _156 = _151.z + -0.5f;
-  float _168 = ((((dot(float2(_58, (-0.0f - _59)), float2(_75, _76)) + 2.0f) + dot(float2(_83, (-0.0f - _84)), float2(_101, _102))) + dot(float2(_109, (-0.0f - _110)), float2(_128, _129))) + dot(float2(_136, (-0.0f - _137)), float2(_155, _156))) * 0.25f;
-  float _169 = ((((dot(float2(_59, _58), float2(_75, _76)) + 2.0f) + dot(float2(_84, _83), float2(_101, _102))) + dot(float2(_110, _109), float2(_128, _129))) + dot(float2(_137, _136), float2(_155, _156))) * 0.25f;
-  float _170 = (((_97.z + _71.z) + _124.w) + _151.x) * 0.25f;
-  float _183 = (Material.PreshaderBuffer[4].w) * saturate(dot(float3((1.0f - ((Material.PreshaderBuffer[0].x) * _36.x)), (1.0f - ((Material.PreshaderBuffer[0].x) * _36.y)), (1.0f - ((Material.PreshaderBuffer[0].x) * _36.z))), float3(1.0f, 1.0f, 1.0f)));
-  float _201 = (Material.PreshaderBuffer[5].x) * (_168 + -0.49804699420928955f);
-  float _202 = (Material.PreshaderBuffer[5].x) * (_169 + -0.49804699420928955f);
-  float _203 = (Material.PreshaderBuffer[5].x) * (_170 + -0.49804699420928955f);
-  float _204 = dot(float3(_201, _202, _203), float3(0.30000001192092896f, 0.5899999737739563f, 0.10999999940395355f));
-  float _214 = (((saturate(_183 * (((_168 + -1.0f) * (Material.PreshaderBuffer[4].z)) + 1.0f)) * (_40 - _36.x)) + _36.x) + _201) + ((Material.PreshaderBuffer[5].y) * (_204 - _201));
-  float _217 = (((saturate(_183 * (((_169 + -1.0f) * (Material.PreshaderBuffer[4].z)) + 1.0f)) * (_40 - _36.y)) + _36.y) + _202) + ((Material.PreshaderBuffer[5].y) * (_204 - _202));
-  float _220 = (((saturate(_183 * (((Material.PreshaderBuffer[4].z) * (_170 + -1.0f)) + 1.0f)) * (_40 - _36.z)) + _36.z) + _203) + ((Material.PreshaderBuffer[5].y) * (_204 - _203));
-  SV_Target.x = max(((((Material.PreshaderBuffer[6].x) - _214) * (Material.PreshaderBuffer[5].z)) + _214), 0.0f);
-  SV_Target.y = max(((((Material.PreshaderBuffer[6].y) - _217) * (Material.PreshaderBuffer[5].z)) + _217), 0.0f);
-  SV_Target.z = max(((((Material.PreshaderBuffer[6].z) - _220) * (Material.PreshaderBuffer[5].z)) + _220), 0.0f);
+  SV_Target.rgb = ApplyRCAS(SV_Target.rgb, TEXCOORD.xy, PostProcessInput_0_Texture, PostProcessInput_0_Sampler);
   SV_Target.w = 0.0f;
   return SV_Target;
 }
