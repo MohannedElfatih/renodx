@@ -53,7 +53,7 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_INTERMEDIATE_ENCODING         GAMMA_CORRECTION_NONE
 #define RENODX_SWAP_CHAIN_GAMMA_CORRECTION   GAMMA_CORRECTION_GAMMA_2_2
 #define RENODX_TONE_MAP_HUE_PROCESSOR        renodx::draw::HUE_PROCESSOR_ICTCP
-#define RENODX_TONE_MAP_HUE_SHIFT            1.f
+#define RENODX_TONE_MAP_HUE_SHIFT            0.5f
 #define RENODX_TONE_MAP_PASS_AUTOCORRECTION  1.f
 #define RENODX_TONE_MAP_PER_CHANNEL          0.f
 #define CUSTOM_OUTPUT_SHADER_DRAWN           shader_injection.output_has_drawn
