@@ -404,7 +404,14 @@ bool blitCopy(reshade::api::command_list* cmd_list) {
   return true;
 }
 
-renodx::mods::shader::CustomShaders custom_shaders = {
+renodx::mods::shader::CustomShaders custom_shaders = {};
+
+struct ShaderItem {
+  uint32_t key;
+  renodx::mods::shader::CustomShader val;
+};
+
+const ShaderItem INITIAL_SHADERS[] = {
     ////// HDRP START //////
     CustomShaderEntryCallback(0x45C0BC06, &UberHDRPfsr1),
     CustomShaderEntryCallback(0x59A9259E, &UberHDRPfsr1),
@@ -1687,9 +1694,25 @@ renodx::mods::shader::CustomShaders custom_shaders = {
     //__ALL_CUSTOM_SHADERS,
 };
 
-renodx::mods::shader::CustomShaders other_shaders = {
-    __ALL_CUSTOM_SHADERS,
-};
+const ShaderItem OTHER_SHADERS[] = {
+    __ALL_CUSTOM_SHADERS};
+
+static std::once_flag g_build_shaders_once;
+
+void MergeShaders() {
+  std::call_once(g_build_shaders_once, [] {
+    custom_shaders.reserve(std::size(OTHER_SHADERS) + std::size(INITIAL_SHADERS));
+
+    // Register initial shaders first
+    for (const auto& kv : INITIAL_SHADERS) {
+      custom_shaders.try_emplace(kv.val.crc32, kv.val);
+    }
+
+    for (const auto& kv : OTHER_SHADERS) {
+      custom_shaders.try_emplace(kv.val.crc32, kv.val);
+    }
+  });
+}
 
 float current_settings_mode = 0;
 renodx::utils::settings::Settings settings = {
@@ -2989,13 +3012,6 @@ void OnPresent(
         shader_injection.isClamped = shader_injection.isClamped < 2.f ? 0.f : shader_injection.isClamped;
 }
 
-void MergeShaders() {
-  custom_shaders.reserve(other_shaders.size());  // other_shaders contains all shaders
-  for (auto& kv : other_shaders) {
-    custom_shaders.try_emplace(kv.second.crc32, std::move(kv.second));
-  }
-}
-
 bool initialized = false;
 
 }  // namespace
@@ -3006,9 +3022,10 @@ extern "C" __declspec(dllexport) constexpr const char* DESCRIPTION = "RenoDX for
 BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   switch (fdw_reason) {
     case DLL_PROCESS_ATTACH:
-    MergeShaders();
       if (!reshade::register_addon(h_module)) return FALSE;
       if (!initialized) {
+      MergeShaders();
+
       //renodx::mods::swapchain::swapchain_proxy_compatibility_mode = false;
       renodx::mods::swapchain::swapchain_proxy_revert_state = true;
       //renodx::mods::shader::force_pipeline_cloning = true;
