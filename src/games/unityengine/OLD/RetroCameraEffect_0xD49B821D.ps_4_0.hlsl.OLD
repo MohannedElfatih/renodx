@@ -1,0 +1,119 @@
+#include "../common.hlsl"
+
+Texture2D<float4> t1 : register(t1);
+Texture2D<float4> t0 : register(t0);
+SamplerState s1_s : register(s1);
+SamplerState s0_s : register(s0);
+cbuffer cb0 : register(b0){
+  float4 cb0[9];
+}
+
+#define cmp -
+
+void main(
+  float4 v0 : SV_POSITION0,
+  float2 v1 : TEXCOORD0,
+  float2 w1 : TEXCOORD1,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = cb0[4].yy * cb0[3].xy;
+  r0.zw = cb0[5].xy + v1.xy;
+  r0.zw = frac(r0.zw);
+  r1.xy = float2(-0.5,-0.5) + r0.zw;
+  r1.xy = r1.xy + r1.xy;
+  r1.z = dot(r1.xy, r1.xy);
+  r1.w = r1.z * cb0[7].x + 1;
+  r1.xy = r1.xy * r1.ww;
+  r1.w = cb0[7].x * r1.z;
+  r1.z = -r1.z * cb0[4].z + 1;
+  r1.w = log2(r1.w);
+  r1.w = cb0[7].y * r1.w;
+  r1.w = exp2(r1.w);
+  r2.xy = r1.xy * r1.ww + r0.zw;
+  r0.z = -0.01 + cb0[6].z;
+  r2.z = max(r2.y, r0.z);
+  r0.zw = float2(-0.5,-0.5) + r2.xz;
+  r0.zw = r0.zw + r0.zw;
+  r0.xy = r0.xy * r0.zw;
+  r0.z = dot(r0.zw, r0.zw);
+  r0.xy = -r0.xy * r0.zz + r2.xz;
+  r0.xyzw = t0.Sample(s0_s, r0.xy).xyzw;
+  r3.y = log2(r0.y);
+  r1.xy = cb0[4].yy * float2(-0.0003,-0.0003) + r2.xz;
+  r4.xyzw = t0.Sample(s0_s, r1.xy).xyzw;
+  r3.z = log2(r4.z);
+  r0.z = r4.z;
+  r4.xyzw = t0.Sample(s0_s, r2.xz).xyzw;
+  r1.x = r2.z * cb0[7].z + -0.5;
+  r1.x = frac(r1.x);
+  r3.xw = log2(r4.xw);
+  r0.xw = r4.xw;
+  r3.xyzw = cb0[7].wwww * r3.xyzw;
+  r3.xyzw = exp2(r3.xyzw);
+  r3.xyzw = r3.xyzw * float4(2,2,2,2) + float4(2,2,2,2);
+  r4.xyzw = float4(0.5,0.5,0.5,0.5) * r3.xyzw;
+  r4.xyzw = rsqrt(r4.xyzw);
+  r1.y = 1 + -r1.x;
+  r1.x = r1.x + r1.x;
+  r5.xyzw = r1.xxxx * r4.xyzw;
+  r5.xyzw = log2(r5.xyzw);
+  r5.xyzw = r5.xyzw * r3.xyzw;
+  r5.xyzw = exp2(r5.xyzw);
+  r5.xyzw = float4(-1.44269502,-1.44269502,-1.44269502,-1.44269502) * r5.xyzw;
+  r5.xyzw = exp2(r5.xyzw);
+  r1.x = r1.y + r1.y;
+  r4.xyzw = r1.xxxx * r4.xyzw;
+  r4.xyzw = log2(r4.xyzw);
+  r4.xyzw = r4.xyzw * r3.xyzw;
+  r3.xyzw = r3.xyzw * float4(0.2,0.2,0.2,0.2) + float4(0.3,0.3,0.3,0.3);
+  r4.xyzw = exp2(r4.xyzw);
+  r4.xyzw = float4(-1.44269502,-1.44269502,-1.44269502,-1.44269502) * r4.xyzw;
+  r4.xyzw = exp2(r4.xyzw);
+  r4.xyzw = r4.xyzw / r3.xyzw;
+  r3.xyzw = r5.xyzw / r3.xyzw;
+  r4.xyzw = r4.xyzw * r0.xyzw;
+  r0.xyzw = r0.xyzw * r3.xyzw + r4.xyzw;
+  if(injectedData.toneMapType == 0.f){
+    r0 = saturate(r0);
+  }
+  r0.xyz = r0.xyz * r1.zzz;
+  r1.xyzw = t1.Sample(s1_s, w1.xy).xyzw;
+  r3.xyzw = r1.xyzw + -r0.xyzw;
+  r1.x = -cb0[6].y * 0.9 + r1.x;
+  r1.x = cb0[6].y * r1.x;
+  r1.x = 0.1 * r1.x;
+  r0.xyzw = r1.xxxx * r3.xyzw + r0.xyzw;
+  r1.x = cb0[6].z / r2.y;
+  r1.x = saturate(floor(r1.x));
+  r1.yz = float2(-0.5,-0.5) + w1.xy;
+  r3.xyzw = t1.Sample(s1_s, r1.yz).xyzw;
+  r1.xyzw = r3.xyzw * r1.xxxx;
+  r3.xyzw = r1.xyzw * cb0[6].wwww + -r0.xyzw;
+  r1.xyzw = cb0[6].wwww * r1.xyzw;
+  r2.z = r2.y / cb0[6].z;
+  r2.z = -1 + r2.z;
+  r1.xyzw = r2.zzzz * -r1.xyzw;
+  r0.xyzw = r1.xyzw * r3.xyzw + r0.xyzw;
+  r1.xyz = float3(0.15,0.15,0.15) * r0.xyz;
+  r2.zw = cmp(r2.xy < float2(0,0));
+  r2.xy = cmp(float2(1,1) < r2.xy);
+  r1.w = (int)r2.x | (int)r2.z;
+  r1.w = (int)r2.w | (int)r1.w;
+  r1.w = (int)r2.y | (int)r1.w;
+  r0.xyz = r1.www ? r1.xyz : r0.xyz;
+  o0.w = r0.w;
+  if(injectedData.toneMapType == 0.f){
+  r0.xyz = log2(r0.xyz);
+  r0.w = 1 / cb0[8].x;
+  r0.xyz = r0.www * r0.xyz;
+  r0.xyz = exp2(r0.xyz);
+  } else {
+    r0.xyz = renodx::math::SignPow(r0.xyz, 1 / cb0[8].x);
+  }
+  o0.xyz = r0.xyz;
+  return;
+}

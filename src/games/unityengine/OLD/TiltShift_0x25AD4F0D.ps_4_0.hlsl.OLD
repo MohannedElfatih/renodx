@@ -1,0 +1,91 @@
+#include "../common.hlsl"
+
+Texture2D<float4> t1 : register(t1);
+Texture2D<float4> t0 : register(t0);
+SamplerState s1_s : register(s1);
+SamplerState s0_s : register(s0);
+cbuffer cb0 : register(b0){
+  float4 cb0[32];
+}
+
+void main(
+  float4 v0 : SV_POSITION0,
+  float2 v1 : TEXCOORD0,
+  float2 w1 : TEXCOORD1,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.x = cb0[31].y * cb0[30].w;
+  r0.x = cb0[31].x * r0.x;
+  r0.x = 0.166666672 * r0.x;
+  r1.xyzw = -cb0[28].xyxy * float4(0.5,0.5,-0.5,0.5) + v1.xyxy;
+  r2.xyzw = t1.Sample(s1_s, r1.xy).xyzw;
+  r0.y = cb0[21].z * r2.x + cb0[21].w;
+  r2.x = 1 / r0.y;
+  r3.xyzw = t1.Sample(s1_s, r1.zw).xyzw;
+  r0.y = cb0[21].z * r3.x + cb0[21].w;
+  r2.y = 1 / r0.y;
+  r3.xyzw = cb0[28].xyxy * float4(-0.5,0.5,0.5,0.5) + v1.xyxy;
+  r4.xyzw = t1.Sample(s1_s, r3.xy).xyzw;
+  r0.y = cb0[21].z * r4.x + cb0[21].w;
+  r2.z = 1 / r0.y;
+  r4.xyzw = t1.Sample(s1_s, r3.zw).xyzw;
+  r0.y = cb0[21].z * r4.x + cb0[21].w;
+  r2.w = 1 / r0.y;
+  r2.xyzw = -cb0[30].wwww + r2.xyzw;
+  r0.xyzw = r2.xyzw / r0.xxxx;
+  r0.xyzw = max(-cb0[30].xxxx, r0.xyzw);
+  r0.xyzw = min(cb0[30].xxxx, r0.xyzw);
+  r2.xyzw = saturate(cb0[30].yyyy * abs(r0.xyzw));
+  r0.x = dot(r0.xyzw, float4(0.25,0.25,0.25,0.25));
+  r4.xyzw = t0.Sample(s0_s, r1.zw).xyzw;
+  r1.xyzw = t0.Sample(s0_s, r1.xy).xyzw;
+  if(injectedData.isClamped != 0.f){
+  r4.xyz = rolloffSdr(r4.xyz);
+  r1.xyz = rolloffSdr(r1.xyz);
+  }
+  r0.y = max(r4.y, r4.z);
+  r0.y = max(r4.x, r0.y);
+  r0.y = 1 + r0.y;
+  r0.y = 1 / r0.y;
+  r5.y = r2.y * r0.y;
+  r0.yzw = r5.yyy * r4.xyz;
+  r1.w = max(r1.y, r1.z);
+  r1.w = max(r1.x, r1.w);
+  r1.w = 1 + r1.w;
+  r1.w = 1 / r1.w;
+  r5.x = r2.x * r1.w;
+  r0.yzw = r1.xyz * r5.xxx + r0.yzw;
+  r1.xyzw = t0.Sample(s0_s, r3.xy).xyzw;
+  r3.xyzw = t0.Sample(s0_s, r3.zw).xyzw;
+  if(injectedData.isClamped != 0.f){
+  r3.xyz = rolloffSdr(r3.xyz);
+  r1.xyz = rolloffSdr(r1.xyz);
+  }
+  r1.w = max(r1.y, r1.z);
+  r1.w = max(r1.x, r1.w);
+  r1.w = 1 + r1.w;
+  r1.w = 1 / r1.w;
+  r5.z = r2.z * r1.w;
+  r0.yzw = r1.xyz * r5.zzz + r0.yzw;
+  r1.x = max(r3.y, r3.z);
+  r1.x = max(r3.x, r1.x);
+  r1.x = 1 + r1.x;
+  r1.x = 1 / r1.x;
+  r5.w = r2.w * r1.x;
+  r0.yzw = r3.xyz * r5.www + r0.yzw;
+  r1.x = dot(r5.xyzw, float4(1,1,1,1));
+  r0.yzw = r0.yzw / r1.xxx;
+  r1.x = cb0[28].y + cb0[28].y;
+  r1.x = 1 / r1.x;
+  r1.x = saturate(r1.x * abs(r0.x));
+  o0.w = r0.x;
+  r0.x = r1.x * -2 + 3;
+  r1.x = r1.x * r1.x;
+  r0.x = r1.x * r0.x;
+  o0.xyz = r0.yzw * r0.xxx;
+  return;
+}
