@@ -31,7 +31,7 @@ renodx::utils::settings::Settings settings = renodx::templates::settings::JoinSe
             "ToneMapType",
             {
                 .binding = &shader_injection.tone_map_type,
-                .default_value = 2.f,
+                .default_value = 3.f,
                 .labels = {"Vanilla (SDR)", "None", "ACES", "Vanilla+ (ACES + UE Filmic Blend)"},
                 .parse = [](float value) { return value == 0.f ? 4.f : value; },  // hacky way but better than rewriting code
             },
@@ -48,30 +48,31 @@ renodx::utils::settings::Settings settings = renodx::templates::settings::JoinSe
         {"ColorGradeHighlights", {.binding = &shader_injection.tone_map_highlights}},
         {"ColorGradeShadows", {.binding = &shader_injection.tone_map_shadows}},
         {"ColorGradeContrast", {.binding = &shader_injection.tone_map_contrast}},
-        {"ColorGradeSaturation", {.binding = &shader_injection.tone_map_saturation}},
-        {"ColorGradeHighlightSaturation", {.binding = &shader_injection.tone_map_highlight_saturation}},
+        {"ColorGradeSaturation", {.binding = &shader_injection.tone_map_saturation, .default_value = 55.f}},
+        {"ColorGradeHighlightSaturation", {.binding = &shader_injection.tone_map_highlight_saturation, .default_value = 55.f}},
         {"ColorGradeBlowout", {.binding = &shader_injection.tone_map_blowout}},
         {"ColorGradeFlare", {.binding = &shader_injection.tone_map_flare}},
     }),
     {
         new renodx::utils::settings::Setting{
-            .key = "heroLightStrength",
-            .binding = &shader_injection.custom_hero_light_strength,
-            .default_value = 25.f,
-            .label = "Character Light Strength",
-            .section = "Tone Mapping",
-            .max = 100.f,
-            .parse = [](float value) { return value * 0.01f; },
-        },
-        new renodx::utils::settings::Setting{
             .key = "lightStrength",
             .binding = &shader_injection.custom_lights_strength,
             .default_value = 50.f,
             .label = "Lights Strength",
-            .section = "Tone Mapping",
+            .section = "Lighting",
             .max = 100.f,
             .parse = [](float value) { return value * 0.01f; },
         },
+        /* new renodx::utils::settings::Setting{
+            .key = "heroLightStrength",
+            .binding = &shader_injection.custom_hero_light_strength,
+            .default_value = 25.f,
+            .label = "Character Light Strength",
+            .section = "Lighting",
+            .tooltip = "ONLY AFFECTS CERTAIN STAGES",
+            .max = 100.f,
+            .parse = [](float value) { return value * 0.01f; },
+        }, */
         new renodx::utils::settings::Setting{
             .value_type = renodx::utils::settings::SettingValueType::BUTTON,
             .label = "Discord",
@@ -150,11 +151,10 @@ renodx::utils::settings::Settings settings = renodx::templates::settings::JoinSe
 
 void OnPresetOff() {
   renodx::utils::settings::UpdateSettings({
-      {"ToneMapType", 4.f},
+      {"ToneMapType", 3.f},
       {"ToneMapPeakNits", 203.f},
       {"ToneMapGameNits", 203.f},
       {"ToneMapUINits", 203.f},
-      {"ToneMapGammaCorrection", 0.f},
       {"ColorGradeExposure", 1.f},
       {"ColorGradeHighlights", 50.f},
       {"ColorGradeShadows", 50.f},

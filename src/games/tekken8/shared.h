@@ -61,7 +61,7 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_SWAP_CHAIN_ENCODING_COLOR_SPACE color::convert::COLOR_SPACE_BT2020
 #define RENODX_SWAP_CHAIN_ENCODING             renodx::draw::ENCODING_PQ
 #define RENODX_TONE_MAP_PASS_AUTOCORRECTION    1.f
-#define CUSTOM_HERO_LIGHT_STRENGTH             shader_injection.custom_hero_light_strength
+#define CUSTOM_HERO_LIGHT_STRENGTH             0.25f
 #define CUSTOM_LIGHTS_STRENGTH                 shader_injection.custom_lights_strength
 #define CUSTOM_LUT_STRENGTH                    1.f
 #define CUSTOM_LUT_SCALING                     1.f
