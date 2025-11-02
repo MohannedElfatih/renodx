@@ -58,8 +58,6 @@ float setCustomParam(float3 curve, float4 toeA, float4 toeB, float4 midA, float4
   else if (curve.x == 0.8702959 && curve.y == 0.00036573692 && curve.z == 0.17441027) return 20;  // Lost Words
   else if (curve.x == 0.75711614 && curve.y == 0.0023885393 && curve.z == 0.4558127) return 28;  // Lost Words
   else if (curve.x == 0.75619686 && curve.y == 0.01096152 && curve.z == 0.45941812) return 25;  // Lost Words
-  else if (curve.x == 0.3501852 && curve.y == 0.03810674 && curve.z == 0.29539084) return 30;  // UFO ROBOT GRENDIZER
-  else if (curve.x == 0.5 && curve.y == 0.054409407 && curve.z == 0.05441387) return 31;  // NRFTW
 else return 0;
 }
 
@@ -68,7 +66,7 @@ float3 applyUserTonemapCustom(float3 untonemapped, float3 vanilla, float midGray
   float3 outputColor;
   float defaultClip = 4.f;
   renodx::tonemap::Config config = renodx::tonemap::config::Create();
-  config.type = injectedData.toneMapType >= 2.f ? 3.f : injectedData.toneMapType;
+  config.type = min(3, injectedData.toneMapType);
   config.peak_nits = injectedData.toneMapPeakNits;
   config.game_nits = injectedData.toneMapGameNits;
   config.gamma_correction = injectedData.toneMapGammaCorrection;
@@ -155,9 +153,6 @@ float3 applyUserTonemapCustom(float3 untonemapped, float3 vanilla, float midGray
     config.reno_drt_flare = 0.0452f * pow(injectedData.colorGradeFlare, 2.f);
   } else if(param == 29){
     config.reno_drt_contrast = 1.02f;
-  } else if(param == 30){
-    config.reno_drt_contrast = 1.2f;
-    config.reno_drt_flare = 0.14f * injectedData.colorGradeFlare;
   }
   config.reno_drt_dechroma = injectedData.colorGradeDechroma;
   config.reno_drt_blowout = 1.f - injectedData.colorGradeBlowout;
@@ -165,8 +160,9 @@ float3 applyUserTonemapCustom(float3 untonemapped, float3 vanilla, float midGray
                                                                      : renodx::tonemap::config::hue_correction_type::CUSTOM;
   config.hue_correction_strength = injectedData.toneMapHueCorrection;
   config.hue_correction_color = lerp(untonemapped, vanilla, injectedData.toneMapHueShift);
-  config.reno_drt_hue_correction_method = injectedData.toneMapHueProcessor;
-  config.reno_drt_tone_map_method = injectedData.toneMapType - 2.f;
+  config.reno_drt_hue_correction_method = (int)injectedData.toneMapHueProcessor;
+  config.reno_drt_tone_map_method = injectedData.toneMapType == 3.f ? renodx::tonemap::renodrt::config::tone_map_method::REINHARD
+                                                                    : renodx::tonemap::renodrt::config::tone_map_method::DANIELE;
   config.reno_drt_per_channel = injectedData.toneMapPerChannel != 0.f;
   config.reno_drt_working_color_space = 0;
   config.reno_drt_white_clip = injectedData.colorGradeClip == 0.f ? defaultClip : injectedData.colorGradeClip;

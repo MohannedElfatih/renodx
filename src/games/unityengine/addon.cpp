@@ -13,7 +13,6 @@
 
 #include "../../mods/shader.hpp"
 #include "../../mods/swapchain.hpp"
-#include "../../utils/shader.hpp"
 #include "../../utils/date.hpp"
 #include "../../utils/settings.hpp"
 #include "../../utils/random.hpp"
@@ -40,25 +39,6 @@ float InternalLutCheck = 0.f;
 bool finalBlitCheck;
 
 ShaderInjectData shader_injection;
-
-#define UpgradeRTVShader(value)              \
-  {                                          \
-      value,                                 \
-      {                                      \
-          .crc32 = value,                    \
-          .on_draw = [](auto* cmd_list) {                                                           \
-            auto rtvs = renodx::utils::swapchain::GetRenderTargets(cmd_list);                       \
-            bool changed = false;                                                                   \
-            for (auto rtv : rtvs) {                                                                 \
-              changed = renodx::mods::swapchain::ActivateCloneHotSwap(cmd_list->get_device(), rtv); \
-            }                                                                                       \
-            if (changed) {                                                                          \
-              renodx::mods::swapchain::FlushDescriptors(cmd_list);                                  \
-              renodx::mods::swapchain::RewriteRenderTargets(cmd_list, rtvs.size(), rtvs.data(), {0});      \
-            }                                                                                       \
-            return true; }, \
-      },                                     \
-  }
 
 // LutGen, LutBuilder3D
 // can hide
@@ -680,7 +660,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDRPOnDraw(0xF6574655),
     UberHDRPOnDraw(0x29F16183),
     UberHDRPOnDraw(0x17E28214),
-    UberHDRPOnDraw(0x4CF0CF09),
     UberHDRPOnDraw(0x96F6F68C),
     UberHDRPOnDraw(0xAE389F39),
     UberHDRPOnDraw(0xE37D7F68),
@@ -690,21 +669,18 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDRPOnDraw(0x1DD23EA0),
     UberHDRPOnDraw(0x3BD8B8FD),
     UberHDRPOnDraw(0x3F04EE8D),
-    UberHDRPOnDraw(0x4BAB5541),
     UberHDRPOnDraw(0x5F120263),
     UberHDRPOnDraw(0x6A47E083),
     UberHDRPOnDraw(0x8FEBA362),
     UberHDRPOnDraw(0x9A3E18AA),
     UberHDRPOnDraw(0x9A994A5E),
     UberHDRPOnDraw(0x9B5C1401),
-    UberHDRPOnDraw(0x9B9E38C3),
     UberHDRPOnDraw(0x9F0BEDCA),
     UberHDRPOnDraw(0x16F88A15),
     UberHDRPOnDraw(0x23F1EC4F),
     UberHDRPOnDraw(0x87DFDDEA),
     UberHDRPOnDraw(0x744F5F34),
     UberHDRPOnDraw(0x802BDE1D),
-    UberHDRPOnDraw(0x2194C4A3),
     UberHDRPOnDraw(0x3530AC89),
     UberHDRPOnDraw(0x6983BFA7),
     UberHDRPOnDraw(0x44791CF0),
@@ -724,7 +700,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDRPOnDraw(0xF1A75575),
     UberHDRPOnDraw(0xF8BA0FA2),
     UberHDRPOnDraw(0xF110C44D),
-    UberHDRPOnDraw(0xFA609710),
     UberHDRPOnDraw(0xFDF96092),
     UberHDRPOnDraw(0xEFE2ADAE),
       // final pass
@@ -745,8 +720,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     CountLinearOnDraw(0x31B9B1AB),
     CountLinearOnDraw(0x38B55FCE),
     CountLinearOnDraw(0x44D2D279),
-    CountLinearOnDraw(0x48DCE4C7),
-    CountLinearOnDraw(0x51F1D5CA),
     CountLinearOnDraw(0x54D67961),
     CountLinearOnDraw(0x55D603B1),
     CountLinearOnDraw(0x067F6831),
@@ -762,7 +735,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     CountLinearOnDraw(0x1310A22D),
     CountLinearOnDraw(0x3069A872),
     CountLinearOnDraw(0x8883FAEA),
-    CountLinearOnDraw(0x13808C73),
     CountLinearOnDraw(0x27812EF8),
     CountLinearOnDraw(0x28075F34),
     CountLinearOnDraw(0x40072B90),
@@ -780,14 +752,11 @@ const ShaderItem INITIAL_SHADERS[] = {
     CountLinearOnDraw(0xAE7EE10F),
     CountLinearOnDraw(0xB2B44A63),
     CountLinearOnDraw(0xB26F4E2D),
-    CountLinearOnDraw(0xBBC1FA0B),
-    CountLinearOnDraw(0xBD481C0C),
     CountLinearOnDraw(0xBDA2DF56),
     CountLinearOnDraw(0xBF447ED7),
     CountLinearOnDraw(0xCE6260A3),
     CountLinearOnDraw(0xD0BF0A3A),
     CountLinearOnDraw(0xD4E338C4),
-    CountLinearOnDraw(0xD8C621CB),
     CountLinearOnDraw(0xD22CD417),
     CountLinearOnDraw(0xDD2F76F2),
     CountLinearOnDraw(0xED0AF2E7),
@@ -811,8 +780,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     SneakyBuilder3OnDraw(0x3917A841),
     SneakyBuilder3OnDraw(0x6811A33B),
     SneakyBuilder3OnDraw(0xF5AC76A9),
-    SneakyBuilder3OnDraw(0x56369810),
-
         // Custom
     SneakyBuilder2OnDraw(0x3B4291E8),
     SneakyBuilder2OnDraw(0x7D343D34),
@@ -830,7 +797,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     Builder1OnDraw(0x8576F73A),
     Builder1OnDraw(0x04F466E8),
     Builder1OnDraw(0xD73B437F),
-    Builder1OnDraw(0x89B011BE),
         // Neutral
     Builder2OnDraw(0x6C506E30),
     Builder2OnDraw(0x819CADDA),
@@ -845,22 +811,16 @@ const ShaderItem INITIAL_SHADERS[] = {
     Builder3OnDraw(0x31B52561),
     Builder3OnDraw(0x042C6BD1),
     Builder3OnDraw(0x64B708E6),
-    Builder3OnDraw(0x246CE154),
     Builder3OnDraw(0xCE436C36),
     Builder3OnDraw(0xE6EC2E40),
     Builder3OnDraw(0xAE8C0E90),
     Builder3OnDraw(0xBAF1CCB4),
-    Builder3OnDraw(0x1F679F37),
-    Builder3OnDraw(0xA43D2B2D),
-        // Custom
-    Builder2OnDraw(0x93FBDA60),
       /// Builder Ldr ///
     Builder1OnDraw(0x62F196B6),
     Builder1OnDraw(0x48B66B90),
     Builder1OnDraw(0x13EEF169),
     Builder1OnDraw(0x085F1ADA),
     Builder1OnDraw(0x731B4F3C),
-    Builder1OnDraw(0x0906E676),
     Builder1OnDraw(0x562744E8),
     Builder1OnDraw(0x574581C7),
     Builder1OnDraw(0xB3DF43CA),
@@ -869,8 +829,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     Builder1OnDraw(0xFFA5BFB6),
     Builder1OnDraw(0xE736DD70),
     Builder1OnDraw(0x453D9983),
-    Builder1OnDraw(0xABAD60A0),
-    Builder1OnDraw(0x63098018),
       // GenUberLut
     Builder1OnDraw(0x894B73C7),
     Builder1OnDraw(0xDA07C0CD),
@@ -908,10 +866,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0xB2FA9650),
     UberLinearOnDraw(0x614D4290),
     UberLinearOnDraw(0x333D4088),
-    UberLinearOnDraw(0x2B398141),
-    UberLinearOnDraw(0xDF97E9E0),
     UberLinearOnDraw(0xA1BB94CF),
-    UberLinearOnDraw(0xA9C30A53),
     UberLinearOnDraw(0xB75D73F2),
     UberLinearOnDraw(0x4892C014),
     UberLinearOnDraw(0x077C4EBE),
@@ -932,7 +887,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x34FDFCCA),
     UberLinearOnDraw(0xDE9C4A17),
     UberLinearOnDraw(0x0C95BEDA),
-    UberLinearOnDraw(0x0D586669),
     UberLinearOnDraw(0xCF58B964),
     UberLinearOnDraw(0x44894E92),
     UberLinearOnDraw(0x67BE60E8),
@@ -948,6 +902,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x620B1A71),
     UberLinearOnDraw(0x75812DD3),
     UberLinearOnDraw(0xFA04705A),
+    UberLinearOnDraw(0x3063B396),
     UberLinearOnDraw(0xEC2E44B0),
     UberLinearOnDraw(0x7BB9330C),
     UberLinearOnDraw(0x1618D91F),
@@ -974,35 +929,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x5A6D38E4),
     UberLinearOnDraw(0x5CD23656),
     UberLinearOnDraw(0xD587A4E3),
-    UberLinearOnDraw(0xFB956876),
-    UberLinearOnDraw(0x6E92F78E),
-    UberLinearOnDraw(0xFDB5E48B),
-    UberLinearOnDraw(0xD5DD013F),
-    UberLinearOnDraw(0xC37BC9A9),
-    UberLinearOnDraw(0x55CAA7AE),
-    UberLinearOnDraw(0x56470D5E),
-    UberLinearOnDraw(0x03075C9E),
-    UberLinearOnDraw(0x6B6F1A57),
-    UberLinearOnDraw(0x659A2E8E),
-    UberLinearOnDraw(0xC4210E7C),
-    UberLinearOnDraw(0x14DFEA72),
-    UberLinearOnDraw(0x3A4565C5),
-    UberLinearOnDraw(0x4C68E3B1),
-    UberLinearOnDraw(0xAD1DCECB),
-    UberLinearOnDraw(0x94BD15F2),
-    UberLinearOnDraw(0xE48189ED),
-    UberLinearOnDraw(0xE715EAC1),
-    UberLinearOnDraw(0x29E4578F),
-    UberLinearOnDraw(0xC1C66F71),
-    UberLinearOnDraw(0x0F969392),
-    UberLinearOnDraw(0xB2904AA2),
-    UberLinearOnDraw(0xBD82D2DB),
-    UberLinearOnDraw(0x40DE2C8B),
-    UberLinearOnDraw(0xA0247B8C),
-    UberLinearOnDraw(0x3C788F94),
-    UberLinearOnDraw(0xD31C4BBF),
-    UberGammaOnDraw(0x6A501208),
-    UberGammaOnDraw(0xE3B6F1F7),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1063,75 +989,33 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x2DBE5C71),
     UberGammaOnDraw(0x0AC99FA7),
     UberGammaOnDraw(0x8E8A64BA),
-    UberGammaOnDraw(0x53609A70),
-    UberGammaOnDraw(0x99D2E489),
-    UberGammaOnDraw(0xB2EAED3B),
-    UberGammaOnDraw(0x68430C14),
-    UberGammaOnDraw(0x681C8D13),
-    UberGammaOnDraw(0x1E11059F),
-    UberGammaOnDraw(0xEC26FAEC),
-    UberGammaOnDraw(0x396CDE5E),
-    UberGammaOnDraw(0x0E00166F),
-    UberGammaOnDraw(0xF1376E70),
-    UberGammaOnDraw(0x74B19CB7),
-    UberGammaOnDraw(0x1666FB47),
-    UberGammaOnDraw(0x278DE973),
-    UberGammaOnDraw(0xB6BE8953),
-    UberGammaOnDraw(0x0366BBC6),
-    UberGammaOnDraw(0x1ECDAAB2),
-    UberGammaOnDraw(0x40CCE791),
-    UberGammaOnDraw(0x621C5D59),
-    UberGammaOnDraw(0x7301C8FE),
-    UberGammaOnDraw(0xB960B2A2),
-    UberGammaOnDraw(0x4E2766BA),
-    UberGammaOnDraw(0xE168D263),
-    UberGammaOnDraw(0xCE3E675F),
         // Neutral
     UberNeutralLinearOnDraw(0x0B383A2F),
-    UberNeutralGammaOnDraw(0x0EA73DAA),
-    UberNeutralLinearOnDraw(0x01FDB021),
     UberNeutralLinearOnDraw(0x6A5ACB6F),
     UberNeutralLinearOnDraw(0x009A1C24),
-    UberNeutralLinearOnDraw(0x36DEAC10),
     UberNeutralLinearOnDraw(0x66C3EBEB),
     UberNeutralLinearOnDraw(0x96A8E4B9),
     UberNeutralLinearOnDraw(0x5217FBA3),
     UberNeutralLinearOnDraw(0x5456BDEE),
-    UberNeutralLinearOnDraw(0x7404F723),
     UberNeutralLinearOnDraw(0x8613B876),
-    UberNeutralGammaOnDraw(0x179468F9), // no LUT
-    UberNeutralLinearOnDraw(0x28721650),
-    UberNeutralLinearOnDraw(0xA1AACAEA),
-    UberNeutralLinearOnDraw(0xA6C2AA23),
     UberNeutralLinearOnDraw(0xA8F6504E),
-    UberNeutralLinearOnDraw(0xAABF3985),
     UberNeutralLinearOnDraw(0xAC471C80),
     UberNeutralLinearOnDraw(0xAD809271),
-UberNeutralLinearOnDraw(0xB68DCF9E),
-    UberNeutralLinearOnDraw(0xB2327C12),
     UberNeutralLinearOnDraw(0xC999597C),
     UberNeutralLinearOnDraw(0xE73E4C20),
-    UberNeutralLinearOnDraw(0xED86C942),
     UberNeutralLinearOnDraw(0xD5C07171),
-    UberNeutralLinearOnDraw(0xD72DF71C),
-    UberNeutralLinearOnDraw(0xDDF23BBB),
     UberNeutralLinearOnDraw(0xF849180D),
     UberNeutralLinearOnDraw(0x312AE5CE),
     UberNeutralLinearOnDraw(0x4CBE7398),
     UberNeutralLinearOnDraw(0x04D5BD3C),
     UberNeutralLinearOnDraw(0x2CAF46E1),
     UberNeutralLinearOnDraw(0x151F7D68),
-    UberNeutralLinearOnDraw(0x215FEC7F),
     UberNeutralLinearOnDraw(0xD0CC8CE2),
-    UberNeutralLinearOnDraw(0xD1FDEBCD),
     UberNeutralLinearOnDraw(0xC680A959),
-    UberNeutralLinearOnDraw(0x00C855E4),
-    UberNeutralLinearOnDraw(0x54CAE2A0),
-    UberNeutralLinearOnDraw(0xC06DEF33),
-    UberNeutralLinearOnDraw(0x59762D4A),
-    UberNeutralLinearOnDraw(0x5F655887),
     UberNeutralGammaOnDraw(0x692D142C),
+    UberNeutralGammaOnDraw(0x0EA73DAA),
     UberNeutralGammaOnDraw(0x5C329C6B),
+    UberNeutralGammaOnDraw(0x179468F9), // no LUT
     UberNeutralGammaOnDraw(0xCE6048CA), // no LUT
         // ACES
     UberACESLinearOnDraw(0x1C42C445),
@@ -1141,7 +1025,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberACESLinearOnDraw(0xFDA8A0F6),
     UberACESLinearOnDraw(0x9A27FDCD),
     UberACESLinearOnDraw(0x9D2A9AD7),
-    UberACESLinearOnDraw(0x9F4A9AEC),
     UberACESLinearOnDraw(0x51B31CD0),
     UberACESLinearOnDraw(0x60CD88E9),
     UberACESLinearOnDraw(0x63F63B73),
@@ -1156,9 +1039,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberACESLinearOnDraw(0xA9329B7F),
     UberACESLinearOnDraw(0xB4323752),
     UberACESLinearOnDraw(0xC9F897D5),
-    UberACESLinearOnDraw(0xC38BA808),
     UberACESLinearOnDraw(0xC593D007),
-    UberACESLinearOnDraw(0xCD0AF2B1),
     UberACESLinearOnDraw(0xD8C3ADEB),
     UberACESLinearOnDraw(0xE651D798),
     UberACESLinearOnDraw(0x6FEECA44),
@@ -1171,46 +1052,32 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberACESLinearOnDraw(0x98999C03),
     UberACESLinearOnDraw(0x65D6A1C7),
     UberACESLinearOnDraw(0x3063B396),
-    UberACESLinearOnDraw(0x03522F65),
-    UberACESLinearOnDraw(0x6345B89E),
     UberACESLinearOnDraw(0x42A50C71),
     UberACESLinearOnDraw(0x60B48ADF),
     UberACESLinearOnDraw(0x0DE9EBCF),
-    UberACESLinearOnDraw(0x1B8038E6),
     UberACESLinearOnDraw(0x9BF686BC),
     UberACESLinearOnDraw(0xE5C37261),
     UberACESLinearOnDraw(0x7B4E81D3),
-    UberACESLinearOnDraw(0x8F6AB88F),
     UberACESLinearOnDraw(0xE1F3EA92),
     UberACESLinearOnDraw(0xDA822A11),
     UberACESLinearOnDraw(0xE9A455B7),
     UberACESLinearOnDraw(0xF949F5A6),
-    UberACESLinearOnDraw(0xF92506D6),
     UberACESLinearOnDraw(0xFA5BE462),
     UberACESLinearOnDraw(0xFC440F74),
     UberACESLinearOnDraw(0xBBEE8C39),
     UberACESLinearOnDraw(0x8434F830),
-    UberACESLinearOnDraw(0x56DCBA40),
-    UberACESLinearOnDraw(0x464C5DC7),
-    UberACESLinearOnDraw(0xE5AC38E1),
     UberACESGammaOnDraw(0x230619DF),
     UberACESGammaOnDraw(0x74A3CCC8),
     UberACESGammaOnDraw(0x6695772D),
     UberACESGammaOnDraw(0x822AE84C),
-    UberACESLinearOnDraw(0x02985F48),
     UberACESGammaOnDraw(0x03F17B55),
     UberACESGammaOnDraw(0x8516BF4C),
-    UberACESLinearOnDraw(0x82804C2E),
-    UberACESLinearOnDraw(0xDB1A9E91),
     UberACESGammaOnDraw(0x343E55D9),
     UberACESGammaOnDraw(0x0D96CCBA),
         // HD
     UberHDLinearOnDraw(0x0E7B6A15),
     UberHDLinearOnDraw(0x0E883404),
     UberHDLinearOnDraw(0x0EC64D75),
-    UberHDLinearOnDraw(0x0D429D27),
-    UberHDLinearOnDraw(0x0C271B4A),
-    UberHDLinearOnDraw(0xBCC1D592),
     UberHDGammaOnDraw(0x0F750BE1),
 	  UberHDLinearOnDraw(0x0F4188A5),
 	  UberHDGammaOnDraw(0x1C581A77),
@@ -1218,12 +1085,8 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
 	  UberHDLinearOnDraw(0x1E7FFDBB),
     UberHDLinearOnDraw(0x1E832EAE),
 	  UberHDLinearOnDraw(0x1E66576A),
-      UberHDLinearOnDraw(0x2B6A08BE),
-    UberHDGammaOnDraw(0x2BD1D620),
-    UberHDGammaOnDraw(0x2DD1178D),
 	  UberHDLinearOnDraw(0x2E10432D),
 	  UberHDLinearOnDraw(0x02E86441),
-      UberHDLinearOnDraw(0x3E059D01),
     UberHDLinearOnDraw(0x3F8E8017),
 	  UberHDLinearOnDraw(0x4B537637),
 	  UberHDLinearOnDraw(0x4D2B6B11),
@@ -1240,24 +1103,17 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
 	  UberHDGammaOnDraw(0x6E3B0BB9),
 	  UberHDLinearOnDraw(0x6ECE071D),
     UberHDLinearOnDraw(0x7AA25CB8),
-    UberHDLinearOnDraw(0x7BF974DA),
 	  UberHDLinearOnDraw(0x7CA9D945),
 	  UberHDLinearOnDraw(0x07D3D894),
 	  UberHDLinearOnDraw(0x7E2F585E),
 	  UberHDLinearOnDraw(0x07E6710E),
     UberHDLinearOnDraw(0x7EE888FF),
-    UberHDGammaOnDraw(0x8FF6134C),
 	  UberHDLinearOnDraw(0x9B813389),
 	  UberHDLinearOnDraw(0x9CFC6AFA),
 	  UberHDLinearOnDraw(0x9DF20CC3),
 	  UberHDLinearOnDraw(0x10D74361),
-      UberHDLinearOnDraw(0x12BF2AB6),
 	  UberHDLinearOnDraw(0x14AC9B94),
     UberHDLinearOnDraw(0x42B4F952),
-    UberHDLinearOnDraw(0x51D248BE),
-    UberHDGammaOnDraw(0x56ABE46D),
-    UberHDLinearOnDraw(0x057FB6C7),
-    UberHDLinearOnDraw(0x65A1E707),
     UberHDLinearOnDraw(0x66ADC764),
 	  UberHDLinearOnDraw(0x69FE571B),
 	  UberHDLinearOnDraw(0x70F25296),
@@ -1265,23 +1121,15 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
 	  UberHDLinearOnDraw(0x95B85C10),
 	  UberHDLinearOnDraw(0x127B53F7),
     UberHDLinearOnDraw(0x216A76C7),
-    UberHDLinearOnDraw(0x262EEB5C),
 	  UberHDGammaOnDraw(0x351B1F11),
-      UberHDLinearOnDraw(0x389B546B),
 	  UberHDLinearOnDraw(0x450C7E5A),
-    UberHDLinearOnDraw(0x467F2718),
-    UberHDLinearOnDraw(0x495F21AA),
-    UberHDLinearOnDraw(0x715ED95A),
 	  UberHDLinearOnDraw(0x721D4F40),
 	  UberHDLinearOnDraw(0x0733A496),
 	  UberHDGammaOnDraw(0x778CFAC9),
-    UberHDGammaOnDraw(0x868D8699),
-    UberHDLinearOnDraw(0x2450FC89),
 	  UberHDLinearOnDraw(0x2781E558),
 	  UberHDLinearOnDraw(0x2998DD23),
 	  UberHDLinearOnDraw(0x3087C1DD),
 	  UberHDLinearOnDraw(0x3655F826),
-      UberHDLinearOnDraw(0x3919C7EC),
 	  UberHDLinearOnDraw(0x4069CE6C),
 	  UberHDLinearOnDraw(0x4233DBE0),
 	  UberHDLinearOnDraw(0x5839BFE1),
@@ -1295,19 +1143,15 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
 	  UberHDLinearOnDraw(0x134700A7),
     UberHDGammaOnDraw(0x32597878),
     UberHDLinearOnDraw(0x52648650),
-    UberHDLinearOnDraw(0xA2A40DEB),
     UberHDGammaOnDraw(0x2229222B),
 	  UberHDLinearOnDraw(0xA9DCD389),
 	  UberHDLinearOnDraw(0xA42C0E37),
-      UberHDLinearOnDraw(0xAA5903B4),
 	  UberHDLinearOnDraw(0xADCCB7BB),
 	  UberHDLinearOnDraw(0xADFD88AD),
 	  UberHDLinearOnDraw(0xAE047DF6),
-    UberHDGammaOnDraw(0xAEE6F24B),
 	  UberHDLinearOnDraw(0xB8D14E32),
 	  UberHDLinearOnDraw(0xB39F3D8A),
 	  UberHDGammaOnDraw(0xB82B9879),
-    UberHDLinearOnDraw(0xB86A8EAD),
     UberHDGammaOnDraw(0xB2866BD3),
 	  UberHDLinearOnDraw(0xB4780190),
 	  UberHDLinearOnDraw(0xB9579276),
@@ -1316,16 +1160,11 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0xBE37E21E),
 	  UberHDLinearOnDraw(0xC01E64C3),
 	  UberHDLinearOnDraw(0xC5D7F1A1),
-      UberHDLinearOnDraw(0xC9A67BB4),
-    UberHDLinearOnDraw(0xC9B217F6),
-    UberHDLinearOnDraw(0xC36A912D),
 	  UberHDLinearOnDraw(0xC1639FBF),
 	  UberHDLinearOnDraw(0xC2976820),
     UberHDLinearOnDraw(0xCBDCEF29),
 	  UberHDGammaOnDraw(0xD1E36C9E),
-      UberHDLinearOnDraw(0xD3CE0801),
 	  UberHDGammaOnDraw(0xD0045A15),
-      UberHDLinearOnDraw(0xD457F90B),
 	  UberHDLinearOnDraw(0xD4543B6E),
 	  UberHDLinearOnDraw(0xD86170D7),
 	  UberHDLinearOnDraw(0xE0D21C32),
@@ -1338,48 +1177,31 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
 	  UberHDLinearOnDraw(0xF9D83ECD),
 	  UberHDLinearOnDraw(0xF09D3285),
 	  UberHDLinearOnDraw(0xFDC03846),
-    UberHDLinearOnDraw(0x2B004199),
 	  UberHDGammaOnDraw(0x3BB091D1),
     UberHDGammaOnDraw(0x6FC5EBBD),
     UberHDGammaOnDraw(0x21E04E36),
-    UberHDGammaOnDraw(0x24A850DA),
-    UberHDLinearOnDraw(0x29B597F9),
-    UberHDLinearOnDraw(0x34E2CD45),
     UberHDGammaOnDraw(0x4424716A),
     UberHDGammaOnDraw(0xF0DB2F63),
-	UberHDLinearOnDraw(0x8C592D8D),
-    UberHDLinearOnDraw(0x09012773),
+	  UberHDLinearOnDraw(0x8C592D8D),
     UberHDLinearOnDraw(0x342E56C7),
     UberHDLinearOnDraw(0xA8A0A101),
     UberHDLinearOnDraw(0x72C37E3A),
     UberHDLinearOnDraw(0x66CCE9A2),
     ////// URP END //////
     ////// CUSTOM START //////
-    Builder3OnDraw(0xF9658F60), // SadCatStudios_ColorGradingLut
-    Builder1OnDraw(0x6C531A2E), // SadCatStudios_ColorGradingLut
-    UberHDLinearOnDraw(0xFF079BBC), // SadCatS
-    // tudios_FinalBlit
-    UberHDLinearOnDraw(0x99B7B0BF), // SadCatStudios_FinalBlit
     CustomShaderEntryCallback(0x459D4153, &CountLinear),    // Colour Correction
     CustomShaderEntryCallback(0xB0826385, &CountLinear),
-    CustomShaderEntryCallback(0x6D550A49, &CountLinear),  // PS1 Post Processing
     CustomShaderEntryCallback(0x3513581C, &Count),
     CustomShaderEntryCallback(0x457A0F57, &Count),
-    CustomShaderEntryCallback(0x700A4C32, &Count),    // ShaderGraphs ScreenFxShader
-    CustomShaderEntryCallback(0x2D1C3A64, &Count),    // Beat Saber Main effect
-    CustomShaderEntryCallback(0xD44C30D0, &Count),    // Beat Saber Main effect
-    CustomShaderEntryCallback(0x07FD3D55, &CountGammaTonemap1),   // Neva
-    CustomShaderEntryCallback(0xECED3960, &CountTonemap1),    // PostProcess
-    CustomShaderEntryCallback(0xE4D51B68, &CountTonemap1),    // PostProcess
-    CustomShaderEntryCallback(0xB0E8A766, &CountTonemap1),    // PostProcess
-    CustomShaderEntryCallback(0x850F1FE0, &CountTonemap1),    // Unlit Fullscreen Overlay
+    CustomShaderEntryCallback(0x07FD3D55, &CountLinearTonemap1),   // Neva
+    CustomShaderEntryCallback(0xECED3960, &CountLinearTonemap1),    // PostProcess
+    CustomShaderEntryCallback(0xB0E8A766, &CountLinearTonemap1),    // PostProcess
     //CustomShaderEntry(0x144BC65C),
     CustomShaderEntryCallback(0x4C1E450F, &Count),    // RetroPixelPro
     CustomShaderEntryCallback(0x918C7E0C, &Count),    // ScreenRender
     CustomShaderEntryCallback(0x4C6C9444, &Count),    // Blend MorganTweak
     CustomShaderEntryCallback(0xBD332C3A, &CountLinearTonemap1),   // PostFx GlowComposite
-    CustomShaderEntryCallback(0x3E8A6AF2, &CountTonemap1),   // CameraFilterPack 2Lut
-    CustomShaderEntryCallback(0x6EA997C7, &CountTonemap1),   // CameraFilterPack 2Lut
+    CustomShaderEntryCallback(0x3E8A6AF2, &CountLinearTonemap1),   // CameraFilterPack 2Lut
     CustomShaderEntryCallback(0x16F8A02E, &Count),   // CameraFilterPack TV Arcade 2
     CustomShaderEntryCallback(0x12F06F96, &CountLinearTonemap1),   // CameraFilterPack Lut Plus
     //CustomShaderEntryCallback(0xB47E4A58, &CountLinear),    // Water Effect
@@ -1416,19 +1238,16 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     //CustomShaderEntryCallback(0x7A4615AA, &CountLinear),  // ShNecro
     CustomShaderEntryCallback(0xD8341E94, &CountLinearTonemap1Clamped), // RedHook pp LUT
     CustomShaderEntryCallback(0x64031CB8, &CountLinearTonemap1Clamped), // RedHook pp LUT
+    CustomShaderEntryCallback(0x99E1B419, &CountGamma), // EndlessLegends encode
     CustomShaderEntryCallback(0xD0434E6B, &CountTonemap1), // TintedVignette
     CustomShaderEntryCallback(0x74AAB469, &CountTonemap1),  // Beat Saber
     CustomShaderEntryCallback(0xCEEF2538, &CountClamped), // CRT
-    CustomShaderEntryCallback(0xD063498D, &Count), // VolFx Dither
-    CustomShaderEntryCallback(0x1772A606, &Count), // VHS
-    CustomShaderEntryCallback(0x0B302CFA, &CountClamped), // Endroad Sharpen
     CustomShaderEntryCallback(0x8B223C82, &CountLinearTonemap2),    // Squire tonemap
     CustomShaderEntryCallback(0x90ED3547, &CountTonemap1Clamped),  // TGB ColorGrading3D
     CustomShaderEntryCallback(0xEF459349, [](reshade::api::command_list* cmd_list) {    // ClampShader
     shader_injection.isClamped = 1.f;
     return true;
     }),
-    CustomShaderEntryCallback(0x3BB46D74, &CountTonemap1),  // MK Glow SM40
     /*CustomShaderEntry(0x6CA6AD34),  // FinalVisualAdjustments
     CustomShaderEntry(0x3D4B34E8),*/
     //CustomShaderEntry(0x25AD4F0D),
@@ -1447,7 +1266,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0xE60F40B0, &CountTonemap1),       // Blend for bloom
     CustomShaderEntryCallback(0xB7ED38A4, &CountTonemap1),       // Blend for bloom
     CustomShaderEntryCallback(0x26E0E961, &CountTonemap1),       // Blend for bloom
-    CustomShaderEntryCallback(0xE6CCD6DB, &Count),       // Blend for bloom
     CustomShaderEntryCallback(0x34CE249A, &CountTonemap1Clamped),       // Blend for bloom
     CustomShaderEntryCallback(0xA588D1CD, &CountTonemap1Clamped),       // PostBloomRich
     CustomShaderEntryCallback(0xD7C38DB2, [](reshade::api::command_list* cmd_list) {    // Blend for bloom (build)
@@ -1472,9 +1290,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     //CustomShaderEntry(0x7976D6A7),
     //CustomShaderEntry(0x5830BEA5),      // Blend for bloom
     //CustomShaderEntry(0x05A07123),      // XULMREDUX bloom
-    //CustomShaderEntryCallback(0xF2636FE5, &CountGamma),
-    CustomShaderEntryCallback(0x05A07123, &CountGammaTonemap1), // XULMREDUX bloom
-    CustomShaderEntryCallback(0x93DFC667, &CountGammaTonemap1), // XULMREDUX bloom
     //
     CustomShaderEntryCallback(0x0BF02D38, &CountClamped),               // Noise and Grain
     CustomShaderEntryCallback(0xAECBCB31, &CountClamped),               // Noise and Grain
@@ -1558,20 +1373,16 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0xDF0F14A0, &CountGammaTonemap1),
     CustomShaderEntryCallback(0xF3B603D6, &CountLinear),
     CustomShaderEntryCallback(0x341D49EC, &CountGammaTonemap1Clamped),
-    CustomShaderEntryCallback(0x0C2FC484, &CountTonemap1Clamped),
+    CustomShaderEntryCallback(0x0C2FC484, &CountGammaTonemap1Clamped),
     CustomShaderEntryCallback(0x970EA5A1, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0xD70AE6DF, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0xA298CF0E, &CountLinearTonemap1Clamped),
-    CustomShaderEntryCallback(0x79DCD887, &CountLinearTonemap1Clamped),
-    CustomShaderEntryCallback(0x1C3CDF5D, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0xDC3C3CFB, &CountLinearTonemap1Clamped),
-    CustomShaderEntryCallback(0x5B553876, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0x6CB18C43, &CountLinearTonemap2),
     CustomShaderEntryCallback(0x7C3F36C2, &CountLinear),
     CustomShaderEntryCallback(0x97B3FC51, &GammaClamped),
     CustomShaderEntryCallback(0xEEFE9737, &CountGammaTonemap1Clamped),
     CustomShaderEntryCallback(0xB063DC49, &Count),  // Bloom Final
-    CustomShaderEntryCallback(0x7D8CC42F, &Count),  // Bloom Final
     CustomShaderEntryCallback(0xF1E9DC64, &CountGammaTonemap1Clamped),  // Depth Mask Blend
     CustomShaderEntryCallback(0xC441EEAD, &CountLinearTonemap2),  // uc2
       // Scion Combination Pass
@@ -1595,7 +1406,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0xA206F965, &CountTonemap1),
       // Beautify
     CustomShaderEntryCallback(0x98451591, &CountLinear),
-    CustomShaderEntryCallback(0x8B3EF05B, &CountLinearTonemap1),
     CustomShaderEntryCallback(0xCF0602FB, &CountGammaTonemap1),
     CustomShaderEntryCallback(0x1C3A2078, &CountGammaTonemap1),
     CustomShaderEntryCallback(0xA0712B3B, &CountGammaTonemap1),
@@ -1612,12 +1422,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0x6968824B, &CountLinearTonemap1Clamped),
       // SC Post Effect
     //CustomShaderEntry(0x65F50A96),    // LUT
-      // Video Glitches
-    CustomShaderEntryCallback(0xE0B71ABA, &CountLinear),  // Broken Screen
-    CustomShaderEntryCallback(0x6D9A07CE, &CountLinear),  // something
-    CustomShaderEntryCallback(0xD941025F, &CountLinear),  // something
-    CustomShaderEntryCallback(0x156A2067, &CountLinear),  // something
-    CustomShaderEntryCallback(0x1F2132C7, &CountLinear),  // Spectrum Offset
     ////// DIVISION END //////
     ////// UBER START //////
       /// PostFX ///
@@ -1626,19 +1430,14 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberPFXLinearOnDraw(0x1A33E5A1),
     UberPFXLinearOnDraw(0x1AF361CB),
     UberPFXGammaOnDraw(0x1D28756B),
-    UberPFXGammaOnDraw(0x1E0C52C3),
-    UberPFXLinearOnDraw(0x2AE8DF79),
     UberPFXGammaOnDraw(0x2F0122E5),
     UberPFXLinearOnDraw(0x3DA8F050),
-    UberPFXLinearOnDraw(0x4E7CC7FC),
     UberPFXLinearOnDraw(0x4EE6BD0C),
     UberPFXLinearOnDraw(0x5C4F96D7),
-    UberPFXGammaOnDraw(0x5EC7C557),
     UberPFXLinearOnDraw(0x5EED6FFE),
     UberPFXLinearOnDraw(0x6A5E9052),
     UberPFXLinearOnDraw(0x6EB6CA05),
     UberPFXLinearOnDraw(0x06F08670),
-    UberPFXLinearOnDraw(0x6FD9F5E5),
     UberPFXLinearOnDraw(0x7B7C2BA0),
     UberPFXLinearOnDraw(0x7BB0D55E),
     UberPFXGammaOnDraw(0x7CE9A128),
@@ -1653,7 +1452,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberPFXGammaOnDraw(0x8ED83A94),
     UberPFXGammaOnDraw(0x9B557C06),
     UberPFXLinearOnDraw(0x9FDCD9DC),
-    UberPFXLinearOnDraw(0x012ED329),
     UberPFXLinearOnDraw(0x16C17744),
     UberPFXGammaOnDraw(0x41FED193),
     UberPFXLinearOnDraw(0x43CD25CE),
@@ -1663,9 +1461,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberPFXGammaOnDraw(0x59A191DD),
     UberPFXLinearOnDraw(0x59FADBF3),
     UberPFXLinearOnDraw(0x76E8C9E0),
-    UberPFXGammaOnDraw(0x082D188C),
     UberPFXLinearOnDraw(0x93F0A8E4),
-    UberPFXLinearOnDraw(0x99D271BE),
     UberPFXLinearOnDraw(0x100B5477),
     UberPFXGammaOnDraw(0x186D7E4F),
     UberPFXLinearOnDraw(0x291E8F1F),
@@ -1674,21 +1470,16 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberPFXLinearOnDraw(0x569EAA5C),
     UberPFXLinearOnDraw(0x585D07A9),
     UberPFXLinearOnDraw(0x702E161F),
-    UberPFXLinearOnDraw(0x731E3D80),
     UberPFXGammaOnDraw(0x734AEDAD),
     UberPFXLinearOnDraw(0x752CA615),
     UberPFXLinearOnDraw(0x761CCEC0),
-    UberPFXLinearOnDraw(0x803F8E92),
-    UberPFXLinearOnDraw(0x825FFF1B),
     UberPFXLinearOnDraw(0x959B3FB7),
     UberPFXLinearOnDraw(0x2938FC01),
     UberPFXGammaOnDraw(0x5311B657),
     UberPFXLinearOnDraw(0x6420BDE4),
     UberPFXLinearOnDraw(0x6848BE5C),
     UberPFXLinearOnDraw(0x7007E15E),
-    UberPFXLinearOnDraw(0x7734F02F),
     UberPFXLinearOnDraw(0x8903C9E4),
-    UberPFXLinearOnDraw(0x18001AFA),
     UberPFXLinearOnDraw(0x45068D82),
     UberPFXLinearOnDraw(0x51459A11),
     UberPFXLinearOnDraw(0x52481F8D),
@@ -1710,17 +1501,11 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberPFXLinearOnDraw(0xB48DB980),
     UberPFXLinearOnDraw(0xB5617B06),
     UberPFXLinearOnDraw(0xBACB2204),
-    UberPFXLinearOnDraw(0xC0C13C33),
-    UberPFXLinearOnDraw(0xC3D644A6),
     UberPFXLinearOnDraw(0xC3EA0270),
-    UberPFXLinearOnDraw(0xC8CF5A64),
     UberPFXLinearOnDraw(0xC8D99279),
-    UberPFXLinearOnDraw(0xC987FCF3),
-    UberPFXLinearOnDraw(0xCAB9C0D8),
     UberPFXLinearOnDraw(0xCACDD22E),
     UberPFXLinearOnDraw(0xCDEB8FA1),
     UberPFXLinearOnDraw(0xD2C3B7E9),
-    UberPFXLinearOnDraw(0xD26F4D0B),
     UberPFXGammaOnDraw(0xD342B20A),
     UberPFXLinearOnDraw(0xD758B0D4),
     UberPFXLinearOnDraw(0xD7048ECF),
@@ -1730,7 +1515,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberPFXGammaOnDraw(0xE42ECD73),
     UberPFXLinearOnDraw(0xE49EE0CB),
     UberPFXLinearOnDraw(0xEA3FB96C),
-    UberPFXGammaOnDraw(0xEB9BE1DA),
     UberPFXLinearOnDraw(0xECDC6EC9),
     UberPFXGammaOnDraw(0xEE5CA39C),
     UberPFXLinearOnDraw(0xF1C2CE47),
@@ -1745,7 +1529,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberPFXLinearOnDraw(0xFC2F2508),
     UberPFXLinearOnDraw(0xFDB4A670),
     UberPFXLinearOnDraw(0xFE41EA26),
-    UberPFXLinearOnDraw(0xFEC00B8A),
     UberPFXLinearOnDraw(0x01D2D2B8),
         // no LUT
     CountLinearTonemap1ClampedOnDraw(0x0A015C2E),  // maybe dont
@@ -1755,7 +1538,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CountLinearTonemap1ClampedOnDraw(0x2AA95E6B),
     CountGammaTonemap1ClampedOnDraw(0x03AD1809),
     CountLinearTonemap1ClampedOnDraw(0x4D5D5505),
-    CountLinearTonemap1ClampedOnDraw(0x4D8CEA0C),
     CountGammaTonemap1ClampedOnDraw(0x6F0C66BA),
     CountLinearTonemap1ClampedOnDraw(0x7CE8D532),
     CountGammaTonemap1ClampedOnDraw(0x7FA6CC54),
@@ -1773,23 +1555,17 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CountGammaTonemap1ClampedOnDraw(0x0616D26C),
     CountGammaTonemap1ClampedOnDraw(0x662E01AB),
     CountLinearTonemap1ClampedOnDraw(0x910F1AF7),
-    CountLinearTonemap1ClampedOnDraw(0x915C7D30),
     CountGammaTonemap1ClampedOnDraw(0x2339A919),
     CountLinearTonemap1ClampedOnDraw(0x9031E6E6),
     CountGammaTonemap1ClampedOnDraw(0x84868CA0),
-    CountGammaTonemap1ClampedOnDraw(0x363122F4),
     CountGammaTonemap1ClampedOnDraw(0x599066C8),
-    CountGammaTonemap1ClampedOnDraw(0x3806037E),
-    CountGammaTonemap1ClampedOnDraw(0xAB3A8C76),
     CountGammaTonemap1ClampedOnDraw(0xAE488FB0),
-    CountLinearTonemap1ClampedOnDraw(0xB41582C3),
     CountGammaTonemap1ClampedOnDraw(0xBB36315A),
     CountGammaTonemap1ClampedOnDraw(0xBBF7CCB9),
     CountGammaTonemap1ClampedOnDraw(0xC6297BAD),
     CountLinearTonemap1ClampedOnDraw(0xC6971BF6),
     CountLinearTonemap1ClampedOnDraw(0xD73AD73D),
     CountLinearTonemap1ClampedOnDraw(0xD741C111),
-    CountLinearTonemap1ClampedOnDraw(0xD8737CC0),
     CountLinearTonemap1ClampedOnDraw(0xD68115B9),
     CountLinearTonemap1ClampedOnDraw(0xDB886B89),
     CountGammaTonemap1ClampedOnDraw(0xDDC88868),
@@ -1800,9 +1576,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
       /// PP
         // SRGB internal LUT
     UberGammaOnDraw(0x0DA637B5),
-    UberLinearOnDraw(0x1B34A194),
     UberLinearOnDraw(0x1C8D5E9F),
-    UberLinearOnDraw(0x01C94781),
     UberGammaOnDraw(0x1E7D1A75),
     UberLinearOnDraw(0x2B2B673C),
     UberGammaOnDraw(0x3F4B346E),
@@ -1810,13 +1584,10 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberLinearOnDraw(0x4A9DC131),
     UberLinearOnDraw(0x4B0DE7CD),
     UberLinearOnDraw(0x4B3614D0),
-    UberLinearOnDraw(0x4FCB780B),
-    UberLinearOnDraw(0x5C5C0415),
     UberGammaOnDraw(0x05D7FD3F),
     UberGammaOnDraw(0x5ED6AF8F),
     UberGammaOnDraw(0x6A2FFE0C),
     UberGammaOnDraw(0x6B383D5D),
-    UberGammaOnDraw(0x6CEA644C),
     UberLinearOnDraw(0x8CBAADE3),
     UberGammaOnDraw(0x8ED94D63),
     UberGammaOnDraw(0x9C2BCF45),
@@ -1825,7 +1596,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberGammaOnDraw(0x26D16BD4),
     UberGammaOnDraw(0x28E64619),
     UberGammaOnDraw(0x29B13A00),
-    UberLinearOnDraw(0x30C5A882),
     UberGammaOnDraw(0x34A63AC7),
     UberLinearOnDraw(0x47DDAF39),
     UberGammaOnDraw(0x73A5E561),
@@ -1834,7 +1604,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberGammaOnDraw(0x703FCC89),
     UberGammaOnDraw(0x0731C889),
     UberLinearOnDraw(0x937ECFDB),
-    UberLinearOnDraw(0x1082E750),
     UberGammaOnDraw(0x1237D610),
     UberGammaOnDraw(0x3085E401),
     UberGammaOnDraw(0x4546DE90),
@@ -1849,29 +1618,19 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberGammaOnDraw(0x42383A0E),
     UberGammaOnDraw(0x97379D6B),
     UberLinearOnDraw(0x206927BB),
-    UberLinearOnDraw(0x371438B8),
-    UberLinearOnDraw(0x378482BA),
     UberGammaOnDraw(0x15621136),
     UberGammaOnDraw(0x70157207),
-    UberGammaOnDraw(0xA21B6CD5),
     UberGammaOnDraw(0xAC23ED8C),
-    UberLinearOnDraw(0xB1A3409D),
     UberGammaOnDraw(0xB5D55000),
-    UberGammaOnDraw(0xB7AC8C16),
     UberGammaOnDraw(0xB339A072),
     UberGammaOnDraw(0xB811DE51),
     UberGammaOnDraw(0xBB6740C1),
-    UberGammaOnDraw(0xBC98901E),
     UberGammaOnDraw(0xC85DC52C),
     UberLinearOnDraw(0xC493FA01),
-    UberLinearOnDraw(0xC7503CA9),
-    UberLinearOnDraw(0xD92C0A23),
     UberGammaOnDraw(0xDEF5AB02),
     UberLinearOnDraw(0xE002CDC8),
     UberLinearOnDraw(0xE3F4F2E4),
     UberGammaOnDraw(0xE4952B04),
-    UberLinearOnDraw(0xE723937A),
-    UberLinearOnDraw(0xF8EA7355),
     UberGammaOnDraw(0xF647C7C7),
     UberLinearOnDraw(0xFBF8FE52),
     UberLinearOnDraw(0xFDE5FE89),
@@ -1881,8 +1640,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
         // LUT
     UberHDGammaOnDraw(0x0CA6FA43),
     UberHDLinearOnDraw(0x0D600615),
-    UberHDGammaOnDraw(0x1AA327C4),
-    UberHDGammaOnDraw(0x01AF86C9),
     UberHDLinearOnDraw(0x1BF2161B),
     UberHDLinearOnDraw(0x1F59543C),
     UberHDLinearOnDraw(0x2E293919),
@@ -1892,10 +1649,8 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0x03AB4108),
     UberHDOnDraw(0x3BF59C8D),
     UberHDLinearOnDraw(0x3C71577B),
-    UberHDGammaOnDraw(0x03CBA401),
     UberHDLinearOnDraw(0x3D7D2ACF),
     UberHDLinearOnDraw(0x4A872453),
-    UberHDLinearOnDraw(0x4B3A4726),
     UberHDLinearOnDraw(0x4C89E2E6),
     UberHDLinearOnDraw(0x5D0FF321),
     UberHDLinearOnDraw(0x5FCCEC0F),
@@ -1910,7 +1665,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDGammaOnDraw(0x8C10BEAF),
     UberHDLinearOnDraw(0x8C673209),
     UberHDLinearOnDraw(0x8E8030DA),
-    UberHDGammaOnDraw(0x8F0A4568),
     UberHDLinearOnDraw(0x9BC48214),
     UberHDLinearOnDraw(0x9C62C0D7),
     UberHDLinearOnDraw(0x9CB51433),
@@ -1922,22 +1676,17 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0x18DC6A24),
     UberHDGammaOnDraw(0x30B1D393),
     UberHDGammaOnDraw(0x30E315A6),
-    UberHDLinearOnDraw(0x32AFF662),
     UberHDGammaOnDraw(0x32B27DC5),
     UberHDLinearOnDraw(0x37EE06EC),
     UberHDLinearOnDraw(0x41CA1DD6),
-    UberHDGammaOnDraw(0x42D5A5B2),
     UberHDLinearOnDraw(0x45B1DBE4),
     UberHDLinearOnDraw(0x46D3ECE8),
     UberHDGammaOnDraw(0x58F9D31B),
-    UberHDGammaOnDraw(0x60B79FE3),
     UberHDLinearOnDraw(0x63D93240),
     UberHDLinearOnDraw(0x69C7EC21),
     UberHDLinearOnDraw(0x71F55427),
     UberHDGammaOnDraw(0x78EF9B01),
-    UberHDLinearOnDraw(0x79C0F979),
     UberHDLinearOnDraw(0x82AF3065),
-    UberHDGammaOnDraw(0x82FF3964),
     UberHDLinearOnDraw(0x085B95F5),
     UberHDLinearOnDraw(0x86D12314),
     UberHDLinearOnDraw(0x86E67F52),
@@ -1959,8 +1708,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0x728A5929),
     UberHDLinearOnDraw(0x783ABD54),
     UberHDLinearOnDraw(0x808BC2A2),
-    UberHDGammaOnDraw(0x821B9FB1),
-    UberHDGammaOnDraw(0x869CB3F0),
     UberHDLinearOnDraw(0x916E68A2),
     UberHDLinearOnDraw(0x957EC72A),
     UberHDLinearOnDraw(0x995B36D9),
@@ -1980,22 +1727,16 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0x52401FF0),
     UberHDLinearOnDraw(0x063470DC),
     UberHDGammaOnDraw(0x80309D55),
-    UberHDGammaOnDraw(0x80912E62),
     UberHDLinearOnDraw(0x81198D61),
     UberHDLinearOnDraw(0x98834C99),
-    UberHDLinearOnDraw(0x99257EBF),
     UberHDLinearOnDraw(0x99273E5D),
     UberHDLinearOnDraw(0x18486417),
     UberHDGammaOnDraw(0x86692346),
-    UberHDGammaOnDraw(0xA1B5810B),
     UberHDLinearOnDraw(0xA2FE36C0),
     UberHDLinearOnDraw(0xA31D6E8F),
     UberHDLinearOnDraw(0xA46C1ECB),
-    UberHDLinearOnDraw(0xA66D3ADA),
     UberHDGammaOnDraw(0xA932CAC7),
-    UberHDLinearOnDraw(0xA9229E77),
     UberHDLinearOnDraw(0xA34705B5),
-    UberHDGammaOnDraw(0xAA43A92F),
     UberHDLinearOnDraw(0xAB9BAF73),
     UberHDOnDraw(0xABB348D3),
     UberHDLinearOnDraw(0xABD0CDAB),
@@ -2017,19 +1758,15 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0xC63B24BB),
     UberHDLinearOnDraw(0xC77C6136),
     UberHDLinearOnDraw(0xC783A02A),
-    UberHDLinearOnDraw(0xC7555B4A),
     UberHDLinearOnDraw(0xC59328DA),
     UberHDLinearOnDraw(0xCF7B19D4),
     UberHDLinearOnDraw(0xCFEEF3DE),
     UberHDGammaOnDraw(0xD0CC549E),
-    UberHDGammaOnDraw(0xD3EB3C80),
-    UberHDLinearOnDraw(0xD6B24AEB),
     UberHDLinearOnDraw(0xD11EBDA2),
     UberHDGammaOnDraw(0xD32FF805),
     UberHDLinearOnDraw(0xD3985CC4),
     UberHDLinearOnDraw(0xD213345E),
     UberHDLinearOnDraw(0xD924189F),
-    UberHDLinearOnDraw(0xDA13BFBD),
     UberHDLinearOnDraw(0xDB814E6C),
     UberHDLinearOnDraw(0xDCAD3BF2),
     UberHDGammaOnDraw(0xDF21D66E),
@@ -2045,9 +1782,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDGammaOnDraw(0xEC929462),
     UberHDLinearOnDraw(0xECD0DFE1),
     UberHDLinearOnDraw(0xEF7C8F91),
-    UberHDGammaOnDraw(0xF4E5CCA5),
-    UberHDGammaOnDraw(0xF5E818A0),
-    UberHDLinearOnDraw(0xF47A06A5),
     UberHDLinearOnDraw(0xF455EE3C),
     UberHDLinearOnDraw(0xFA2F9A68),
     UberHDLinearOnDraw(0xFC0ECCE8),
@@ -2056,7 +1790,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0x71A4E35E),
     UberHDLinearOnDraw(0xD25C43B1),
         // No LUT
-    CustomShaderEntryCallback(0xA1EA3B3E, &Gamma),
     CountGammaTonemap1OnDraw(0x3E60912E),
     CountGammaTonemap1OnDraw(0x4CEC1E87),
     CountLinearTonemap1OnDraw(0x5C428D81),
@@ -2097,7 +1830,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CountGammaTonemap1OnDraw(0xFF444EF2),
     CountGammaTonemap1OnDraw(0xF180FFF6),
     CountGammaTonemap1OnDraw(0x34A4537A),
-        // Sapphire
+        // Sapphire (Windbound)
     CountLinearACES709OnDraw(0x2B0930CC),
     CountLinearACES709OnDraw(0x8D4D9A63),
     CountLinearACES709OnDraw(0x8DF1BF80),
@@ -2108,24 +1841,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CountLinearACES709OnDraw(0xAE663C8F),
     CountLinearACES709OnDraw(0xBA4DCC6E),
     CountLinearACES709OnDraw(0xE01E2588),
-        // HoF
-    CountLinearACES709OnDraw(0x88B63A53),
-    CountLinearACES709OnDraw(0x72285EF2),
-    CountLinearACES709OnDraw(0xA98C7CAA),
-    CountLinearACES709OnDraw(0xC680CDDE),
-    CountLinearACES709OnDraw(0xE94F0830),
-    /*CountLinearACES709OnDraw(0x7E70DA8D),
-    CountLinearACES709OnDraw(0x9F77F2C9),
-    CountLinearACES709OnDraw(0x32C33FE2),
-    CountLinearACES709OnDraw(0x69D09E7E),
-    CountLinearACES709OnDraw(0x75C4E8F2),
-    CountLinearACES709OnDraw(0x0121EB5A),
-    CountLinearACES709OnDraw(0x2133A066),
-    CountLinearACES709OnDraw(0xA0E6F747),
-    CountLinearACES709OnDraw(0xA98C7CAA),
-    CountLinearACES709OnDraw(0xAB54902E),
-    CountLinearACES709OnDraw(0xAED0ED65),
-    CountLinearACES709OnDraw(0xF4D5896D),*/
       // Chromatic Aberration
     CountTonemap1OnDraw(0xEEE589B3),
     CountTonemap1OnDraw(0x937A4C13),
@@ -2165,10 +1880,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0xECBDB4D4, &CountLinearTonemap35),
     CustomShaderEntryCallback(0xBF6B8004, &CountLinearTonemap35),
     CustomShaderEntryCallback(0x33BF2974, &CountLinearTonemap35),
-    CustomShaderEntryCallback(0x55A62D93, &CountLinearTonemap35),
-    CustomShaderEntryCallback(0x7CEC71DC, &CountLinearTonemap35),
-    CustomShaderEntryCallback(0xBFB6E777, &CountLinearTonemap35),
-    CustomShaderEntryCallback(0xBD2444A7, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0xB046A9EB, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0x4483E5EF, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0x18174CED, &CountLinearTonemap35),
@@ -2184,10 +1895,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0xF2C3C778, &CountLinearTonemap35),
     CustomShaderEntryCallback(0x8EFD32D4, &CountLinearTonemap35),
     CustomShaderEntryCallback(0xD70BBE87, &CountLinearTonemap3),
-    CustomShaderEntryCallback(0xBCBEAF16, &CountLinearTonemap3),
     CustomShaderEntryCallback(0xA9F01758, &CountLinearTonemap3),
-      // Final Pass
-    CustomShaderEntryCallback(0x75838EB7, &CountLinear),
     ////// PP END //////
     ////// POSTFINAL START //////
       // 
@@ -2198,8 +1906,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0xD8CBEF60, &CountLinear),
     CustomShaderEntryCallback(0xC8194FF2, &CountLinear),
     CustomShaderEntryCallback(0x5D490E8A, &CountLinear),
-    CustomShaderEntryCallback(0x3715DB93, &CountLinear),
-    CustomShaderEntryCallback(0x1EE4CF1C, &CountLinear),
     CustomShaderEntryCallback(0xD90A4513, &CountGamma),
     CustomShaderEntryCallback(0x780BC110, &CountGamma),
     CustomShaderEntryCallback(0xAEE78EFC, &CountGamma),      // BlitSpace
@@ -2212,14 +1918,15 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0x0D7738C5, &CountLinear),
     CustomShaderEntryCallback(0x3E0783E6, &Count),
     CustomShaderEntryCallback(0x0175C0E5, &CountLinear),
-    CustomShaderEntryCallback(0x5CC458E2, &Count),
+    CustomShaderEntryCallback(0x5CC458E2, &CountLinear),
     CustomShaderEntryCallback(0x623A834B, &CountLinear),
     CustomShaderEntryCallback(0x83775429, &CountLinear),
     CustomShaderEntryCallback(0xA95311EA, &CountLinear),
     CustomShaderEntryCallback(0xABF2B519, &CountLinear),
     CustomShaderEntryCallback(0xB2E77E10, &CountLinear),
+    CustomShaderEntryCallback(0xB13A3CBB, &CountLinear),
     CustomShaderEntryCallback(0xCC8B6ACF, &CountLinear),
-    CustomShaderEntryCallback(0xD00B5B47, &Count),
+    CustomShaderEntryCallback(0xD00B5B47, &CountLinear),
     CustomShaderEntryCallback(0xDCD2C9A2, &CountLinear),
     CustomShaderEntryCallback(0xE6835798, &Count),
     CustomShaderEntryCallback(0x0D8F51E1, &CountLinear),
@@ -2238,8 +1945,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0x8C0BCB63, &Count),
     CustomShaderEntryCallback(0xA52F70F8, &Count),
     CustomShaderEntryCallback(0x9E60BC82, &CountLinearTonemap1),
-    CustomShaderEntryCallback(0xB13A3CBB, &CountLinear),
-    CustomShaderEntryCallback(0xB8B233F1, &CountLinear),
       // Unknown space
     CustomShaderEntryCallback(0x9E4CBF41, &Count),
     CustomShaderEntryCallback(0x4528B1BE, &Count),
@@ -2254,7 +1959,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0xE96B977C, &CountLinear),
     CustomShaderEntryCallback(0xB1DF8B20, &CountLinear),
     CustomShaderEntryCallback(0x1F20DEB9, &Count),
-    CustomShaderEntryCallback(0x1F20DEB9, &Count),
     CustomShaderEntryCallback(0x0D4651C9, &CountLinear),      // gamesfarm postfx
     CustomShaderEntryCallback(0x0299214E, &CountLinear),      // gamesfarm postfx
     CustomShaderEntryCallback(0x244A72BB, &CountLinear),      // gamesfarm postfx
@@ -2265,11 +1969,9 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     ////// LUTBUILDER START //////
       /// 2D Baker ///
     Builder1OnDraw(0x6BA3776A),
-    Builder1OnDraw(0x67A66D2D),
     Builder1OnDraw(0xDE54BEC4),  // TLD merger
         // user LUT
     Builder1OnDraw(0x425A05B0),
-    Builder1OnDraw(0x7EAF565D),
     Builder1OnDraw(0xA7199AE8),
         // Neutral
     Builder2OnDraw(0x93CAF565),
@@ -2284,14 +1986,12 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     Builder2OnDraw(0xBE750C14),
     Builder2OnDraw(0xC0683CB5),
     Builder2OnDraw(0xB79884AA),
-    Builder2OnDraw(0xFF0BEDB7),
         // ACES
     Builder3OnDraw(0x0D6DE82C),
     Builder3OnDraw(0x5B6D435F),
     Builder3OnDraw(0x6EA48EC8),
     Builder3OnDraw(0x47A1239F),
     Builder3OnDraw(0xD58102C7),
-    Builder3OnDraw(0xB80155E4),
         // Custom
     Builder2OnDraw(0x9192FB27),
       /// Post Fx Lut Generator ///
@@ -2307,8 +2007,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     SneakyBuilder3OnDraw(0xF70A0EED),
     SneakyBuilder3OnDraw(0x33891579),
     SneakyBuilder3OnDraw(0x65D3755B),
-    SneakyBuilder3OnDraw(0x56B8D689),
-    SneakyBuilder3OnDraw(0xAA3605C8),
     //__ALL_CUSTOM_SHADERS,
     BlitCopyOnDraw(0x8674BE1F),
     BlitCopyOnDraw(0x49E25D6C),
@@ -2317,11 +2015,6 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     finalBlitCheck = renodx::utils::swapchain::HasBackBufferRenderTarget(cmd_list);
     return renodx::utils::swapchain::HasBackBufferRenderTarget(cmd_list);
     }),
-    // LIS BtS Remaster
-    UpgradeRTVShader(0xD1DBB0E2), // FXAA
-    UpgradeRTVShader(0x3F2260DA), // Sunshafts Composite
-    UpgradeRTVShader(0x82ABB5A1), // Sunshafts Composite
-    UpgradeRTVShader(0x71A08591), // PostFX DoF
     //CustomSwapchainShader(0x20133A8B),
 };
 
@@ -2412,9 +2105,9 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.toneMapGammaCorrection,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 1.f,
-        .label = "SDR EOTF Emulation",
+        .label = "Gamma Correction",
         .section = "Tone Mapping",
-        .tooltip = "Emulates output decoding used on SDR displays.",
+        .tooltip = "Emulates a display EOTF.",
         .labels = {"Off", "2.2", "BT.1886"},
         .tint = 0x38F6FC,
         .is_visible = []() { return current_settings_mode >= 1; },
@@ -2725,21 +2418,11 @@ renodx::utils::settings::Settings settings = {
         .key = "fxLens",
         .binding = &shader_injection.fxLens,
         .default_value = 50.f,
-        .label = "Lens Dirt/Flare",
+        .label = "Lens Dirt",
         .section = "Effects",
         .tint = 0x4D7180,
         .max = 100.f,
         .parse = [](float value) { return value * 0.02f; },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "fxDoF",
-        .binding = &shader_injection.fxDoF,
-        .default_value = 100.f,
-        .label = "Depth of Field",
-        .section = "Effects",
-        .tint = 0x4D7180,
-        .max = 100.f,
-        .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
         .key = "fxCA",
@@ -2806,7 +2489,7 @@ renodx::utils::settings::Settings settings = {
         .tint = 0x4D7180,
         .max = 100.f,
         .parse = [](float value) { return value * 0.01f; },
-        .is_visible = []() { return shader_injection.tonemapCheck < 2.f; },
+        .is_visible = []() { return shader_injection.tonemapCheck == 1.f; },
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
@@ -2911,70 +2594,10 @@ void OnPresetOff() {
   renodx::utils::settings::UpdateSetting("fxBloom", 50.f);
   renodx::utils::settings::UpdateSetting("fxLens", 50.f);
   renodx::utils::settings::UpdateSetting("fxVignette", 50.f);
-  renodx::utils::settings::UpdateSetting("fxDoF", 100.f);
   renodx::utils::settings::UpdateSetting("fxCA", 50.f);
   renodx::utils::settings::UpdateSetting("fxNoise", 50.f);
   renodx::utils::settings::UpdateSetting("fxFilmGrain", 50.f);
   renodx::utils::settings::UpdateSetting("fxFilmGrainType", 0.f);
-}
-
-struct __declspec(uuid("A1B2C3D4-5678-90AB-CDEF-0123456789AB")) BlendOnlyData {
-  reshade::api::pipeline pipeline = {};
-};
-
-constexpr reshade::api::pipeline_layout PIPELINE_LAYOUT{0};
-
-void CreateBlendPipeline(reshade::api::device *device) {
-  auto *d = device->create_private_data<BlendOnlyData>();
-
-  reshade::api::blend_desc bd = {};
-  bd.blend_enable[0] = true;
-  bd.source_color_blend_factor[0] = reshade::api::blend_factor::one;
-  bd.dest_color_blend_factor[0]   = reshade::api::blend_factor::one;
-  bd.color_blend_op[0]            = reshade::api::blend_op::add;
-  bd.source_alpha_blend_factor[0] = reshade::api::blend_factor::one;
-  bd.dest_alpha_blend_factor[0]   = reshade::api::blend_factor::one;
-  bd.alpha_blend_op[0]            = reshade::api::blend_op::add;
-
-  reshade::api::pipeline_subobject sub = {};
-  sub.type  = reshade::api::pipeline_subobject_type::blend_state;
-  sub.count = 1;
-  sub.data  = &bd;
-
-  device->create_pipeline(PIPELINE_LAYOUT, 1, &sub, &d->pipeline);
-}
-
-void DestroyBlendPipeline(reshade::api::device *device) {
-  auto *d = device->get_private_data<BlendOnlyData>();
-  if (d != nullptr && d->pipeline.handle != 0) {
-    device->destroy_pipeline(d->pipeline);
-    d->pipeline = {};
-    device->destroy_private_data<BlendOnlyData>();
-  }
-}
-
-bool Blend_OnDrawIndexed(reshade::api::command_list* cmd_list,
-                         uint32_t index_count, uint32_t instance_count,
-                         uint32_t first_index, int32_t vertex_offset,
-                         uint32_t first_instance)
-{
-  // get RenoDX shader state and pixel state (same pattern used in the Unreal addon)
-  auto* shader_state = renodx::utils::shader::GetCurrentState(cmd_list);
-  if (shader_state == nullptr) return false;
-
-  auto* pixel_state = renodx::utils::shader::GetCurrentPixelState(shader_state);
-  const uint32_t pixel_hash = renodx::utils::shader::GetCurrentPixelShaderHash(pixel_state);
-  if (pixel_hash == 0u) return false;
-  if (pixel_hash == 0x807D5E31u) {
-    auto *device = cmd_list->get_device();
-    auto *d = device->get_private_data<BlendOnlyData>();
-    if (d != nullptr && d->pipeline.handle != 0) {
-      // bind only the output-merger stage to change blend state only
-      cmd_list->bind_pipeline(reshade::api::pipeline_stage::output_merger, d->pipeline);
-    }
-  }
-
-  return false;
 }
 
 void AddLiRTEDUpgrades() {
@@ -3020,63 +2643,19 @@ void AddTGTFoAUpgrades() {
       });
 }
 
-void AddOPUSPPUpgrades() {
-      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
-          .old_format = reshade::api::format::r8g8b8a8_typeless,
-          .new_format = reshade::api::format::r16g16b16a16_typeless,
-          .index = 9,
-          .ignore_size = false,
-      });
-}
-
-void AddLISBtSUpgrades() {
-      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
-          .old_format = reshade::api::format::r8g8b8a8_typeless,
-          .new_format = reshade::api::format::r16g16b16a16_typeless,
-          .index = 0,
-          .ignore_size = false,
-          .usage_include = reshade::api::resource_usage::render_target,
-      });
-      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
-          .old_format = reshade::api::format::r8g8b8a8_typeless,
-          .new_format = reshade::api::format::r16g16b16a16_typeless,
-          .ignore_size = true,
-          .use_resource_view_cloning = true,
-          .use_resource_view_hot_swap = true,
-      });
-}
-
-void AddSmolInternalLutUpgrade() {
-      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
-          .old_format = reshade::api::format::r8g8b8a8_typeless,
-          .new_format = reshade::api::format::r16g16b16a16_typeless,
-          .dimensions = {256,16},
-          .usage_include = reshade::api::resource_usage::render_target,
-      });
-}
-
 void AddGamePatches() {
   auto process_path = renodx::utils::platform::GetCurrentProcessPath();
   auto filename = process_path.filename().string();
   auto product_name = renodx::utils::platform::GetProductName(process_path);
   if (filename == "Fall of Avalon.exe") {
     AddTGTFoAUpgrades();
-  } else if (filename == "Life is Strange - Before the Storm.exe") {
-    AddLISBtSUpgrades();
-    shader_injection.isClamped = 2.f;
   } else if (filename == "TheEternalDie.exe") {
     AddLiRTEDUpgrades();
-  } else if (filename == "OPUS_ Prism Peak.exe"){
-    AddSmolInternalLutUpgrade();
-    AddOPUSPPUpgrades();
-  } else if (filename == "Tales of Xillia Remastered.exe" || filename == "CONSTANCE.exe") {
-    AddSmolInternalLutUpgrade();
   } else if(filename == "Ultros.exe" || filename == "Batbarian Testament of the Primordials.exe"
     || filename == "nslt.exe" || filename == "AuRevoir.exe" || filename == "ShootasBloodAndTeef.exe"
   || filename == "Copycat.exe" || filename == "Make Way.exe" || filename == "Digimon World Next Order.exe"
   || filename == "Quern.exe" || filename == "reverse1999.exe" || filename == "NineSols.exe" || filename == "Distance.exe"
-  || filename == "SlimeRancher.exe" || filename == "Source of Madness.exe" || filename == "Stirring Abyss.exe"
-  || filename == "thief.exe" || filename == "STASIS2.exe" || filename == "Elementallis.exe"){
+  || filename == "SlimeRancher.exe" || filename == "Source of Madness.exe"){
     shader_injection.isClamped = 2.f;
     } else if(filename == "It Steals.exe"){
     shader_injection.isClamped = 3.f;
@@ -3097,7 +2676,7 @@ const std::unordered_map<std::string, reshade::api::format> UPGRADE_TARGETS = {
     //{"R8G8B8A8_SNORM", reshade::api::format::r8g8b8a8_snorm},
     {"R8G8B8A8_UNORM_SRGB", reshade::api::format::r8g8b8a8_unorm_srgb},
     //{"B8G8R8A8_UNORM_SRGB", reshade::api::format::b8g8r8a8_unorm_srgb},
-    {"R10G10B10A2_UNORM", reshade::api::format::r10g10b10a2_unorm},
+    //{"R10G10B10A2_UNORM", reshade::api::format::r10g10b10a2_unorm},
     //{"B10G10R10A2_UNORM", reshade::api::format::b10g10r10a2_unorm},
 };
 
@@ -3191,12 +2770,6 @@ const std::unordered_map<
             {
                 {"Swapchain_Encoding", 1.f},
                 {"Blit_Copy_Hack", 0.f},
-            },
-        },
-        {
-            "Descenders.exe",
-            {
-              {"Use_Swapchain_Proxy", 1.f},
             },
         },
         {
@@ -3316,12 +2889,6 @@ const std::unordered_map<
             },
         },
         {
-            "Life is Strange - Before the Storm.exe",
-            {
-                {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_NONE},
-            },
-        },
-        {
             "LittleBigAdventureTwinsensQuest.exe",
             {
                 {"Upgrade_R11G11B10_FLOAT", UPGRADE_TYPE_OUTPUT_RATIO},
@@ -3353,15 +2920,6 @@ const std::unordered_map<
             },
         },
         {
-            "OPUS_ Prism Peak.exe",
-            {
-                {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_NONE},
-                {"Upgrade_R11G11B10_FLOAT", UPGRADE_TYPE_OUTPUT_RATIO},
-                {"Scaling_Offset", 1.f},
-                {"Tonemap_Offset", 1.f},
-            },
-        },
-        {
             "OsirisNewDawn.exe",
             {
                 {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_NONE},
@@ -3384,12 +2942,6 @@ const std::unordered_map<
             "Reignbreaker.exe",
             {
                 {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_ANY},
-            },
-        },
-        {
-            "Replaced.exe",
-            {
-                {"Upgrade_R11G11B10_FLOAT", UPGRADE_TYPE_ANY},
             },
         },
         {
@@ -3434,7 +2986,6 @@ const std::unordered_map<
             "SlimeRancher.exe",
             {
                 {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_ANY},
-                {"Swapchain_Encoding", 1.f},
             },
         },
         {
@@ -3448,13 +2999,6 @@ const std::unordered_map<
             "SodaCrisis.exe",
             {
                 {"Scaling_Offset", 3.f},
-                {"Blit_Copy_Hack", 3.f},
-            },
-        },
-        {
-            "Solasta.exe",
-            {
-                {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_ANY},
                 {"Blit_Copy_Hack", 3.f},
             },
         },
@@ -3527,7 +3071,6 @@ const std::unordered_map<
 
 float g_upgrade_copy_destinations = 0.f;
 float g_use_resource_cloning = 0.f;
-float g_force_pipeline_cloning = 0.f;
 float g_resize_internal_lut = 0.f;
 float toggleBlitHack = 0.f;
 
@@ -3719,27 +3262,6 @@ void AddAdvancedSettings() {
   }
   {
     auto* setting = new renodx::utils::settings::Setting{
-        .key = "Force_Pipeline_Cloning",
-        .binding = &g_force_pipeline_cloning,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Force Pipeline Cloning",
-        .section = "Resource Upgrades",
-        .tooltip = "Not sure how it works, mostly to solve issues with dx12 (I think).",
-        .labels = {
-            "Off",
-            "On",
-        },
-        .tint = 0xAFD8B5,
-        .is_global = true,
-        .is_visible = []() { return settings[0]->GetValue() >= 2; },
-    };
-    add_setting(setting);
-    g_force_pipeline_cloning = setting->GetValue();
-    renodx::mods::shader::force_pipeline_cloning = g_force_pipeline_cloning == 1.f;
-  }
-  {
-    auto* setting = new renodx::utils::settings::Setting{
         .key = "Upgrade_CopyDestinations",
         .binding = &g_upgrade_copy_destinations,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
@@ -3898,11 +3420,11 @@ void AddAdvancedSettings() {
   }
 }
 
-/*void OnInitDevice(reshade::api::device* device) {
+void OnInitDevice(reshade::api::device* device) {
   if (device->get_api() == reshade::api::device_api::d3d12) {
     renodx::mods::shader::force_pipeline_cloning = true;
   }
-}*/
+}
 
 bool fired_on_init_swapchain = false;
 
@@ -3945,7 +3467,7 @@ void OnPresent(
         settings[17]->is_enabled = []() { return shader_injection.toneMapType >= 3.f; };
         settings[18]->is_enabled = []() { return shader_injection.toneMapType >= 3.f; };
         settings[19]->is_enabled = []() { return shader_injection.toneMapType >= 3.f; };
-        settings[20]->is_enabled = []() { return shader_injection.toneMapType >= 3.f; };
+        settings[20]->is_enabled = []() { return shader_injection.toneMapType == 3.f; };
         shader_injection.tonemapCheck = unityTonemapper;
             } else if(trunc(unityTonemapper) == 1){
         settings[1]->labels = {"Vanilla", "None", "Frostbite", "RenoDRT (Hermite Spline)", "DICE"};
@@ -3966,7 +3488,6 @@ void OnPresent(
           InternalLutCheck = 1.f;
         } else {
           InternalLutCheck = 0.f;
-          sneakyBuilder = false;
         }
         shader_injection.countOld = fmax(1.f, countMid - countOffset);
         shader_injection.count2Old = fmax(1.f, count2Mid - count2Offset);
@@ -4017,7 +3538,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       //renodx::mods::shader::allow_multiple_push_constants = true;
       //renodx::mods::shader::revert_constant_buffer_ranges = true;
       renodx::mods::swapchain::expected_constant_buffer_index = 13;
-      renodx::mods::swapchain::expected_constant_buffer_space = 50;
+      //renodx::mods::swapchain::expected_constant_buffer_space = 50;
       renodx::mods::swapchain::use_resource_cloning = true;
       renodx::utils::random::binds.push_back(&shader_injection.random);
       AddAdvancedSettings();
@@ -4030,10 +3551,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       });
       AddGamePatches();
       //reshade::register_event<reshade::addon_event::init_device>(OnInitDevice);
-      reshade::register_event<reshade::addon_event::init_device>(CreateBlendPipeline);
-      reshade::register_event<reshade::addon_event::destroy_device>(DestroyBlendPipeline);
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
-      reshade::register_event<reshade::addon_event::draw_indexed>(Blend_OnDrawIndexed);
       reshade::register_event<reshade::addon_event::present>(OnPresent);
         initialized = true;
       }

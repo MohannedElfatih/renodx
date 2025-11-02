@@ -101,8 +101,7 @@ void main(
     r0.xyz = applyFilmGrain(r0.xyz, v1);
   }
   if (injectedData.countOld == injectedData.countNew) {
-    r0.xyz = injectedData.gammaSpace != 0.f ? renodx::color::srgb::DecodeSafe(r0.xyz) : r0.xyz;
-    r0.xyz = PostToneMapScale(r0.xyz, injectedData.gammaSpace != 0.f);
+    r0.xyz = PostToneMapScale(r0.xyz);
   }
   o0.xyz = r0.xyz;
   o0.w = 1;

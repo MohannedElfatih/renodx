@@ -137,7 +137,7 @@ void main(
   r0.xyz = applyUserTonemapACES(r0.xyz, 0);
   float3 hdrColor = r0.xyz;
   float3 sdrColor = renodx::tonemap::renodrt::NeutralSDR(hdrColor);
-  float3 curvesInput = injectedData.toneMapType == 0.f ? hdrColor : sdrColor;
+  float3 curvesInput = injectedData.toneMapType <= 1.f ? hdrColor : sdrColor;
   r0.xyz = curvesInput;
   bool isWCG = r0.x < 0.0 || r0.y < 0.0 || r0.z < 0.0;
   if(injectedData.toneMapType != 0.f){

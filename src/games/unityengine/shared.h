@@ -6,8 +6,6 @@
 #define RENODX_RENO_DRT_NEUTRAL_SDR_CLAMP_PEAK        -1
 #define RENODX_RENO_DRT_NEUTRAL_SDR_CLAMP_COLOR_SPACE -1
 #define RENODX_RENO_DRT_NEUTRAL_SDR_TONE_MAP_METHOD   renodx::tonemap::renodrt::config::tone_map_method::HERMITE_SPLINE
-#define RENODX_RENO_DRT_NEUTRAL_SDR_WHITE_CLIP        20.f
-
 #include "../../shaders/renodx.hlsl"
 #endif
 
@@ -50,29 +48,29 @@ struct ShaderInjectData {
   float fxBloom;
 
   float fxLens;
-  float fxDoF;
   float fxVignette;
   float fxCA;
-
   float fxNoise;
+
   float fxFilmGrain;
   float fxFilmGrainType;
   float fxHdrBoost;
-
   float random;
+
   float tonemapCheck;
   float countOld;
   float countNew;
-
   float count2Old;
+
   float count2New;
   float blitCopyHack;
   float gammaSpace;
-
   float isClamped;
+
   float swapchainProxy;
   float rolloffUI;
   float processing_use_scrgb;
+  float padding4;
 };
 
 #ifndef __cplusplus
