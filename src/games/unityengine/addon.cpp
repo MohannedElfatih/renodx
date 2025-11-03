@@ -929,6 +929,9 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x5A6D38E4),
     UberLinearOnDraw(0x5CD23656),
     UberLinearOnDraw(0xD587A4E3),
+    UberLinearOnDraw(0xFB956876),
+    UberLinearOnDraw(0x6E92F78E),
+    UberLinearOnDraw(0xFDB5E48B),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1758,10 +1761,12 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0xC63B24BB),
     UberHDLinearOnDraw(0xC77C6136),
     UberHDLinearOnDraw(0xC783A02A),
+    UberHDLinearOnDraw(0xC7555B4A),
     UberHDLinearOnDraw(0xC59328DA),
     UberHDLinearOnDraw(0xCF7B19D4),
     UberHDLinearOnDraw(0xCFEEF3DE),
     UberHDGammaOnDraw(0xD0CC549E),
+    UberHDLinearOnDraw(0xD6B24AEB),
     UberHDLinearOnDraw(0xD11EBDA2),
     UberHDGammaOnDraw(0xD32FF805),
     UberHDLinearOnDraw(0xD3985CC4),
@@ -1896,6 +1901,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x8EFD32D4, &CountLinearTonemap35),
     CustomShaderEntryCallback(0xD70BBE87, &CountLinearTonemap3),
     CustomShaderEntryCallback(0xA9F01758, &CountLinearTonemap3),
+      // Final Pass
+    CustomShaderEntryCallback(0x75838EB7, &CountLinear),
     ////// PP END //////
     ////// POSTFINAL START //////
       // 

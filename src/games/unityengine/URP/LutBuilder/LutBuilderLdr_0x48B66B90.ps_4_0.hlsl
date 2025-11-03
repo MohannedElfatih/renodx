@@ -174,7 +174,8 @@ void main(
     r0.xyz = isWCG ? renodx::color::bt709::from::BT2020(r0.xyz) : r0.xyz;
   }
   float3 hdrColor = r0.xyz;
-  float3 sdrColor = renodx::tonemap::renodrt::NeutralSDR(hdrColor);
+  float y = renodx::color::y::from::BT709(hdrColor);
+  float3 sdrColor = lerp(hdrColor, renodx::tonemap::renodrt::NeutralSDR(hdrColor), saturate(y));
   float3 curvesInput = injectedData.toneMapType <= 1.f ? hdrColor : sdrColor;
   r0.xyz = curvesInput;
   isWCG = r0.x < 0.0 || r0.y < 0.0 || r0.z < 0.0;
