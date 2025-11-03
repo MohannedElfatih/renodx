@@ -250,28 +250,12 @@ float3 CenterTexel(float3 color, float size) {
 
 #define SAMPLE_COLOR_3D_FUNCTION_GENERATOR(TextureType)                                                     \
   float3 SampleColor(float3 color, Config lut_config, TextureType lut_texture) {                            \
-    float3 sampled_color;                                                                                   \
-    float max_channel = 1.f;                                                                                \
-    float gamut_compression_scale = 1.f;                                                                    \
-    if (lut_config.max_channel > 0.f) {                                                                     \
-      max_channel = renodx::math::Max(color.r, color.g, color.b, 1.f);                                      \
-      color /= max_channel;                                                                                 \
-    }                                                                                                       \
-    if (lut_config.gamut_compress > 1.f) {                                                                  \
-      float grayscale = renodx::color::y::from::BT709(color.rgb);                                           \
-      gamut_compression_scale = renodx::color::correct::ComputeGamutCompressionScale(color.rgb, grayscale); \
-      color = renodx::color::correct::GamutCompress(color, grayscale, gamut_compression_scale);             \
-    }                                                                                                       \
     [branch]                                                                                                \
     if (lut_config.tetrahedral) {                                                                           \
-      sampled_color = SampleTetrahedral(lut_texture, color, lut_config.size);                               \
+      return SampleTetrahedral(lut_texture, color, lut_config.size);                               \
     } else {                                                                                                \
-      sampled_color = Sample(lut_texture, lut_config.lut_sampler, color.rgb, lut_config.size);              \
+      return Sample(lut_texture, lut_config.lut_sampler, color.rgb, lut_config.size);              \
     }                                                                                                       \
-    if (lut_config.gamut_compress > 1.f) {                                                                  \
-      sampled_color = renodx::color::correct::GamutDecompress(sampled_color, gamut_compression_scale);      \
-    }                                                                                                       \
-    return sampled_color * max_channel;                                                                     \
   }
 
 #define SAMPLE_COLOR_2D_FUNCTION_GENERATOR(TextureType)                                           \
