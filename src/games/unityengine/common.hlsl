@@ -265,7 +265,7 @@ float3 handleUserLUT(float3 hdrLinearColor, Texture2D lut_texture, SamplerState 
     }
    if (lut_config.gamut_compress > 0.f) {                                                       
       float3 encoded = renodx::color::gamma::EncodeSafe(color_output.rgb, encode_gamma);        
-      float3 decompressed = renodx::color::correct::GamutDecompress(color_output.rgb, gamut_compression_scale);      
+      float3 decompressed = renodx::color::correct::GamutDecompress(encoded.rgb, gamut_compression_scale);      
       color_output = renodx::color::gamma::DecodeSafe(decompressed, encode_gamma);             
     }                                                                                          
     color_output *= max_channel;                                                               
@@ -359,7 +359,7 @@ float3 handleUserLUT(float3 hdrLinearColor, Texture3D lut_texture, SamplerState 
     }
    if (lut_config.gamut_compress > 0.f) {                                                       
       float3 encoded = renodx::color::gamma::EncodeSafe(color_output.rgb, encode_gamma);        
-      float3 decompressed = renodx::color::correct::GamutDecompress(color_output.rgb, gamut_compression_scale);      
+      float3 decompressed = renodx::color::correct::GamutDecompress(encoded.rgb, gamut_compression_scale);      
       color_output = renodx::color::gamma::DecodeSafe(decompressed, encode_gamma);             
     }                                                                                          
     color_output *= max_channel;  
