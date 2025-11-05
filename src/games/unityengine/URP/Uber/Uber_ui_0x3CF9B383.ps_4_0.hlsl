@@ -18,7 +18,11 @@ void main(
   float4 fDest;
 
   r0.xyzw = t0.SampleBias(s0_s, v1.xy, cb0[19].x).xyzw;
-  r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
+  if(injectedData.countOld < injectedData.countNew){
+    r0.xyz = InvertToneMapScale(r0.xyz, true);
+  } else {
+    r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
+  }
   if (cb0[138].z > 0) {
     r1.xy = -cb0[138].xy + v1.xy;
     r1.yz = cb0[138].zz * abs(r1.xy) * min(1.f, injectedData.fxVignette);
@@ -59,7 +63,7 @@ void main(
   } else {
     r0.xyz = renodx::lut::SampleTetrahedral(t1, r0.xyz, cb0[128].z + 1u);
   }
-  if (injectedData.countOld == injectedData.countNew) {
+  if (injectedData.countOld <= injectedData.countNew) {
     r0.xyz = PostToneMapScale(r0.xyz, true);
   } else {
     r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
