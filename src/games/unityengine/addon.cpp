@@ -1464,6 +1464,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberPFXGammaOnDraw(0x59A191DD),
     UberPFXLinearOnDraw(0x59FADBF3),
     UberPFXLinearOnDraw(0x76E8C9E0),
+    UberPFXGammaOnDraw(0x082D188C),
     UberPFXLinearOnDraw(0x93F0A8E4),
     UberPFXLinearOnDraw(0x100B5477),
     UberPFXGammaOnDraw(0x186D7E4F),
@@ -1561,7 +1562,9 @@ const ShaderItem INITIAL_SHADERS[] = {
     CountGammaTonemap1ClampedOnDraw(0x2339A919),
     CountLinearTonemap1ClampedOnDraw(0x9031E6E6),
     CountGammaTonemap1ClampedOnDraw(0x84868CA0),
+    CountGammaTonemap1ClampedOnDraw(0x363122F4),
     CountGammaTonemap1ClampedOnDraw(0x599066C8),
+    CountGammaTonemap1ClampedOnDraw(0xAB3A8C76),
     CountGammaTonemap1ClampedOnDraw(0xAE488FB0),
     CountGammaTonemap1ClampedOnDraw(0xBB36315A),
     CountGammaTonemap1ClampedOnDraw(0xBBF7CCB9),
@@ -2496,7 +2499,7 @@ renodx::utils::settings::Settings settings = {
         .tint = 0x4D7180,
         .max = 100.f,
         .parse = [](float value) { return value * 0.01f; },
-        .is_visible = []() { return shader_injection.tonemapCheck == 1.f; },
+        .is_visible = []() { return shader_injection.tonemapCheck < 2.f; },
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
@@ -3495,6 +3498,7 @@ void OnPresent(
           InternalLutCheck = 1.f;
         } else {
           InternalLutCheck = 0.f;
+          sneakyBuilder = false;
         }
         shader_injection.countOld = fmax(1.f, countMid - countOffset);
         shader_injection.count2Old = fmax(1.f, count2Mid - count2Offset);
