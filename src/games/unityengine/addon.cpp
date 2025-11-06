@@ -1248,7 +1248,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     //CustomShaderEntryCallback(0x7A4615AA, &CountLinear),  // ShNecro
     CustomShaderEntryCallback(0xD8341E94, &CountLinearTonemap1Clamped), // RedHook pp LUT
     CustomShaderEntryCallback(0x64031CB8, &CountLinearTonemap1Clamped), // RedHook pp LUT
-    CustomShaderEntryCallback(0x99E1B419, &CountGamma), // EndlessLegends encode
     CustomShaderEntryCallback(0xD0434E6B, &CountTonemap1), // TintedVignette
     CustomShaderEntryCallback(0x74AAB469, &CountTonemap1),  // Beat Saber
     CustomShaderEntryCallback(0xCEEF2538, &CountClamped), // CRT
@@ -1895,6 +1894,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0xECBDB4D4, &CountLinearTonemap35),
     CustomShaderEntryCallback(0xBF6B8004, &CountLinearTonemap35),
     CustomShaderEntryCallback(0x33BF2974, &CountLinearTonemap35),
+    CustomShaderEntryCallback(0x55A62D93, &CountLinearTonemap35),
+    CustomShaderEntryCallback(0x7CEC71DC, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0xB046A9EB, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0x4483E5EF, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0x18174CED, &CountLinearTonemap35),
@@ -2122,9 +2123,9 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.toneMapGammaCorrection,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 1.f,
-        .label = "Gamma Correction",
+        .label = "SDR EOTF Emulation",
         .section = "Tone Mapping",
-        .tooltip = "Emulates a display EOTF.",
+        .tooltip = "Emulates output decoding used on SDR displays.",
         .labels = {"Off", "2.2", "BT.1886"},
         .tint = 0x38F6FC,
         .is_visible = []() { return current_settings_mode >= 1; },
@@ -2693,7 +2694,7 @@ const std::unordered_map<std::string, reshade::api::format> UPGRADE_TARGETS = {
     //{"R8G8B8A8_SNORM", reshade::api::format::r8g8b8a8_snorm},
     {"R8G8B8A8_UNORM_SRGB", reshade::api::format::r8g8b8a8_unorm_srgb},
     //{"B8G8R8A8_UNORM_SRGB", reshade::api::format::b8g8r8a8_unorm_srgb},
-    //{"R10G10B10A2_UNORM", reshade::api::format::r10g10b10a2_unorm},
+    {"R10G10B10A2_UNORM", reshade::api::format::r10g10b10a2_unorm},
     //{"B10G10R10A2_UNORM", reshade::api::format::b10g10r10a2_unorm},
 };
 
