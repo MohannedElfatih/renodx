@@ -18,19 +18,14 @@ void main(
   float4 fDest;
 
   r0.xyzw = t0.Sample(s0_s, v1.xy).xyzw;
+  r0.xyzw = cb0[2].yyyy * r0.xyzw;
+  r0.xyz = sqrt(r0.xyz);
   o0.w = r0.w;
-  r1.xyz = handleUserLUT(r0.xyz, t1, s1_s, 0, 3);
-  r0.xyz = renodx::math::SignSqrt(r0.xyz);
-  //r1.xyzw = t1.Sample(s1_s, r0.xyz).xyzw;
+  r1.xyz = cb0[2].zzz + r0.xyz;
+  r1.xyzw = t1.Sample(s1_s, r1.xyz).xyzw;
+  r1.xyz = cb0[2].www + r1.xyz;
   r1.xyz = r1.xyz + -r0.xyz;
   r0.xyz = cb0[2].xxx * r1.xyz + r0.xyz;
-  r0.xyz = sign(r0.xyz) * r0.xyz * r0.xyz;
-  if(injectedData.tonemapCheck == 1.f && (injectedData.count2Old == injectedData.count2New)){
-    r0.xyz = applyUserNoTonemap(r0.xyz);
-  }
-  if (injectedData.countOld == injectedData.countNew) {
-  r0.xyz = PostToneMapScale(r0.xyz);
-  }
-  o0.xyz = r0.xyz;
+  o0.xyz = r0.xyz * r0.xyz;
   return;
 }
