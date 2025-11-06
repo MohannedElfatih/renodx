@@ -24,7 +24,7 @@ void main(
   //r1.xyzw = t1.Sample(s1_s, r0.xyz).xyzw;
   r1.xyz = r1.xyz + -r0.xyz;
   r0.xyz = cb0[2].xxx * r1.xyz + r0.xyz;
-  r0.xyz = renodx::math::SignPow(r0.xyz, 2.f);
+  r0.xyz = sign(r0.xyz) * r0.xyz * r0.xyz;
   if(injectedData.tonemapCheck == 1.f && (injectedData.count2Old == injectedData.count2New)){
     r0.xyz = applyUserNoTonemap(r0.xyz);
   }

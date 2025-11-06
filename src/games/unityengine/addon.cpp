@@ -669,6 +669,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDRPOnDraw(0x1DD23EA0),
     UberHDRPOnDraw(0x3BD8B8FD),
     UberHDRPOnDraw(0x3F04EE8D),
+    UberHDRPOnDraw(0x4BAB5541),
     UberHDRPOnDraw(0x5F120263),
     UberHDRPOnDraw(0x6A47E083),
     UberHDRPOnDraw(0x8FEBA362),
@@ -932,6 +933,11 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0xFB956876),
     UberLinearOnDraw(0x6E92F78E),
     UberLinearOnDraw(0xFDB5E48B),
+    UberLinearOnDraw(0xD5DD013F),
+    UberLinearOnDraw(0xC37BC9A9),
+    UberLinearOnDraw(0x55CAA7AE),
+    UberLinearOnDraw(0x56470D5E),
+    UberLinearOnDraw(0x03075C9E),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1183,6 +1189,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDGammaOnDraw(0x3BB091D1),
     UberHDGammaOnDraw(0x6FC5EBBD),
     UberHDGammaOnDraw(0x21E04E36),
+    UberHDLinearOnDraw(0x29B597F9),
     UberHDGammaOnDraw(0x4424716A),
     UberHDGammaOnDraw(0xF0DB2F63),
 	  UberHDLinearOnDraw(0x8C592D8D),
@@ -3477,7 +3484,7 @@ void OnPresent(
         settings[17]->is_enabled = []() { return shader_injection.toneMapType >= 3.f; };
         settings[18]->is_enabled = []() { return shader_injection.toneMapType >= 3.f; };
         settings[19]->is_enabled = []() { return shader_injection.toneMapType >= 3.f; };
-        settings[20]->is_enabled = []() { return shader_injection.toneMapType == 3.f; };
+        settings[20]->is_enabled = []() { return shader_injection.toneMapType >= 3.f; };
         shader_injection.tonemapCheck = unityTonemapper;
             } else if(trunc(unityTonemapper) == 1){
         settings[1]->labels = {"Vanilla", "None", "Frostbite", "RenoDRT (Hermite Spline)", "DICE"};
@@ -3549,7 +3556,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       //renodx::mods::shader::allow_multiple_push_constants = true;
       //renodx::mods::shader::revert_constant_buffer_ranges = true;
       renodx::mods::swapchain::expected_constant_buffer_index = 13;
-      //renodx::mods::swapchain::expected_constant_buffer_space = 50;
+      renodx::mods::swapchain::expected_constant_buffer_space = 50;
       renodx::mods::swapchain::use_resource_cloning = true;
       renodx::utils::random::binds.push_back(&shader_injection.random);
       AddAdvancedSettings();
