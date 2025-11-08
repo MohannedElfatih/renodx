@@ -1000,6 +1000,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x8E8A64BA),
         // Neutral
     UberNeutralLinearOnDraw(0x0B383A2F),
+    UberNeutralGammaOnDraw(0x0EA73DAA),
+    UberNeutralLinearOnDraw(0x01FDB021),
     UberNeutralLinearOnDraw(0x6A5ACB6F),
     UberNeutralLinearOnDraw(0x009A1C24),
     UberNeutralLinearOnDraw(0x66C3EBEB),
@@ -1007,12 +1009,17 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberNeutralLinearOnDraw(0x5217FBA3),
     UberNeutralLinearOnDraw(0x5456BDEE),
     UberNeutralLinearOnDraw(0x8613B876),
+    UberNeutralGammaOnDraw(0x179468F9), // no LUT
+    UberNeutralLinearOnDraw(0xA6C2AA23),
     UberNeutralLinearOnDraw(0xA8F6504E),
+    UberNeutralLinearOnDraw(0xAABF3985),
     UberNeutralLinearOnDraw(0xAC471C80),
     UberNeutralLinearOnDraw(0xAD809271),
+    UberNeutralLinearOnDraw(0xB2327C12),
     UberNeutralLinearOnDraw(0xC999597C),
     UberNeutralLinearOnDraw(0xE73E4C20),
     UberNeutralLinearOnDraw(0xD5C07171),
+    UberNeutralLinearOnDraw(0xDDF23BBB),
     UberNeutralLinearOnDraw(0xF849180D),
     UberNeutralLinearOnDraw(0x312AE5CE),
     UberNeutralLinearOnDraw(0x4CBE7398),
@@ -1020,11 +1027,10 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberNeutralLinearOnDraw(0x2CAF46E1),
     UberNeutralLinearOnDraw(0x151F7D68),
     UberNeutralLinearOnDraw(0xD0CC8CE2),
+    UberNeutralLinearOnDraw(0xD1FDEBCD),
     UberNeutralLinearOnDraw(0xC680A959),
     UberNeutralGammaOnDraw(0x692D142C),
-    UberNeutralGammaOnDraw(0x0EA73DAA),
     UberNeutralGammaOnDraw(0x5C329C6B),
-    UberNeutralGammaOnDraw(0x179468F9), // no LUT
     UberNeutralGammaOnDraw(0xCE6048CA), // no LUT
         // ACES
     UberACESLinearOnDraw(0x1C42C445),
@@ -1112,6 +1118,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDGammaOnDraw(0x6E3B0BB9),
 	  UberHDLinearOnDraw(0x6ECE071D),
     UberHDLinearOnDraw(0x7AA25CB8),
+    UberHDLinearOnDraw(0x7BF974DA),
 	  UberHDLinearOnDraw(0x7CA9D945),
 	  UberHDLinearOnDraw(0x07D3D894),
 	  UberHDLinearOnDraw(0x7E2F585E),
@@ -1132,6 +1139,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0x216A76C7),
 	  UberHDGammaOnDraw(0x351B1F11),
 	  UberHDLinearOnDraw(0x450C7E5A),
+    UberHDLinearOnDraw(0x467F2718),
 	  UberHDLinearOnDraw(0x721D4F40),
 	  UberHDLinearOnDraw(0x0733A496),
 	  UberHDGammaOnDraw(0x778CFAC9),
@@ -1161,6 +1169,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0xB8D14E32),
 	  UberHDLinearOnDraw(0xB39F3D8A),
 	  UberHDGammaOnDraw(0xB82B9879),
+    UberHDLinearOnDraw(0xB86A8EAD),
     UberHDGammaOnDraw(0xB2866BD3),
 	  UberHDLinearOnDraw(0xB4780190),
 	  UberHDLinearOnDraw(0xB9579276),
@@ -1193,6 +1202,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDGammaOnDraw(0x4424716A),
     UberHDGammaOnDraw(0xF0DB2F63),
 	  UberHDLinearOnDraw(0x8C592D8D),
+    UberHDLinearOnDraw(0x09012773),
     UberHDLinearOnDraw(0x342E56C7),
     UberHDLinearOnDraw(0xA8A0A101),
     UberHDLinearOnDraw(0x72C37E3A),
@@ -1201,6 +1211,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     ////// CUSTOM START //////
     CustomShaderEntryCallback(0x459D4153, &CountLinear),    // Colour Correction
     CustomShaderEntryCallback(0xB0826385, &CountLinear),
+    CustomShaderEntryCallback(0x6D550A49, &CountLinear),  // PS1 Post Processing
     CustomShaderEntryCallback(0x3513581C, &Count),
     CustomShaderEntryCallback(0x457A0F57, &Count),
     CustomShaderEntryCallback(0x07FD3D55, &CountLinearTonemap1),   // Neva
@@ -1392,6 +1403,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x97B3FC51, &GammaClamped),
     CustomShaderEntryCallback(0xEEFE9737, &CountGammaTonemap1Clamped),
     CustomShaderEntryCallback(0xB063DC49, &Count),  // Bloom Final
+    CustomShaderEntryCallback(0x7D8CC42F, &Count),  // Bloom Final
     CustomShaderEntryCallback(0xF1E9DC64, &CountGammaTonemap1Clamped),  // Depth Mask Blend
     CustomShaderEntryCallback(0xC441EEAD, &CountLinearTonemap2),  // uc2
       // Scion Combination Pass
@@ -1896,6 +1908,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x33BF2974, &CountLinearTonemap35),
     CustomShaderEntryCallback(0x55A62D93, &CountLinearTonemap35),
     CustomShaderEntryCallback(0x7CEC71DC, &CountLinearTonemap35),
+    CustomShaderEntryCallback(0xBFB6E777, &CountLinearTonemap35),
+    CustomShaderEntryCallback(0xBD2444A7, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0xB046A9EB, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0x4483E5EF, &CountLinearTonemap35),
     //CustomShaderEntryCallback(0x18174CED, &CountLinearTonemap35),
@@ -1911,6 +1925,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0xF2C3C778, &CountLinearTonemap35),
     CustomShaderEntryCallback(0x8EFD32D4, &CountLinearTonemap35),
     CustomShaderEntryCallback(0xD70BBE87, &CountLinearTonemap3),
+    CustomShaderEntryCallback(0xBCBEAF16, &CountLinearTonemap3),
     CustomShaderEntryCallback(0xA9F01758, &CountLinearTonemap3),
       // Final Pass
     CustomShaderEntryCallback(0x75838EB7, &CountLinear),

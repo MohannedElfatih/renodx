@@ -357,7 +357,7 @@ float3 applyUserTonemapNeutral(float3 untonemapped, float peak = 0) {
   config.reno_drt_tone_map_method = injectedData.toneMapType - 2.f;
   config.reno_drt_per_channel = injectedData.toneMapPerChannel != 0.f;
   config.reno_drt_working_color_space = 0;
-  config.reno_drt_white_clip = injectedData.colorGradeClip == 0.f ? 4.f * (injectedData.toneMapPeakNits / injectedData.toneMapGameNits) : injectedData.colorGradeClip;
+  config.reno_drt_white_clip = injectedData.colorGradeClip == 0.f ? 4.f : injectedData.colorGradeClip;
   if (injectedData.toneMapType == 0.f) {
     outputColor = saturate(hueCorrectionColor);
   } else {
