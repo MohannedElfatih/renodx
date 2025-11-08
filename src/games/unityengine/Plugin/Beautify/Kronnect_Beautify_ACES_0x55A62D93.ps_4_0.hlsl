@@ -106,12 +106,6 @@ void main(
   r0.x = r0.x * r0.y + 1;
   r0.xyw = r2.xyz * r0.xxx;
   o0.w = r2.w;
-  /*r0.xyw = cb0[7].xxx * r0.xyw;
-  r1.xyz = r0.xyw * float3(2.50999999,2.50999999,2.50999999) + float3(0.0299999993,0.0299999993,0.0299999993);
-  r1.xyz = r1.xyz * r0.xyw;
-  r2.xyz = r0.xyw * float3(2.43000007,2.43000007,2.43000007) + float3(0.589999974,0.589999974,0.589999974);
-  r0.xyw = r0.xyw * r2.xyz + float3(0.140000001,0.140000001,0.140000001);
-  r0.xyw = r1.xyz / r0.xyw;*/
   float midGray = vanillaNarkACES(float3(0.18f, 0.18f, 0.18f)).x;
   float3 hueCorrectionColor = vanillaNarkACES(r0.xyw);
   renodx::tonemap::Config config = renodx::tonemap::config::Create();
