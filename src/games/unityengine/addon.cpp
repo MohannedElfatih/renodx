@@ -938,6 +938,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x55CAA7AE),
     UberLinearOnDraw(0x56470D5E),
     UberLinearOnDraw(0x03075C9E),
+    UberLinearOnDraw(0x6B6F1A57),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1451,10 +1452,12 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberPFXLinearOnDraw(0x1A33E5A1),
     UberPFXLinearOnDraw(0x1AF361CB),
     UberPFXGammaOnDraw(0x1D28756B),
+    UberPFXGammaOnDraw(0x1E0C52C3),
     UberPFXGammaOnDraw(0x2F0122E5),
     UberPFXLinearOnDraw(0x3DA8F050),
     UberPFXLinearOnDraw(0x4EE6BD0C),
     UberPFXLinearOnDraw(0x5C4F96D7),
+    UberPFXGammaOnDraw(0x5EC7C557),
     UberPFXLinearOnDraw(0x5EED6FFE),
     UberPFXLinearOnDraw(0x6A5E9052),
     UberPFXLinearOnDraw(0x6EB6CA05),
@@ -1537,6 +1540,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberPFXGammaOnDraw(0xE42ECD73),
     UberPFXLinearOnDraw(0xE49EE0CB),
     UberPFXLinearOnDraw(0xEA3FB96C),
+    UberPFXGammaOnDraw(0xEB9BE1DA),
     UberPFXLinearOnDraw(0xECDC6EC9),
     UberPFXGammaOnDraw(0xEE5CA39C),
     UberPFXLinearOnDraw(0xF1C2CE47),
@@ -1816,6 +1820,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0x71A4E35E),
     UberHDLinearOnDraw(0xD25C43B1),
         // No LUT
+    CustomShaderEntryCallback(0xA1EA3B3E, &Gamma),
     CountGammaTonemap1OnDraw(0x3E60912E),
     CountGammaTonemap1OnDraw(0x4CEC1E87),
     CountLinearTonemap1OnDraw(0x5C428D81),
@@ -2040,6 +2045,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     SneakyBuilder3OnDraw(0xF70A0EED),
     SneakyBuilder3OnDraw(0x33891579),
     SneakyBuilder3OnDraw(0x65D3755B),
+    SneakyBuilder3OnDraw(0x56B8D689),
     //__ALL_CUSTOM_SHADERS,
     BlitCopyOnDraw(0x8674BE1F),
     BlitCopyOnDraw(0x49E25D6C),
@@ -2688,7 +2694,7 @@ void AddGamePatches() {
     || filename == "nslt.exe" || filename == "AuRevoir.exe" || filename == "ShootasBloodAndTeef.exe"
   || filename == "Copycat.exe" || filename == "Make Way.exe" || filename == "Digimon World Next Order.exe"
   || filename == "Quern.exe" || filename == "reverse1999.exe" || filename == "NineSols.exe" || filename == "Distance.exe"
-  || filename == "SlimeRancher.exe" || filename == "Source of Madness.exe"){
+  || filename == "SlimeRancher.exe" || filename == "Source of Madness.exe" || filename == "Stirring Abyss.exe"){
     shader_injection.isClamped = 2.f;
     } else if(filename == "It Steals.exe"){
     shader_injection.isClamped = 3.f;
@@ -3032,6 +3038,13 @@ const std::unordered_map<
             "SodaCrisis.exe",
             {
                 {"Scaling_Offset", 3.f},
+                {"Blit_Copy_Hack", 3.f},
+            },
+        },
+        {
+            "Solasta.exe",
+            {
+                {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_ANY},
                 {"Blit_Copy_Hack", 3.f},
             },
         },

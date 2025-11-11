@@ -27,6 +27,6 @@ void main(
   } else {
     o0.w = r1.w;
   }
-  o0.xyz = r0.xyz;
+  o0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
   return;
 }
