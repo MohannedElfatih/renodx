@@ -46,7 +46,7 @@ void main(
     r0.xyz = isWCG ? renodx::color::bt2020::from::BT709(r0.xyz) : r0.xyz;
   }
   r0.xyz = max(float3(0,0,0), r0.xyz);
-  r1.xyz = pow(r1.xyz, 1.f / 2.2f);
+  r0.xyz = pow(r0.xyz, 1.f / 2.2f);
   r1.xyz = r0.xyz + r0.xyz;
   r2.xyz = r0.xyz * r0.xyz;
   r3.xyz = min(float3(1,1,1), r0.xyz);
