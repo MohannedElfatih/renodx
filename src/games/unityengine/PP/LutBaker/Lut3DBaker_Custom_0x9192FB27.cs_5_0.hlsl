@@ -58,6 +58,7 @@ float setCustomParam(float3 curve, float4 toeA, float4 toeB, float4 midA, float4
   else if (curve.x == 0.8702959 && curve.y == 0.00036573692 && curve.z == 0.17441027) return 20;  // Lost Words
   else if (curve.x == 0.75711614 && curve.y == 0.0023885393 && curve.z == 0.4558127) return 28;  // Lost Words
   else if (curve.x == 0.75619686 && curve.y == 0.01096152 && curve.z == 0.45941812) return 25;  // Lost Words
+  else if (curve.x == 0.3501852 && curve.y == 0.03810674 && curve.z == 0.29539084) return 30;  // UFO ROBOT GRENDIZER
 else return 0;
 }
 
@@ -153,6 +154,9 @@ float3 applyUserTonemapCustom(float3 untonemapped, float3 vanilla, float midGray
     config.reno_drt_flare = 0.0452f * pow(injectedData.colorGradeFlare, 2.f);
   } else if(param == 29){
     config.reno_drt_contrast = 1.02f;
+  } else if(param == 30){
+    config.reno_drt_contrast = 1.2f;
+    config.reno_drt_flare = 0.14f * injectedData.colorGradeFlare;
   }
   config.reno_drt_dechroma = injectedData.colorGradeDechroma;
   config.reno_drt_blowout = 1.f - injectedData.colorGradeBlowout;
