@@ -948,6 +948,9 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x56470D5E),
     UberLinearOnDraw(0x03075C9E),
     UberLinearOnDraw(0x6B6F1A57),
+    UberLinearOnDraw(0x659A2E8E),
+    UberLinearOnDraw(0xC4210E7C),
+    UberLinearOnDraw(0x14DFEA72),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1008,6 +1011,13 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x2DBE5C71),
     UberGammaOnDraw(0x0AC99FA7),
     UberGammaOnDraw(0x8E8A64BA),
+    UberGammaOnDraw(0x53609A70),
+    UberGammaOnDraw(0x99D2E489),
+    UberGammaOnDraw(0xB2EAED3B),
+    UberGammaOnDraw(0x68430C14),
+    UberGammaOnDraw(0x681C8D13),
+    UberGammaOnDraw(0x1E11059F),
+    UberGammaOnDraw(0xEC26FAEC),
         // Neutral
     UberNeutralLinearOnDraw(0x0B383A2F),
     UberNeutralGammaOnDraw(0x0EA73DAA),
@@ -1030,6 +1040,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberNeutralLinearOnDraw(0xB2327C12),
     UberNeutralLinearOnDraw(0xC999597C),
     UberNeutralLinearOnDraw(0xE73E4C20),
+    UberNeutralLinearOnDraw(0xED86C942),
     UberNeutralLinearOnDraw(0xD5C07171),
     UberNeutralLinearOnDraw(0xDDF23BBB),
     UberNeutralLinearOnDraw(0xF849180D),
@@ -1038,6 +1049,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberNeutralLinearOnDraw(0x04D5BD3C),
     UberNeutralLinearOnDraw(0x2CAF46E1),
     UberNeutralLinearOnDraw(0x151F7D68),
+    UberNeutralLinearOnDraw(0x215FEC7F),
     UberNeutralLinearOnDraw(0xD0CC8CE2),
     UberNeutralLinearOnDraw(0xD1FDEBCD),
     UberNeutralLinearOnDraw(0xC680A959),
@@ -1142,6 +1154,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0x10D74361),
 	  UberHDLinearOnDraw(0x14AC9B94),
     UberHDLinearOnDraw(0x42B4F952),
+    UberHDGammaOnDraw(0x56ABE46D),
     UberHDLinearOnDraw(0x66ADC764),
 	  UberHDLinearOnDraw(0x69FE571B),
 	  UberHDLinearOnDraw(0x70F25296),
@@ -1207,6 +1220,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0xF9D83ECD),
 	  UberHDLinearOnDraw(0xF09D3285),
 	  UberHDLinearOnDraw(0xFDC03846),
+    UberHDLinearOnDraw(0x2B004199),
 	  UberHDGammaOnDraw(0x3BB091D1),
     UberHDGammaOnDraw(0x6FC5EBBD),
     UberHDGammaOnDraw(0x21E04E36),
@@ -1226,6 +1240,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x6D550A49, &CountLinear),  // PS1 Post Processing
     CustomShaderEntryCallback(0x3513581C, &Count),
     CustomShaderEntryCallback(0x457A0F57, &Count),
+    CustomShaderEntryCallback(0x700A4C32, &Count),    // ShaderGraphs ScreenFxShader
+    CustomShaderEntryCallback(0x2D1C3A64, &Count),    // Beat Saber Main effect
     CustomShaderEntryCallback(0x07FD3D55, &CountLinearTonemap1),   // Neva
     CustomShaderEntryCallback(0xECED3960, &CountLinearTonemap1),    // PostProcess
     CustomShaderEntryCallback(0xB0E8A766, &CountLinearTonemap1),    // PostProcess
@@ -1299,6 +1315,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0xE60F40B0, &CountTonemap1),       // Blend for bloom
     CustomShaderEntryCallback(0xB7ED38A4, &CountTonemap1),       // Blend for bloom
     CustomShaderEntryCallback(0x26E0E961, &CountTonemap1),       // Blend for bloom
+    CustomShaderEntryCallback(0xE6CCD6DB, &Count),       // Blend for bloom
     CustomShaderEntryCallback(0x34CE249A, &CountTonemap1Clamped),       // Blend for bloom
     CustomShaderEntryCallback(0xA588D1CD, &CountTonemap1Clamped),       // PostBloomRich
     CustomShaderEntryCallback(0xD7C38DB2, [](reshade::api::command_list* cmd_list) {    // Blend for bloom (build)
@@ -1440,6 +1457,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0xA206F965, &CountTonemap1),
       // Beautify
     CustomShaderEntryCallback(0x98451591, &CountLinear),
+    CustomShaderEntryCallback(0x8B3EF05B, &CountLinearTonemap1),
     CustomShaderEntryCallback(0xCF0602FB, &CountGammaTonemap1),
     CustomShaderEntryCallback(0x1C3A2078, &CountGammaTonemap1),
     CustomShaderEntryCallback(0xA0712B3B, &CountGammaTonemap1),
@@ -1628,6 +1646,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x5ED6AF8F),
     UberGammaOnDraw(0x6A2FFE0C),
     UberGammaOnDraw(0x6B383D5D),
+    UberGammaOnDraw(0x6CEA644C),
     UberLinearOnDraw(0x8CBAADE3),
     UberGammaOnDraw(0x8ED94D63),
     UberGammaOnDraw(0x9C2BCF45),
@@ -1644,6 +1663,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x703FCC89),
     UberGammaOnDraw(0x0731C889),
     UberLinearOnDraw(0x937ECFDB),
+    UberLinearOnDraw(0x1082E750),
     UberGammaOnDraw(0x1237D610),
     UberGammaOnDraw(0x3085E401),
     UberGammaOnDraw(0x4546DE90),
@@ -1658,9 +1678,11 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x42383A0E),
     UberGammaOnDraw(0x97379D6B),
     UberLinearOnDraw(0x206927BB),
+    UberLinearOnDraw(0x378482BA),
     UberGammaOnDraw(0x15621136),
     UberGammaOnDraw(0x70157207),
     UberGammaOnDraw(0xAC23ED8C),
+    UberLinearOnDraw(0xB1A3409D),
     UberGammaOnDraw(0xB5D55000),
     UberGammaOnDraw(0xB339A072),
     UberGammaOnDraw(0xB811DE51),
@@ -1672,6 +1694,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0xE002CDC8),
     UberLinearOnDraw(0xE3F4F2E4),
     UberGammaOnDraw(0xE4952B04),
+    UberLinearOnDraw(0xE723937A),
+    UberLinearOnDraw(0xF8EA7355),
     UberGammaOnDraw(0xF647C7C7),
     UberLinearOnDraw(0xFBF8FE52),
     UberLinearOnDraw(0xFDE5FE89),
@@ -1877,7 +1901,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CountGammaTonemap1OnDraw(0xFF444EF2),
     CountGammaTonemap1OnDraw(0xF180FFF6),
     CountGammaTonemap1OnDraw(0x34A4537A),
-        // Sapphire (Windbound)
+        // Sapphire
     CountLinearACES709OnDraw(0x2B0930CC),
     CountLinearACES709OnDraw(0x8D4D9A63),
     CountLinearACES709OnDraw(0x8DF1BF80),
@@ -1888,6 +1912,18 @@ const ShaderItem INITIAL_SHADERS[] = {
     CountLinearACES709OnDraw(0xAE663C8F),
     CountLinearACES709OnDraw(0xBA4DCC6E),
     CountLinearACES709OnDraw(0xE01E2588),
+    /*CountLinearACES709OnDraw(0x7E70DA8D),
+    CountLinearACES709OnDraw(0x9F77F2C9),
+    CountLinearACES709OnDraw(0x32C33FE2),
+    CountLinearACES709OnDraw(0x69D09E7E),
+    CountLinearACES709OnDraw(0x75C4E8F2),
+    CountLinearACES709OnDraw(0x0121EB5A),
+    CountLinearACES709OnDraw(0x2133A066),
+    CountLinearACES709OnDraw(0xA0E6F747),
+    CountLinearACES709OnDraw(0xA98C7CAA),
+    CountLinearACES709OnDraw(0xAB54902E),
+    CountLinearACES709OnDraw(0xAED0ED65),
+    CountLinearACES709OnDraw(0xF4D5896D),*/
       // Chromatic Aberration
     CountTonemap1OnDraw(0xEEE589B3),
     CountTonemap1OnDraw(0x937A4C13),
@@ -2473,7 +2509,7 @@ renodx::utils::settings::Settings settings = {
         .key = "fxLens",
         .binding = &shader_injection.fxLens,
         .default_value = 50.f,
-        .label = "Lens Dirt",
+        .label = "Lens Dirt/Flare",
         .section = "Effects",
         .tint = 0x4D7180,
         .max = 100.f,

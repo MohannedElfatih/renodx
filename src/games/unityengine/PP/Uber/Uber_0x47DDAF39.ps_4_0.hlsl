@@ -84,7 +84,7 @@ void main(
   r0.yzw = r2.xyz + -r1.xyz;
   r0.xyz = r0.xxx * r0.yzw + r1.xyz;
   } else {
-    r0.xyz = renodx::lut::SampleTetrahedral(t5, r0.xyz, cb0[36].z + 1u);
+    r0.xyz = renodx::lut::SampleTetrahedral(t5, r0.yzx, cb0[36].z + 1u);
   }
   r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
   r1.xy = v1.xy * cb0[30].xy + cb0[30].zw;
