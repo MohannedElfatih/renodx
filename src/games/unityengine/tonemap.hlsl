@@ -393,7 +393,7 @@ float3 applyUserNoTonemap(float3 untonemapped) {
   config.reno_drt_working_color_space = 0;
   config.reno_drt_white_clip = injectedData.colorGradeClip == 0.f ? 2.f * (injectedData.toneMapPeakNits / injectedData.toneMapGameNits) : injectedData.colorGradeClip;
   if (injectedData.toneMapType == 0.f) {
-    outputColor = saturate(outputColor);
+    outputColor = max(0.f, outputColor);
   } else {
     outputColor = HDRBoost(outputColor, injectedData.fxHdrBoost);
   }
