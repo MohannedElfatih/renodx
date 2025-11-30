@@ -2734,6 +2734,15 @@ void AddTGTFoAUpgrades() {
       });
 }
 
+void AddSmolInternalLutUpgrade() {
+      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+          .old_format = reshade::api::format::r8g8b8a8_typeless,
+          .new_format = reshade::api::format::r16g16b16a16_typeless,
+          .dimensions = {256,16},
+          .usage_include = reshade::api::resource_usage::render_target,
+      });
+}
+
 void AddGamePatches() {
   auto process_path = renodx::utils::platform::GetCurrentProcessPath();
   auto filename = process_path.filename().string();
@@ -2742,6 +2751,8 @@ void AddGamePatches() {
     AddTGTFoAUpgrades();
   } else if (filename == "TheEternalDie.exe") {
     AddLiRTEDUpgrades();
+  } else if (filename == "Tales of Xillia Remastered.exe") {
+    AddSmolInternalLutUpgrade();
   } else if(filename == "Ultros.exe" || filename == "Batbarian Testament of the Primordials.exe"
     || filename == "nslt.exe" || filename == "AuRevoir.exe" || filename == "ShootasBloodAndTeef.exe"
   || filename == "Copycat.exe" || filename == "Make Way.exe" || filename == "Digimon World Next Order.exe"
