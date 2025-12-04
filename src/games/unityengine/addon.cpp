@@ -1018,6 +1018,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x681C8D13),
     UberGammaOnDraw(0x1E11059F),
     UberGammaOnDraw(0xEC26FAEC),
+    UberGammaOnDraw(0x396CDE5E),
         // Neutral
     UberNeutralLinearOnDraw(0x0B383A2F),
     UberNeutralGammaOnDraw(0x0EA73DAA),
@@ -2757,7 +2758,7 @@ void AddGamePatches() {
     AddTGTFoAUpgrades();
   } else if (filename == "TheEternalDie.exe") {
     AddLiRTEDUpgrades();
-  } else if (filename == "Tales of Xillia Remastered.exe") {
+  } else if (filename == "Tales of Xillia Remastered.exe" || filename == "CONSTANCE.exe") {
     AddSmolInternalLutUpgrade();
   } else if(filename == "Ultros.exe" || filename == "Batbarian Testament of the Primordials.exe"
     || filename == "nslt.exe" || filename == "AuRevoir.exe" || filename == "ShootasBloodAndTeef.exe"
