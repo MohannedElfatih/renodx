@@ -41,10 +41,10 @@ void main(
   r1.x = dot(float3(2.858470,-1.628790,-0.024891), r0.xyz);
   r1.y = dot(float3(-0.210182,1.158200,0.000324281), r0.xyz);
   r1.z = dot(float3(-0.041812,-0.118169,1.068670), r0.xyz);
-  r0.xyz = renodx::color::arri::logc::c1000::Encode(r1.xyz, true);
+  r0.xyz = renodx::color::arri::logc::c1000::Encode(r1.xyz, false);
   r0.xyz = r0.xyz + float3(-0.4135884,-0.4135884,-0.4135884);
   r0.xyz = r0.xyz * cb0[141].zzz + float3(0.4135884,0.4135884,0.4135884);
-  r0.xyz = renodx::color::arri::logc::c1000::Decode(r0.xyz, true);
+  r0.xyz = renodx::color::arri::logc::c1000::Decode(r0.xyz, false);
   r0.xyz = cb0[137].xyz * r0.xyz;
   bool isWCG = r0.x < 0.0 || r0.y < 0.0 || r0.z < 0.0;
   if(injectedData.toneMapType != 0.f){
