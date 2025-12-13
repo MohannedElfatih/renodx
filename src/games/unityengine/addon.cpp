@@ -40,6 +40,25 @@ bool finalBlitCheck;
 
 ShaderInjectData shader_injection;
 
+#define UpgradeRTVShader(value)              \
+  {                                          \
+      value,                                 \
+      {                                      \
+          .crc32 = value,                    \
+          .on_draw = [](auto* cmd_list) {                                                           \
+            auto rtvs = renodx::utils::swapchain::GetRenderTargets(cmd_list);                       \
+            bool changed = false;                                                                   \
+            for (auto rtv : rtvs) {                                                                 \
+              changed = renodx::mods::swapchain::ActivateCloneHotSwap(cmd_list->get_device(), rtv); \
+            }                                                                                       \
+            if (changed) {                                                                          \
+              renodx::mods::swapchain::FlushDescriptors(cmd_list);                                  \
+              renodx::mods::swapchain::RewriteRenderTargets(cmd_list, rtvs.size(), rtvs.data(), {0});      \
+            }                                                                                       \
+            return true; }, \
+      },                                     \
+  }
+
 // LutGen, LutBuilder3D
 // can hide
 bool SneakyBuilderTonemap1(reshade::api::command_list* cmd_list) {
@@ -660,6 +679,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDRPOnDraw(0xF6574655),
     UberHDRPOnDraw(0x29F16183),
     UberHDRPOnDraw(0x17E28214),
+    UberHDRPOnDraw(0x4CF0CF09),
     UberHDRPOnDraw(0x96F6F68C),
     UberHDRPOnDraw(0xAE389F39),
     UberHDRPOnDraw(0xE37D7F68),
@@ -703,6 +723,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDRPOnDraw(0xF1A75575),
     UberHDRPOnDraw(0xF8BA0FA2),
     UberHDRPOnDraw(0xF110C44D),
+    UberHDRPOnDraw(0xFA609710),
     UberHDRPOnDraw(0xFDF96092),
     UberHDRPOnDraw(0xEFE2ADAE),
       // final pass
@@ -951,6 +972,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x659A2E8E),
     UberLinearOnDraw(0xC4210E7C),
     UberLinearOnDraw(0x14DFEA72),
+    UberLinearOnDraw(0x3A4565C5),
+    UberLinearOnDraw(0x4C68E3B1),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1019,6 +1042,11 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x1E11059F),
     UberGammaOnDraw(0xEC26FAEC),
     UberGammaOnDraw(0x396CDE5E),
+    UberGammaOnDraw(0x0E00166F),
+    UberGammaOnDraw(0xF1376E70),
+    UberGammaOnDraw(0x74B19CB7),
+    UberGammaOnDraw(0x1666FB47),
+    UberGammaOnDraw(0x278DE973),
         // Neutral
     UberNeutralLinearOnDraw(0x0B383A2F),
     UberNeutralGammaOnDraw(0x0EA73DAA),
@@ -1043,6 +1071,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberNeutralLinearOnDraw(0xE73E4C20),
     UberNeutralLinearOnDraw(0xED86C942),
     UberNeutralLinearOnDraw(0xD5C07171),
+    UberNeutralLinearOnDraw(0xD72DF71C),
     UberNeutralLinearOnDraw(0xDDF23BBB),
     UberNeutralLinearOnDraw(0xF849180D),
     UberNeutralLinearOnDraw(0x312AE5CE),
@@ -1292,6 +1321,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0xD0434E6B, &CountTonemap1), // TintedVignette
     CustomShaderEntryCallback(0x74AAB469, &CountTonemap1),  // Beat Saber
     CustomShaderEntryCallback(0xCEEF2538, &CountClamped), // CRT
+    CustomShaderEntryCallback(0xD063498D, &Count), // VolFx Dither
+    CustomShaderEntryCallback(0x1772A606, &Count), // VHS (UNBEATABLE)
     CustomShaderEntryCallback(0x0B302CFA, &CountClamped), // Endroad Sharpen
     CustomShaderEntryCallback(0x8B223C82, &CountLinearTonemap2),    // Squire tonemap
     CustomShaderEntryCallback(0x90ED3547, &CountTonemap1Clamped),  // TGB ColorGrading3D
@@ -1530,12 +1561,14 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberPFXGammaOnDraw(0x734AEDAD),
     UberPFXLinearOnDraw(0x752CA615),
     UberPFXLinearOnDraw(0x761CCEC0),
+    UberPFXLinearOnDraw(0x803F8E92),
     UberPFXLinearOnDraw(0x959B3FB7),
     UberPFXLinearOnDraw(0x2938FC01),
     UberPFXGammaOnDraw(0x5311B657),
     UberPFXLinearOnDraw(0x6420BDE4),
     UberPFXLinearOnDraw(0x6848BE5C),
     UberPFXLinearOnDraw(0x7007E15E),
+    UberPFXLinearOnDraw(0x7734F02F),
     UberPFXLinearOnDraw(0x8903C9E4),
     UberPFXLinearOnDraw(0x45068D82),
     UberPFXLinearOnDraw(0x51459A11),
@@ -1563,6 +1596,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberPFXLinearOnDraw(0xCACDD22E),
     UberPFXLinearOnDraw(0xCDEB8FA1),
     UberPFXLinearOnDraw(0xD2C3B7E9),
+    UberPFXLinearOnDraw(0xD26F4D0B),
     UberPFXGammaOnDraw(0xD342B20A),
     UberPFXLinearOnDraw(0xD758B0D4),
     UberPFXLinearOnDraw(0xD7048ECF),
@@ -1749,6 +1783,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0x18DC6A24),
     UberHDGammaOnDraw(0x30B1D393),
     UberHDGammaOnDraw(0x30E315A6),
+    UberHDLinearOnDraw(0x32AFF662),
     UberHDGammaOnDraw(0x32B27DC5),
     UberHDLinearOnDraw(0x37EE06EC),
     UberHDLinearOnDraw(0x41CA1DD6),
@@ -1759,6 +1794,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0x69C7EC21),
     UberHDLinearOnDraw(0x71F55427),
     UberHDGammaOnDraw(0x78EF9B01),
+    UberHDLinearOnDraw(0x79C0F979),
     UberHDLinearOnDraw(0x82AF3065),
     UberHDGammaOnDraw(0x82FF3964),
     UberHDLinearOnDraw(0x085B95F5),
@@ -1803,12 +1839,14 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDGammaOnDraw(0x80309D55),
     UberHDLinearOnDraw(0x81198D61),
     UberHDLinearOnDraw(0x98834C99),
+    UberHDLinearOnDraw(0x99257EBF),
     UberHDLinearOnDraw(0x99273E5D),
     UberHDLinearOnDraw(0x18486417),
     UberHDGammaOnDraw(0x86692346),
     UberHDLinearOnDraw(0xA2FE36C0),
     UberHDLinearOnDraw(0xA31D6E8F),
     UberHDLinearOnDraw(0xA46C1ECB),
+    UberHDLinearOnDraw(0xA66D3ADA),
     UberHDGammaOnDraw(0xA932CAC7),
     UberHDLinearOnDraw(0xA34705B5),
     UberHDGammaOnDraw(0xAA43A92F),
@@ -1844,6 +1882,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0xD3985CC4),
     UberHDLinearOnDraw(0xD213345E),
     UberHDLinearOnDraw(0xD924189F),
+    UberHDLinearOnDraw(0xDA13BFBD),
     UberHDLinearOnDraw(0xDB814E6C),
     UberHDLinearOnDraw(0xDCAD3BF2),
     UberHDGammaOnDraw(0xDF21D66E),
@@ -2105,6 +2144,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     SneakyBuilder3OnDraw(0x33891579),
     SneakyBuilder3OnDraw(0x65D3755B),
     SneakyBuilder3OnDraw(0x56B8D689),
+    SneakyBuilder3OnDraw(0xAA3605C8),
     //__ALL_CUSTOM_SHADERS,
     BlitCopyOnDraw(0x8674BE1F),
     BlitCopyOnDraw(0x49E25D6C),
@@ -2113,6 +2153,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     finalBlitCheck = renodx::utils::swapchain::HasBackBufferRenderTarget(cmd_list);
     return renodx::utils::swapchain::HasBackBufferRenderTarget(cmd_list);
     }),
+    UpgradeRTVShader(0xD1DBB0E2),
     //CustomSwapchainShader(0x20133A8B),
 };
 
@@ -2741,6 +2782,37 @@ void AddTGTFoAUpgrades() {
       });
 }
 
+void AddLISBtSUpgrades() {
+      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+          .old_format = reshade::api::format::r8g8b8a8_typeless,
+          .new_format = reshade::api::format::r16g16b16a16_typeless,
+          .index = 0,
+          .ignore_size = false,
+          .usage_include = reshade::api::resource_usage::render_target,
+      });
+      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+          .old_format = reshade::api::format::r8g8b8a8_typeless,
+          .new_format = reshade::api::format::r16g16b16a16_typeless,
+          .ignore_size = true,
+          .use_resource_view_cloning = true,
+          .use_resource_view_hot_swap = true,
+      });
+      /*renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+          .old_format = reshade::api::format::r8g8b8a8_typeless,
+          .new_format = reshade::api::format::r16g16b16a16_typeless,
+          .index = 4,
+          .ignore_size = false,
+          .usage_include = reshade::api::resource_usage::render_target,
+      });
+      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+          .old_format = reshade::api::format::r8g8b8a8_typeless,
+          .new_format = reshade::api::format::r16g16b16a16_typeless,
+          .index = 11,
+          .ignore_size = false,
+          .usage_include = reshade::api::resource_usage::render_target,
+      });*/
+}
+
 void AddSmolInternalLutUpgrade() {
       renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
           .old_format = reshade::api::format::r8g8b8a8_typeless,
@@ -2756,6 +2828,8 @@ void AddGamePatches() {
   auto product_name = renodx::utils::platform::GetProductName(process_path);
   if (filename == "Fall of Avalon.exe") {
     AddTGTFoAUpgrades();
+  } else if (filename == "Life is Strange - Before the Storm.exe") {
+    AddLISBtSUpgrades();
   } else if (filename == "TheEternalDie.exe") {
     AddLiRTEDUpgrades();
   } else if (filename == "Tales of Xillia Remastered.exe" || filename == "CONSTANCE.exe") {
@@ -2995,6 +3069,12 @@ const std::unordered_map<
             "LEGO Party.exe",
             {
                 {"Upgrade_R11G11B10_FLOAT", UPGRADE_TYPE_OUTPUT_SIZE},
+            },
+        },
+        {
+            "Life is Strange - Before the Storm.exe",
+            {
+                {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_NONE},
             },
         },
         {
