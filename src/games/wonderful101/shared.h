@@ -1,5 +1,5 @@
-#ifndef SRC_SMASH_BROS_ULTIMATE_SHARED_H_
-#define SRC_SMASH_BROS_ULTIMATE_SHARED_H_
+#ifndef SRC_WONDERFUL101_SHARED_H_
+#define SRC_WONDERFUL101_SHARED_H_
 
 // Must be 32bit aligned
 // Should be 4x32
@@ -70,4 +70,4 @@ cbuffer injected_buffer : register(b13) {
 
 #endif
 
-#endif  // SRC_SMASH_BROS_ULTIMATE_SHARED_H_
+#endif  // SRC_WONDERFUL101_SHARED_H_

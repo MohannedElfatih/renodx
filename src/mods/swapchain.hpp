@@ -67,6 +67,12 @@ struct HeapDescriptorInfo {
   bool is_active;
 };
 
+struct LocalRenderPassState {
+  uint32_t original_rt_count = 0;
+  reshade::api::render_pass_depth_stencil_desc original_ds{};
+  std::vector<reshade::api::render_pass_render_target_desc> modified_rts;
+};
+
 struct __declspec(uuid("809df2f6-e1c7-4d93-9c6e-fa88dd960b7c")) DeviceData {
   std::shared_mutex mutex;
 
@@ -196,6 +202,9 @@ static thread_local std::optional<reshade::api::swapchain_desc> upgraded_swapcha
 static thread_local std::optional<reshade::api::resource> local_original_resource;
 static thread_local std::optional<reshade::api::resource_desc> local_original_resource_desc;
 static thread_local std::optional<reshade::api::resource_view_desc> local_original_resource_view_desc;
+
+// Vulkan
+static thread_local std::optional<LocalRenderPassState> local_render_target_pass_state;
 
 // Methods
 
@@ -615,84 +624,106 @@ inline reshade::api::resource CloneResource(utils::resource::ResourceInfo* resou
 
   reshade::api::resource_desc& new_desc = resource_info->clone_desc;
 
-  new_desc.texture.format = target->new_format;
-  new_desc.usage = static_cast<reshade::api::resource_usage>(
-      static_cast<uint32_t>(desc.usage)
-      | (target->usage_set & ~target->usage_unset));
-  if (new_desc.heap == reshade::api::memory_heap::custom) {
+  auto is_buffer = new_desc.type == reshade::api::resource_type::buffer;
+
+  // Crosire recommends always overwriting to gpu_only on cloning
+  if (new_desc.heap == reshade::api::memory_heap::custom || new_desc.heap == reshade::api::memory_heap::unknown) {
     new_desc.heap = reshade::api::memory_heap::gpu_only;
   }
 
   auto& initial_state = resource_info->initial_state;
   reshade::api::resource& resource_clone = resource_info->clone;
 
-#ifdef DEBUG_LEVEL_1
-  std::stringstream s;
-  s << "mods::swapchain::CloneResource(";
-  s << PRINT_PTR(resource_info->resource.handle);
-  s << ", format: " << desc.texture.format << " => " << new_desc.texture.format;
-  s << ", type: " << desc.type;
-  s << ", flags: " << std::hex << static_cast<uint32_t>(desc.flags) << std::dec;
-  s << ", heap: " << std::hex << static_cast<uint32_t>(desc.heap) << std::dec;
-  s << ", usage: 0x" << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
-  s << ", new_usage: 0x" << std::hex << static_cast<uint32_t>(new_desc.usage) << std::dec;
-  s << ", dimensions: " << desc.texture.width << "x" << desc.texture.height;
-  s << ", initial_state: " << initial_state;
-  s << ")";
-  reshade::log::message(reshade::log::level::debug, s.str().c_str());
-#endif
-
   void** shared_handle = nullptr;
 
-  if (target->use_shared_handle) {
-    new_desc.flags = reshade::api::resource_flags::shared;
-    new_desc.type = reshade::api::resource_type::texture_2d;
-    shared_handle = &resource_info->shared_handle;
+  if (!is_buffer) {
+    new_desc.texture.format = target->new_format;
 
-    if (resource_info->device->get_api() == reshade::api::device_api::opengl) {
-      new_desc.flags |= reshade::api::resource_flags::shared_nt_handle;
-    }
-    new_desc.usage |= reshade::api::resource_usage::copy_source;
-    new_desc.usage |= reshade::api::resource_usage::copy_dest;
-    if (use_device_proxy && resource_info->device != proxy_device_reshade) {
-      if (proxy_device == nullptr) {
-        // no present yet, ignore
-        return {0u};
+    new_desc.usage = static_cast<reshade::api::resource_usage>(renodx::utils::bitwise::SetFlag(static_cast<uint32_t>(desc.usage), (target->usage_set & ~target->usage_unset)));
+
+    void** shared_handle = nullptr;
+
+    if (target->use_shared_handle) {
+      new_desc.flags = reshade::api::resource_flags::shared;
+      new_desc.type = reshade::api::resource_type::texture_2d;
+      shared_handle = &resource_info->shared_handle;
+
+      if (resource_info->device->get_api() == reshade::api::device_api::opengl) {
+        new_desc.flags |= reshade::api::resource_flags::shared_nt_handle;
       }
-      auto* data = renodx::utils::data::Get<DeviceData>(resource_info->device);
-      assert(data != nullptr);
-      auto* hwnd = data->primary_swapchain_window;
+      new_desc.usage |= reshade::api::resource_usage::copy_source;
+      new_desc.usage |= reshade::api::resource_usage::copy_dest;
+      if (use_device_proxy && resource_info->device != proxy_device_reshade) {
+        if (proxy_device == nullptr) {
+          // no present yet, ignore
+          return {0u};
+        }
+        auto* data = renodx::utils::data::Get<DeviceData>(resource_info->device);
+        assert(data != nullptr);
+        auto* hwnd = data->primary_swapchain_window;
 
-      auto* new_device = GetDeviceProxy(resource_info, hwnd);
-      assert(new_device != nullptr);
-      assert(proxy_device_reshade != nullptr);
-      assert(resource_info->proxy_resource.handle == 0u);
+        auto* new_device = GetDeviceProxy(resource_info, hwnd);
+        assert(new_device != nullptr);
+        assert(proxy_device_reshade != nullptr);
+        assert(resource_info->proxy_resource.handle == 0u);
 
-      proxy_device_reshade->create_resource(new_desc, nullptr, initial_state, &resource_info->proxy_resource, shared_handle);
+        proxy_device_reshade->create_resource(new_desc, nullptr, initial_state, &resource_info->proxy_resource, shared_handle);
 
-      assert(resource_info->proxy_resource.handle != 0u);
+        assert(resource_info->proxy_resource.handle != 0u);
 
-      renodx::utils::resource::store->resource_infos[resource_info->proxy_resource.handle] = {
-          .device = proxy_device_reshade,
-          .desc = new_desc,
-          .resource = resource_info->resource,
-      };
+        renodx::utils::resource::store->resource_infos[resource_info->proxy_resource.handle] = {
+            .device = proxy_device_reshade,
+            .desc = new_desc,
+            .resource = resource_info->resource,
+        };
 
-      // shared handle can now be used in opengl
+        // shared handle can now be used in opengl
+      }
+    } else {
+      new_desc.flags = reshade::api::resource_flags::none;
     }
-
-  } else {
-    new_desc.flags = reshade::api::resource_flags::none;
+#ifdef DEBUG_LEVEL_1
+    std::stringstream s;
+    s << "mods::swapchain::CloneResource(";
+    s << PRINT_PTR(resource_info->resource.handle);
+    s << ", format: " << desc.texture.format << " => " << new_desc.texture.format;
+    s << ", type: " << desc.type;
+    s << ", flags: " << std::hex << static_cast<uint32_t>(desc.flags) << std::dec;
+    s << ", heap: " << std::hex << static_cast<uint32_t>(desc.heap) << std::dec;
+    s << ", usage: 0x" << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
+    s << ", new_usage: 0x" << std::hex << static_cast<uint32_t>(new_desc.usage) << std::dec;
+    s << ", dimensions: " << desc.texture.width << "x" << desc.texture.height;
+    s << ", initial_state: " << initial_state;
+    s << ")";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+#endif
   }
+#ifdef DEBUG_LEVEL_1
+  else {
+    std::stringstream s;
+    s << "mods::swapchain::CloneResource(";
+    s << PRINT_PTR(resource_info->resource.handle);
+    s << ", type: " << desc.type;
+    s << ", flags: " << std::hex << static_cast<uint32_t>(desc.flags) << std::dec;
+    s << ", heap: " << std::hex << static_cast<uint32_t>(desc.heap) << std::dec;
+    s << ", usage: 0x" << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
+    s << ", new_usage: 0x" << std::hex << static_cast<uint32_t>(new_desc.usage) << std::dec;
+    s << ", size: " << desc.buffer.size;
+    s << ", initial_state: " << initial_state;
+    s << ")";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+  }
+#endif
 
   auto* device = resource_info->device;
+
   if (device->create_resource(
           new_desc,
           nullptr,  // initial_data
           initial_state,
           &resource_clone,
           shared_handle)) {
-    auto extra_ram = renodx::utils::resource::ComputeTextureSize(new_desc);
+    auto extra_ram = is_buffer ? static_cast<uint32_t>(new_desc.buffer.size) : renodx::utils::resource::ComputeTextureSize(new_desc);
     utils::resource::store->resource_infos[resource_clone.handle] = {
         .device = device,
         .desc = new_desc,
@@ -1562,14 +1593,16 @@ static bool OnCreateSwapchain(reshade::api::swapchain_desc& desc, void* hwnd) {
   }
 
   bool is_dxgi = false;
+  bool is_vulkan = false;
   switch (device_api) {
     case reshade::api::device_api::d3d10:
     case reshade::api::device_api::d3d11:
     case reshade::api::device_api::d3d12:
       is_dxgi = true;
+    case reshade::api::device_api::vulkan:
+      is_vulkan = true;
     case reshade::api::device_api::d3d9:
     case reshade::api::device_api::opengl:
-    case reshade::api::device_api::vulkan:
       break;
     default:
       assert(false);
@@ -1591,7 +1624,7 @@ static bool OnCreateSwapchain(reshade::api::swapchain_desc& desc, void* hwnd) {
   auto old_present_flags = desc.present_flags;
   auto old_buffer_count = desc.back_buffer_count;
 
-  if (is_dxgi) {
+  if (is_dxgi || is_vulkan) {
     if (!use_resize_buffer && !use_device_proxy) {
       desc.back_buffer.texture.format = target_format;
 
@@ -1601,23 +1634,25 @@ static bool OnCreateSwapchain(reshade::api::swapchain_desc& desc, void* hwnd) {
       }
     }
 
-    if (!use_device_proxy) {
-      switch (desc.present_mode) {
-        case static_cast<uint32_t>(DXGI_SWAP_EFFECT_SEQUENTIAL):
-          desc.present_mode = static_cast<uint32_t>(DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL);
-          break;
-        case static_cast<uint32_t>(DXGI_SWAP_EFFECT_DISCARD):
-          desc.present_mode = static_cast<uint32_t>(DXGI_SWAP_EFFECT_FLIP_DISCARD);
-          break;
+    if (is_dxgi) {
+      if (!use_device_proxy) {
+        switch (desc.present_mode) {
+          case static_cast<uint32_t>(DXGI_SWAP_EFFECT_SEQUENTIAL):
+            desc.present_mode = static_cast<uint32_t>(DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL);
+            break;
+          case static_cast<uint32_t>(DXGI_SWAP_EFFECT_DISCARD):
+            desc.present_mode = static_cast<uint32_t>(DXGI_SWAP_EFFECT_FLIP_DISCARD);
+            break;
+        }
       }
-    }
 
-    if (!use_resize_buffer) {
-      if (prevent_full_screen) {
-        desc.present_flags &= ~DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-      }
-      if (force_screen_tearing) {
-        desc.present_flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+      if (!use_resize_buffer) {
+        if (prevent_full_screen) {
+          desc.present_flags &= ~DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+        }
+        if (force_screen_tearing) {
+          desc.present_flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+        }
       }
     }
   } else if (device_api == reshade::api::device_api::d3d9) {
@@ -1657,44 +1692,46 @@ static bool OnCreateSwapchain(reshade::api::swapchain_desc& desc, void* hwnd) {
   s << ", present flag:";
   s << "0x" << std::hex << old_present_flags << std::dec;
 
-  static constexpr auto DXGI_SWAP_CHAIN_FLAG_NAMES = frozen::make_unordered_map<uint32_t, const char*>({
-      {DXGI_SWAP_CHAIN_FLAG_NONPREROTATED, "NONPREROTATED"},
-      {DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH, "ALLOW_MODE_SWITCH"},
-      {DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE, "GDI_COMPATIBLE"},
-      {DXGI_SWAP_CHAIN_FLAG_RESTRICTED_CONTENT, "RESTRICTED_CONTENT"},
-      {DXGI_SWAP_CHAIN_FLAG_RESTRICT_SHARED_RESOURCE_DRIVER, "RESTRICT_SHARED_RESOURCE_DRIVER"},
-      {DXGI_SWAP_CHAIN_FLAG_DISPLAY_ONLY, "DISPLAY_ONLY"},
-      {DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT, "FRAME_LATENCY_WAITABLE_OBJECT"},
-      {DXGI_SWAP_CHAIN_FLAG_FOREGROUND_LAYER, "FOREGROUND_LAYER"},
-      {DXGI_SWAP_CHAIN_FLAG_FULLSCREEN_VIDEO, "FULLSCREEN_VIDEO"},
-      {DXGI_SWAP_CHAIN_FLAG_YUV_VIDEO, "YUV_VIDEO"},
-      {DXGI_SWAP_CHAIN_FLAG_HW_PROTECTED, "HW_PROTECTED"},
-      {DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING, "ALLOW_TEARING"},
-      {DXGI_SWAP_CHAIN_FLAG_RESTRICTED_TO_ALL_HOLOGRAPHIC_DISPLAYS, "RESTRICTED_TO_ALL_HOLOGRAPHIC_DISPLAYS"},
-  });
-  {
-    bool has_flag = false;
-    for (const auto& [flag_value, flag_string] : DXGI_SWAP_CHAIN_FLAG_NAMES) {
-      if (renodx::utils::bitwise::HasFlag(old_present_flags, flag_value)) {
-        s << (has_flag ? " | " : " (") << flag_string;
-        has_flag = true;
+  if (is_dxgi) {
+    static constexpr auto DXGI_SWAP_CHAIN_FLAG_NAMES = frozen::make_unordered_map<uint32_t, const char*>({
+        {DXGI_SWAP_CHAIN_FLAG_NONPREROTATED, "NONPREROTATED"},
+        {DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH, "ALLOW_MODE_SWITCH"},
+        {DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE, "GDI_COMPATIBLE"},
+        {DXGI_SWAP_CHAIN_FLAG_RESTRICTED_CONTENT, "RESTRICTED_CONTENT"},
+        {DXGI_SWAP_CHAIN_FLAG_RESTRICT_SHARED_RESOURCE_DRIVER, "RESTRICT_SHARED_RESOURCE_DRIVER"},
+        {DXGI_SWAP_CHAIN_FLAG_DISPLAY_ONLY, "DISPLAY_ONLY"},
+        {DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT, "FRAME_LATENCY_WAITABLE_OBJECT"},
+        {DXGI_SWAP_CHAIN_FLAG_FOREGROUND_LAYER, "FOREGROUND_LAYER"},
+        {DXGI_SWAP_CHAIN_FLAG_FULLSCREEN_VIDEO, "FULLSCREEN_VIDEO"},
+        {DXGI_SWAP_CHAIN_FLAG_YUV_VIDEO, "YUV_VIDEO"},
+        {DXGI_SWAP_CHAIN_FLAG_HW_PROTECTED, "HW_PROTECTED"},
+        {DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING, "ALLOW_TEARING"},
+        {DXGI_SWAP_CHAIN_FLAG_RESTRICTED_TO_ALL_HOLOGRAPHIC_DISPLAYS, "RESTRICTED_TO_ALL_HOLOGRAPHIC_DISPLAYS"},
+    });
+    {
+      bool has_flag = false;
+      for (const auto& [flag_value, flag_string] : DXGI_SWAP_CHAIN_FLAG_NAMES) {
+        if (renodx::utils::bitwise::HasFlag(old_present_flags, flag_value)) {
+          s << (has_flag ? " | " : " (") << flag_string;
+          has_flag = true;
+        }
       }
+      if (has_flag) s << ")";
     }
-    if (has_flag) s << ")";
-  }
 
-  s << " => ";
-  s << "0x" << std::hex << desc.present_flags << std::dec;
+    s << " => ";
+    s << "0x" << std::hex << desc.present_flags << std::dec;
 
-  if (old_present_flags != desc.present_flags) {
-    bool has_flag = false;
-    for (const auto& [flag_value, flag_string] : DXGI_SWAP_CHAIN_FLAG_NAMES) {
-      if (renodx::utils::bitwise::HasFlag(desc.present_flags, flag_value)) {
-        s << (has_flag ? " | " : " (") << flag_string;
-        has_flag = true;
+    if (old_present_flags != desc.present_flags) {
+      bool has_flag = false;
+      for (const auto& [flag_value, flag_string] : DXGI_SWAP_CHAIN_FLAG_NAMES) {
+        if (renodx::utils::bitwise::HasFlag(desc.present_flags, flag_value)) {
+          s << (has_flag ? " | " : " (") << flag_string;
+          has_flag = true;
+        }
       }
+      if (has_flag) s << ")";
     }
-    if (has_flag) s << ")";
   }
 
   s << ", buffers:" << old_buffer_count << " => " << desc.back_buffer_count;
@@ -1842,6 +1879,73 @@ static bool IsUpgraded(reshade::api::swapchain* swapchain) {
   return data->upgraded_swapchains.contains(swapchain);
 }
 
+// Reshade documentation specifies subobjects as const but invokation isn't
+/* inline bool OnCreatePipeline(reshade::api::device* device, reshade::api::pipeline_layout layout, uint32_t subobject_count, reshade::api::pipeline_subobject* subobjects) {
+  if (device->get_api() != reshade::api::device_api::vulkan) return false;
+  if (subobject_count == 0) {
+    std::stringstream s;
+    s << "mods::swapchain::OnCreatePipeline(";
+    s << "Skipping empty pipeline";
+    s << ")";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+    return false;
+  }
+  if (subobject_count == -1) {
+    std::stringstream s;
+    s << "mods::swapchain::OnCreatePipeline(";
+    s << "Wrong subobject count: " << subobject_count;
+    s << ")";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+    return false;
+  }
+
+  auto* private_data = renodx::utils::data::Get<DeviceData>(device);
+  auto& swap_chain_upgrade_targets = private_data->swap_chain_upgrade_targets;
+  const uint32_t len = private_data->swap_chain_upgrade_targets.size();
+  auto changed = false;
+
+  for (uint32_t i = 0; i < subobject_count; ++i) {
+    auto& sub = subobjects[i];
+    if (sub.type == reshade::api::pipeline_subobject_type::render_target_formats) {
+      const auto* current_pipeline_formats =
+          static_cast<const reshade::api::format*>(sub.data);
+
+      auto* new_pipeline_formats =
+          static_cast<reshade::api::format*>(
+              malloc(sizeof(reshade::api::format) * sub.count));
+      for (uint32_t j = 0; j < sub.count; ++j) {
+        auto current_format = current_pipeline_formats[j];
+        auto new_format = current_format;
+        for (uint32_t k = 0; k < len; k++) {
+          renodx::mods::swapchain::SwapChainUpgradeTarget* target = &swap_chain_upgrade_targets[k];
+          if (auto pair2 = target->view_upgrades.find({reshade::api::resource_usage::render_target, current_format});
+              pair2 != target->view_upgrades.end() && pair2->second != reshade::api::format::unknown) {
+            new_format = pair2->second;
+            changed = true;
+#ifdef DEBUG_LEVEL_1
+            std::stringstream s;
+            s << "mods::swapchain::OnCreatePipeline(Upgrading pipeline attachment: ";
+            s << PRINT_PTR(layout.handle);
+            s << ", format: " << current_format << " => " << new_format;
+            s << ") [" << k << "/" << len << "]";
+            reshade::log::message(reshade::log::level::debug, s.str().c_str());
+#endif
+          }
+        }
+        new_pipeline_formats[j] = new_format;
+      }
+
+      sub.data = new_pipeline_formats;
+    } else {
+      continue;
+    }
+  }
+
+  if (!changed) return false;
+
+  return true;
+} */
+
 inline bool OnCreateResource(
     reshade::api::device* device,
     reshade::api::resource_desc& desc,
@@ -1857,6 +1961,11 @@ inline bool OnCreateResource(
     reshade::log::message(reshade::log::level::warning, s.str().c_str());
     return false;
   }
+
+  bool is_vulkan = device->get_api() == reshade::api::device_api::vulkan;
+
+  // Vulkan TEXEL Buffers can be converted to textures later
+  // or copied to textures directly, might wanna handle it here
   switch (desc.type) {
     case reshade::api::resource_type::texture_3d:
     case reshade::api::resource_type::texture_2d:
@@ -1932,6 +2041,12 @@ inline bool OnCreateResource(
 
   if (found_target == nullptr) return false;
 
+  if (is_vulkan) {
+    // Vulkan requires these for blits
+    // desc.usage |= reshade::api::resource_usage::copy_source;
+    // desc.usage |= reshade::api::resource_usage::copy_dest;
+  }
+
   if (all_completed) {
     private_data->resource_upgrade_finished = true;
   }
@@ -2003,6 +2118,7 @@ inline bool OnCreateResource(
   local_original_resource = original_resource;
   local_original_resource_desc = original_desc;
   local_applied_target = found_target;
+
   return true;
 }
 
@@ -2018,6 +2134,12 @@ inline void OnInitResourceInfo(renodx::utils::resource::ResourceInfo* resource_i
     case reshade::api::resource_type::texture_2d:
     case reshade::api::resource_type::surface:
       break;
+    case reshade::api::resource_type::buffer: {
+      // Vulkan buffers sizes must be defined so we should clone them
+      if (device->get_api() == reshade::api::device_api::vulkan) {
+        break;
+      }
+    }
     case reshade::api::resource_type::unknown:
       reshade::log::message(reshade::log::level::warning, "mods::swapchain::OnInitResource(Unknown resource type)");
     default:
@@ -2050,6 +2172,23 @@ inline void OnInitResourceInfo(renodx::utils::resource::ResourceInfo* resource_i
     local_applied_target = nullptr;
 
   } else if (use_resource_cloning) {
+    if (desc.type == reshade::api::resource_type::buffer) {
+      if (utils::resource::IsImageLikeBuffer(desc)) {
+        // Clone_enabled mean we'll double the size later (32bit -> 64bit)
+        resource_info->clone_enabled = true;
+#ifdef DEBUG_LEVEL_1
+        std::stringstream s;
+        s << "mods::swapchain::OnInitResource(cloning buffer";
+        s << ", size: " << desc.buffer.size;
+        s << ", usage: " << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
+        s << ")";
+        reshade::log::message(reshade::log::level::debug, s.str().c_str());
+#endif
+      }
+
+      return;
+    }
+
     auto* private_data = renodx::utils::data::Get<DeviceData>(device);
     if (private_data == nullptr) {
       assert(private_data != nullptr);
@@ -2250,6 +2389,9 @@ inline bool OnCopyBufferToTexture(
     reshade::api::resource dest,
     uint32_t dest_subresource,
     const reshade::api::subresource_box* dest_box) {
+  const auto is_vulkan = cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan;
+  if (!is_vulkan && !use_resource_cloning) return false;
+
   auto* source_info = utils::resource::GetResourceInfo(source);
   if (source_info == nullptr) return false;
 
@@ -2257,53 +2399,107 @@ inline bool OnCopyBufferToTexture(
 
   if (destination_info == nullptr) return false;
 
-  const auto source_clone = GetResourceClone(source_info);
-  const auto dest_clone = GetResourceClone(destination_info);
+  if (use_resource_cloning) {
+    const auto source_clone = GetResourceClone(source_info);
+    const auto dest_clone = GetResourceClone(destination_info);
 
-  if (!source_info->upgraded && !destination_info->upgraded
-      && (source_clone.handle == 0u) && (dest_clone.handle == 0u)) return false;
+    if (!source_info->upgraded && !destination_info->upgraded
+        && (source_clone.handle == 0u) && (dest_clone.handle == 0u)) return false;
 
-  if (destination_info->desc.texture.format == destination_info->clone_desc.texture.format) {
+    if (destination_info->desc.texture.format == destination_info->clone_desc.texture.format) {
 #ifdef DEBUG_LEVEL_1
-    std::stringstream s;
-    s << "mods::swapchain::OnCopyBufferToTexture(Redirected to clone: ";
-    s << PRINT_PTR(dest.handle);
-    s << " => " << PRINT_PTR(dest_clone.handle);
-    s << ")";
-    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      std::stringstream s;
+      s << "mods::swapchain::OnCopyBufferToTexture(Redirected to clone: ";
+      s << PRINT_PTR(dest.handle);
+      s << " => " << PRINT_PTR(dest_clone.handle);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
 #endif
-    cmd_list->copy_buffer_to_texture(source, source_offset, row_length, slice_height, dest_clone, dest_subresource);
+      cmd_list->copy_buffer_to_texture(source, source_offset, row_length, slice_height, dest_clone, dest_subresource);
 
-    return true;
-    // remap to other
-  }
-  // Mismatched, copy to original and blit?
-  cmd_list->copy_buffer_to_texture(source, source_offset, row_length, slice_height, dest, dest_subresource);
+      return true;
+      // remap to other
+    }
+    // Mismatched, copy to original and blit?
+    cmd_list->copy_buffer_to_texture(source, source_offset, row_length, slice_height, dest, dest_subresource);
 
-  std::stringstream s;
-  s << "mods::swapchain::OnCopyBufferToTexture(mismatched ";
-  s << PRINT_PTR(source.handle);
-  s << "[" << source_offset << "]";
-  s << " => " << PRINT_PTR(dest.handle);
-  s << "[" << dest_subresource << "]";
-  s << " (" << destination_info->clone_desc.texture.format << ")";
-  if (dest_box != nullptr) {
-    s << "(" << dest_box->top << ", " << dest_box->left << ", " << dest_box->front << ")";
-  }
-  s << ")";
+    std::stringstream s;
+    s << "mods::swapchain::OnCopyBufferToTexture(mismatched ";
+    s << PRINT_PTR(source.handle);
+    s << "[" << source_offset << "]";
+    s << " => " << PRINT_PTR(dest.handle);
+    s << "[" << dest_subresource << "]";
+    s << " (" << destination_info->clone_desc.texture.format << ")";
+    if (dest_box != nullptr) {
+      s << "(" << dest_box->top << ", " << dest_box->left << ", " << dest_box->front << ")";
+    }
+    s << ")";
 
-  reshade::log::message(reshade::log::level::warning, s.str().c_str());
+    reshade::log::message(reshade::log::level::warning, s.str().c_str());
 
-  if (cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan) {
-    // perform blit
-    cmd_list->copy_texture_region(dest, dest_subresource, dest_box, dest_clone, dest_subresource, dest_box);
+    if (cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan) {
+      // perform blit
+      // Note: Vulkan throws an error if dest vkImage doesn't have resource_usage::copy_source flag
+      cmd_list->copy_texture_region(dest, dest_subresource, dest_box, dest_clone, dest_subresource, dest_box);
+      return true;
+    } else {
+      // Perform DirectX blit
+      return true;
+    }
+
     return true;
   } else {
-    // Perform DirectX blit
-    return true;
-  }
+    // Clone and upgrade buffer based on target's format
+    // VK buffers don't have format except in bufferView but not all buffers get that
+    if (source_info->desc.type == reshade::api::resource_type::buffer && destination_info->upgraded && destination_info->upgrade_target != nullptr) {
+      // Create clone
+      if (source_info->clone.handle == 0u) {
+        const auto old_format_bit_depth = reshade::api::format_bit_depth(destination_info->upgrade_target->old_format);
+        const auto new_format_bit_depth = reshade::api::format_bit_depth(destination_info->upgrade_target->new_format);
 
-  return true;
+        // Avoid division by 0
+        if (old_format_bit_depth != 0 && new_format_bit_depth != 0) {
+          const auto bit_depth_ratio = new_format_bit_depth / old_format_bit_depth;
+
+          if (bit_depth_ratio > 1) {
+            constexpr auto shader_device_usages = reshade::api::resource_usage::shader_resource | reshade::api::resource_usage::unordered_access | reshade::api::resource_usage::acceleration_structure;
+            constexpr auto copy_usages = reshade::api::resource_usage::copy_dest | reshade::api::resource_usage::copy_source;
+
+            source_info->clone_enabled = true;
+            source_info->desc.buffer.size *= bit_depth_ratio;
+            const auto original_usage = source_info->desc.usage;
+            // These usages add VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT to our clone, which error vma
+            source_info->desc.usage = renodx::utils::bitwise::UnsetFlag(source_info->desc.usage, shader_device_usages);
+            // Need these flags to copy to and from buffer
+            source_info->desc.usage = renodx::utils::bitwise::SetFlag(source_info->desc.usage, copy_usages);
+
+            auto source_clone = GetResourceClone(source_info);
+            source_info->desc.buffer.size /= bit_depth_ratio;
+            source_info->desc.usage = original_usage;
+          }
+        }
+      }
+
+      if (source_info->clone.handle == 0u) return false;
+      constexpr auto offset = 0;
+      cmd_list->copy_buffer_region(source, offset, source_info->clone, offset, source_info->desc.buffer.size);
+
+      cmd_list->copy_buffer_to_texture(source_info->clone, source_offset, row_length, slice_height, dest, dest_subresource, dest_box);
+
+#ifdef DEBUG_LEVEL_0
+      std::stringstream s;
+      s << "mods::swapchain::OnCopyBufferToTexture(Redirecting VK Buffer to clone ";
+      s << PRINT_PTR(source.handle);
+      s << " => " << PRINT_PTR(source_info->clone.handle);
+      s << ", source buffer size: " << source_info->desc.buffer.size << " => " << source_info->clone_desc.buffer.size;
+      s << ", dest texture format: " << destination_info->upgrade_target->old_format << " => " << destination_info->upgrade_target->new_format;
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+#endif
+      return true;
+    }
+    return false;
+  }
 }
 
 inline bool OnCreateResourceView(
@@ -2316,14 +2512,22 @@ inline bool OnCreateResourceView(
   if (device == proxy_device_reshade) return false;
   bool expected = false;
   bool found_upgrade = false;
+  bool is_vulkan = device->get_api() == reshade::api::device_api::vulkan;
 
   utils::resource::ResourceInfo* resource_info = nullptr;
   reshade::api::resource_view_desc current_desc = desc;
-  if (desc.type == reshade::api::resource_view_type::unknown) {
+
+  if (desc.type == reshade::api::resource_view_type::unknown || (is_vulkan && desc.type == reshade::api::resource_view_type::buffer)) {
     resource_info = utils::resource::GetResourceInfo(resource);
     if (resource_info == nullptr) return false;
     current_desc = utils::resource::PopulateUnknownResourceViewDesc(device, desc, usage_type, resource_info);
   }
+
+  // Adjust usage_info from undefined so it actually upgrades format
+#ifdef DEBUG_LEVEL_1
+  auto old_usage_type = usage_type;
+#endif
+
   switch (current_desc.type) {
     case reshade::api::resource_view_type::texture_1d:
     case reshade::api::resource_view_type::texture_1d_array:
@@ -2334,15 +2538,39 @@ inline bool OnCreateResourceView(
     case reshade::api::resource_view_type::texture_3d:
     case reshade::api::resource_view_type::texture_cube:
     case reshade::api::resource_view_type::texture_cube_array:
+      if (is_vulkan) {
+        // Images either have cpu_access or undefined usage only,
+        // isn't returned to reshade so doesn't matter.
+        if (usage_type == reshade::api::resource_usage::undefined) {
+          usage_type = reshade::api::resource_usage::render_target;
+        }
+      }
       break;
+    case reshade::api::resource_view_type::buffer:
+      if (is_vulkan) {
+        if (usage_type == reshade::api::resource_usage::undefined) {
+          usage_type = resource_info->desc.usage;
+        }
+        break;
+      };
+      return false;
     case reshade::api::resource_view_type::unknown:
       assert(false);
     default:
     case reshade::api::resource_view_type::acceleration_structure:
-    case reshade::api::resource_view_type::buffer:
-
       return false;
   }
+
+#ifdef DEBUG_LEVEL_1
+  if (old_usage_type != usage_type) {
+    std::stringstream s;
+    s << "mods::swapchain::OnCreateResourceView(Override usage type";
+    s << ", resource: " << PRINT_PTR(resource.handle);
+    s << ", usage: " << old_usage_type << " => " << usage_type;
+    s << ")";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+  }
+#endif
 
   utils::resource::ResourceInfo temp_resource_info = {};
   if (resource_info == nullptr) {
@@ -2380,7 +2608,7 @@ inline bool OnCreateResourceView(
       s << ", type: " << current_desc.type;
       s << ")";
       reshade::log::message(reshade::log::level::warning, s.str().c_str());
-      assert(current_desc.format != reshade::api::format::unknown);
+      // assert(current_desc.format != reshade::api::format::unknown);
       return false;
     }
   }
@@ -2428,7 +2656,7 @@ inline bool OnCreateResourceView(
             found_upgrade = true;
             break;
           default:
-            if (renodx::utils::resource::IsCompressible(current_desc.format, resource_desc.texture.format)) {
+            if (is_vulkan || renodx::utils::resource::IsCompressible(current_desc.format, resource_desc.texture.format)) {
               break;
             }
             std::stringstream s;
@@ -3109,14 +3337,55 @@ static void OnBeginRenderPass(
 
   auto* new_rts = ApplyRenderTargetClones(rts, count);
   if (new_rts == nullptr) return;
-  cmd_list->end_render_pass();
-  cmd_list->begin_render_pass(count, new_rts, ds);
+
+  const bool is_vk = cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan;
+
+  if (is_vk) {
+    // Vulkan hasn't called begin pass by this point so we move logic to endPass
+    local_render_target_pass_state.emplace();
+
+    local_render_target_pass_state.value().original_rt_count = count;
+    local_render_target_pass_state.value().original_ds = ds != nullptr ? *ds : reshade::api::render_pass_depth_stencil_desc{};
+    local_render_target_pass_state.value().modified_rts.assign(new_rts, new_rts + count);
+
+#ifdef DEBUG_LEVEL_1
+    std::stringstream s;
+    s << "mods::swapchain::OnBeginRenderPass(";
+    s << "(Vulkan) copying render pass info: ";
+    s << "count: " << local_render_target_pass_state.value().original_rt_count;
+    s << ");";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+#endif
+  } else {
+    cmd_list->end_render_pass();
+    cmd_list->begin_render_pass(count, new_rts, ds);
+  }
   free(new_rts);
 }
 
 static void OnEndRenderPass(reshade::api::command_list* cmd_list) {
   auto* cmd_list_data = renodx::utils::data::Get<CommandListData>(cmd_list);
   if (cmd_list_data == nullptr) return;
+
+  const bool is_vk = cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan;
+
+  if (is_vk) {
+    if (local_render_target_pass_state.has_value()) {
+      auto& local_state = *local_render_target_pass_state;
+      cmd_list->end_render_pass();
+      cmd_list->begin_render_pass(local_state.original_rt_count, local_state.modified_rts.data(), &local_state.original_ds);
+      local_render_target_pass_state.reset();
+#ifdef DEBUG_LEVEL_1
+      std::stringstream s;
+      s << "mods::swapchain::OnEndRenderPass(";
+      s << "(Vulkan) begin new render pass based on copy: ";
+      s << "count: " << local_state.original_rt_count;
+      s << ");";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+#endif
+      return;
+    }
+  }
   cmd_list_data->pass_count--;
 }
 
@@ -3400,7 +3669,7 @@ inline bool OnCopyTextureRegion(
 
   reshade::log::message(reshade::log::level::warning, s.str().c_str());
 
-  assert(false);
+  // assert(false);
 
   if (cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan) {
     // perform blit
@@ -3618,7 +3887,7 @@ static void Use(DWORD fdw_reason, T* new_injections = nullptr) {
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
       reshade::register_event<reshade::addon_event::destroy_swapchain>(OnDestroySwapchain);
 
-      // reshade::register_event<reshade::addon_event::create_pipeline>(on_create_pipeline);
+      // reshade::register_event<reshade::addon_event::create_pipeline>(OnCreatePipeline);
       reshade::register_event<reshade::addon_event::create_resource>(OnCreateResource);
       reshade::register_event<reshade::addon_event::create_resource_view>(OnCreateResourceView);
 
@@ -3632,6 +3901,8 @@ static void Use(DWORD fdw_reason, T* new_injections = nullptr) {
       reshade::register_event<reshade::addon_event::resolve_texture_region>(OnResolveTextureRegion);
 
       reshade::register_event<reshade::addon_event::copy_texture_region>(OnCopyTextureRegion);
+      reshade::register_event<reshade::addon_event::copy_buffer_to_texture>(OnCopyBufferToTexture);
+      // TODO(Ritsu): Clone render passes?
 
       if (use_resource_cloning) {
         reshade::register_event<reshade::addon_event::init_command_list>(OnInitCommandList);
@@ -3649,7 +3920,7 @@ static void Use(DWORD fdw_reason, T* new_injections = nullptr) {
         reshade::register_event<reshade::addon_event::clear_unordered_access_view_float>(OnClearUnorderedAccessViewFloat);
 
         reshade::register_event<reshade::addon_event::barrier>(OnBarrier);
-        reshade::register_event<reshade::addon_event::copy_buffer_to_texture>(OnCopyBufferToTexture);
+        // reshade::register_event<reshade::addon_event::copy_buffer_to_texture>(OnCopyBufferToTexture);
 
         if (!swap_chain_proxy_pixel_shader.empty() || !swap_chain_proxy_shaders.empty()) {
           // Create swapchain proxy
@@ -3683,8 +3954,7 @@ static void Use(DWORD fdw_reason, T* new_injections = nullptr) {
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
       reshade::unregister_event<reshade::addon_event::destroy_swapchain>(OnDestroySwapchain);
 
-      // reshade::register_event<reshade::addon_event::create_pipeline>(on_create_pipeline);
-
+      // reshade::unregister_event<reshade::addon_event::create_pipeline>(OnCreatePipeline);
       reshade::unregister_event<reshade::addon_event::create_resource>(OnCreateResource);
       reshade::unregister_event<reshade::addon_event::create_resource_view>(OnCreateResourceView);
 

@@ -462,6 +462,14 @@ static bool ChangeColorSpace(reshade::api::swapchain* swapchain, reshade::api::c
     swapchain4 = nullptr;
   } else {
     // Vulkan ???
+    if (swapchain->get_color_space() == color_space) return false;  // Already desired colorspace
+    if (swapchain->check_color_space_support(color_space)) {
+    } else {
+      std::stringstream s;
+      s << "renodx::utils::swapchain::ChangeColorSpace(Unsupported Vulkan color space)";
+      reshade::log::message(reshade::log::level::warning, s.str().c_str());
+      return false;
+    }
   }
 
   auto* device = swapchain->get_device();
