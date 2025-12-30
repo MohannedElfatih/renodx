@@ -2509,7 +2509,7 @@ inline bool OnCreateResourceView(
       s << ", type: " << current_desc.type;
       s << ")";
       reshade::log::message(reshade::log::level::warning, s.str().c_str());
-      assert(current_desc.format != reshade::api::format::unknown);
+      // assert(current_desc.format != reshade::api::format::unknown);
       return false;
     }
   }
