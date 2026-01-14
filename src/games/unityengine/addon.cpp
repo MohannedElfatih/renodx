@@ -1047,6 +1047,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x74B19CB7),
     UberGammaOnDraw(0x1666FB47),
     UberGammaOnDraw(0x278DE973),
+    UberGammaOnDraw(0xB6BE8953),
         // Neutral
     UberNeutralLinearOnDraw(0x0B383A2F),
     UberNeutralGammaOnDraw(0x0EA73DAA),
@@ -1124,6 +1125,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESLinearOnDraw(0x42A50C71),
     UberACESLinearOnDraw(0x60B48ADF),
     UberACESLinearOnDraw(0x0DE9EBCF),
+    UberACESLinearOnDraw(0x1B8038E6),
     UberACESLinearOnDraw(0x9BF686BC),
     UberACESLinearOnDraw(0xE5C37261),
     UberACESLinearOnDraw(0x7B4E81D3),
@@ -1154,6 +1156,8 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0x1E7FFDBB),
     UberHDLinearOnDraw(0x1E832EAE),
 	  UberHDLinearOnDraw(0x1E66576A),
+    UberHDGammaOnDraw(0x2BD1D620),
+    UberHDGammaOnDraw(0x2DD1178D),
 	  UberHDLinearOnDraw(0x2E10432D),
 	  UberHDLinearOnDraw(0x02E86441),
     UberHDLinearOnDraw(0x3F8E8017),
@@ -1178,6 +1182,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0x7E2F585E),
 	  UberHDLinearOnDraw(0x07E6710E),
     UberHDLinearOnDraw(0x7EE888FF),
+    UberHDGammaOnDraw(0x8FF6134C),
 	  UberHDLinearOnDraw(0x9B813389),
 	  UberHDLinearOnDraw(0x9CFC6AFA),
 	  UberHDLinearOnDraw(0x9DF20CC3),
@@ -1198,6 +1203,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0x721D4F40),
 	  UberHDLinearOnDraw(0x0733A496),
 	  UberHDGammaOnDraw(0x778CFAC9),
+    UberHDGammaOnDraw(0x868D8699),
 	  UberHDLinearOnDraw(0x2781E558),
 	  UberHDLinearOnDraw(0x2998DD23),
 	  UberHDLinearOnDraw(0x3087C1DD),
@@ -1221,6 +1227,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0xADCCB7BB),
 	  UberHDLinearOnDraw(0xADFD88AD),
 	  UberHDLinearOnDraw(0xAE047DF6),
+    UberHDGammaOnDraw(0xAEE6F24B),
 	  UberHDLinearOnDraw(0xB8D14E32),
 	  UberHDLinearOnDraw(0xB39F3D8A),
 	  UberHDGammaOnDraw(0xB82B9879),
@@ -1255,6 +1262,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDGammaOnDraw(0x3BB091D1),
     UberHDGammaOnDraw(0x6FC5EBBD),
     UberHDGammaOnDraw(0x21E04E36),
+    UberHDGammaOnDraw(0x24A850DA),
     UberHDLinearOnDraw(0x29B597F9),
     UberHDGammaOnDraw(0x4424716A),
     UberHDGammaOnDraw(0xF0DB2F63),
@@ -1274,7 +1282,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x700A4C32, &Count),    // ShaderGraphs ScreenFxShader
     CustomShaderEntryCallback(0x2D1C3A64, &Count),    // Beat Saber Main effect
     CustomShaderEntryCallback(0x07FD3D55, &CountLinearTonemap1),   // Neva
-    CustomShaderEntryCallback(0xECED3960, &CountLinearTonemap1),    // PostProcess
+    CustomShaderEntryCallback(0xECED3960, &CountTonemap1),    // PostProcess
     CustomShaderEntryCallback(0xB0E8A766, &CountLinearTonemap1),    // PostProcess
     //CustomShaderEntry(0x144BC65C),
     CustomShaderEntryCallback(0x4C1E450F, &Count),    // RetroPixelPro
@@ -1330,6 +1338,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     shader_injection.isClamped = 1.f;
     return true;
     }),
+    CustomShaderEntryCallback(0x3BB46D74, &CountTonemap1),  // MK Glow SM40
     /*CustomShaderEntry(0x6CA6AD34),  // FinalVisualAdjustments
     CustomShaderEntry(0x3D4B34E8),*/
     //CustomShaderEntry(0x25AD4F0D),
@@ -1461,6 +1470,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0xD70AE6DF, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0xA298CF0E, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0xDC3C3CFB, &CountLinearTonemap1Clamped),
+    CustomShaderEntryCallback(0x5B553876, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0x6CB18C43, &CountLinearTonemap2),
     CustomShaderEntryCallback(0x7C3F36C2, &CountLinear),
     CustomShaderEntryCallback(0x97B3FC51, &GammaClamped),
@@ -1550,6 +1560,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberPFXLinearOnDraw(0x76E8C9E0),
     UberPFXGammaOnDraw(0x082D188C),
     UberPFXLinearOnDraw(0x93F0A8E4),
+    UberPFXLinearOnDraw(0x99D271BE),
     UberPFXLinearOnDraw(0x100B5477),
     UberPFXGammaOnDraw(0x186D7E4F),
     UberPFXLinearOnDraw(0x291E8F1F),
@@ -1591,8 +1602,10 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberPFXLinearOnDraw(0xB48DB980),
     UberPFXLinearOnDraw(0xB5617B06),
     UberPFXLinearOnDraw(0xBACB2204),
+    UberPFXLinearOnDraw(0xC0C13C33),
     UberPFXLinearOnDraw(0xC3EA0270),
     UberPFXLinearOnDraw(0xC8D99279),
+    UberPFXLinearOnDraw(0xC987FCF3),
     UberPFXLinearOnDraw(0xCACDD22E),
     UberPFXLinearOnDraw(0xCDEB8FA1),
     UberPFXLinearOnDraw(0xD2C3B7E9),
@@ -1680,6 +1693,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x4A9DC131),
     UberLinearOnDraw(0x4B0DE7CD),
     UberLinearOnDraw(0x4B3614D0),
+    UberLinearOnDraw(0x4FCB780B),
+    UberLinearOnDraw(0x5C5C0415),
     UberGammaOnDraw(0x05D7FD3F),
     UberGammaOnDraw(0x5ED6AF8F),
     UberGammaOnDraw(0x6A2FFE0C),
@@ -1701,6 +1716,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x485D45AC),
     UberGammaOnDraw(0x703FCC89),
     UberGammaOnDraw(0x0731C889),
+    UberGammaOnDraw(0x821B9FB1),
     UberLinearOnDraw(0x937ECFDB),
     UberLinearOnDraw(0x1082E750),
     UberGammaOnDraw(0x1237D610),
@@ -1721,9 +1737,11 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x378482BA),
     UberGammaOnDraw(0x15621136),
     UberGammaOnDraw(0x70157207),
+    UberGammaOnDraw(0xA21B6CD5),
     UberGammaOnDraw(0xAC23ED8C),
     UberLinearOnDraw(0xB1A3409D),
     UberGammaOnDraw(0xB5D55000),
+    UberGammaOnDraw(0xB7AC8C16),
     UberGammaOnDraw(0xB339A072),
     UberGammaOnDraw(0xB811DE51),
     UberGammaOnDraw(0xBB6740C1),
@@ -2105,6 +2123,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     ////// LUTBUILDER START //////
       /// 2D Baker ///
     Builder1OnDraw(0x6BA3776A),
+    Builder1OnDraw(0x67A66D2D),
     Builder1OnDraw(0xDE54BEC4),  // TLD merger
         // user LUT
     Builder1OnDraw(0x425A05B0),
@@ -2122,6 +2141,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     Builder2OnDraw(0xBE750C14),
     Builder2OnDraw(0xC0683CB5),
     Builder2OnDraw(0xB79884AA),
+    Builder2OnDraw(0xFF0BEDB7),
         // ACES
     Builder3OnDraw(0x0D6DE82C),
     Builder3OnDraw(0x5B6D435F),
@@ -2153,7 +2173,11 @@ const ShaderItem INITIAL_SHADERS[] = {
     finalBlitCheck = renodx::utils::swapchain::HasBackBufferRenderTarget(cmd_list);
     return renodx::utils::swapchain::HasBackBufferRenderTarget(cmd_list);
     }),
-    UpgradeRTVShader(0xD1DBB0E2),
+    // LIS BtS Remaster
+    UpgradeRTVShader(0xD1DBB0E2), // FXAA
+    UpgradeRTVShader(0x3F2260DA), // Sunshafts Composite
+    UpgradeRTVShader(0x82ABB5A1), // Sunshafts Composite
+    UpgradeRTVShader(0x71A08591), // PostFX DoF
     //CustomSwapchainShader(0x20133A8B),
 };
 
@@ -2797,20 +2821,6 @@ void AddLISBtSUpgrades() {
           .use_resource_view_cloning = true,
           .use_resource_view_hot_swap = true,
       });
-      /*renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
-          .old_format = reshade::api::format::r8g8b8a8_typeless,
-          .new_format = reshade::api::format::r16g16b16a16_typeless,
-          .index = 4,
-          .ignore_size = false,
-          .usage_include = reshade::api::resource_usage::render_target,
-      });
-      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
-          .old_format = reshade::api::format::r8g8b8a8_typeless,
-          .new_format = reshade::api::format::r16g16b16a16_typeless,
-          .index = 11,
-          .ignore_size = false,
-          .usage_include = reshade::api::resource_usage::render_target,
-      });*/
 }
 
 void AddSmolInternalLutUpgrade() {
@@ -2830,6 +2840,7 @@ void AddGamePatches() {
     AddTGTFoAUpgrades();
   } else if (filename == "Life is Strange - Before the Storm.exe") {
     AddLISBtSUpgrades();
+    shader_injection.isClamped = 2.f;
   } else if (filename == "TheEternalDie.exe") {
     AddLiRTEDUpgrades();
   } else if (filename == "Tales of Xillia Remastered.exe" || filename == "CONSTANCE.exe") {
@@ -2838,7 +2849,8 @@ void AddGamePatches() {
     || filename == "nslt.exe" || filename == "AuRevoir.exe" || filename == "ShootasBloodAndTeef.exe"
   || filename == "Copycat.exe" || filename == "Make Way.exe" || filename == "Digimon World Next Order.exe"
   || filename == "Quern.exe" || filename == "reverse1999.exe" || filename == "NineSols.exe" || filename == "Distance.exe"
-  || filename == "SlimeRancher.exe" || filename == "Source of Madness.exe" || filename == "Stirring Abyss.exe"){
+  || filename == "SlimeRancher.exe" || filename == "Source of Madness.exe" || filename == "Stirring Abyss.exe"
+  || filename == "thief.exe" || filename == "STASIS2.exe"){
     shader_injection.isClamped = 2.f;
     } else if(filename == "It Steals.exe"){
     shader_injection.isClamped = 3.f;
@@ -3175,6 +3187,7 @@ const std::unordered_map<
             "SlimeRancher.exe",
             {
                 {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_ANY},
+                {"Swapchain_Encoding", 1.f},
             },
         },
         {

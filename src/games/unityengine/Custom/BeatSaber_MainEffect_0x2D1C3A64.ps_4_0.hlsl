@@ -1,4 +1,4 @@
-#include "../common.hlsl"
+#include "../tonemap.hlsl"
 
 Texture2D<float4> t2 : register(t2);
 Texture2D<float4> t1 : register(t1);
@@ -46,9 +46,16 @@ void main(
   o0.w = r4.w;
   r0.xyz = r1.xyz + r0.xyz;
   o0.xyz = cb0[6].xxx * r0.xyz;
+  if(injectedData.gammaSpace != 0.f){
+    o0.xyz = renodx::color::srgb::DecodeSafe(o0.xyz);
+  }
+  if (injectedData.tonemapCheck == 1.f && (injectedData.count2Old == injectedData.count2New)) {
+    o0.xyz = applyUserNoTonemap(o0.xyz);
+  }
   if (injectedData.countOld == injectedData.countNew) {
-    o0.xyz = injectedData.gammaSpace != 0.f ? renodx::color::srgb::DecodeSafe(o0.xyz) : o0.xyz;
     o0.xyz = PostToneMapScale(o0.xyz, injectedData.gammaSpace != 0.f);
+  } else if (injectedData.gammaSpace != 0.f){
+    o0.xyz = renodx::color::srgb::EncodeSafe(o0.xyz);
   }
   return;
 }
