@@ -810,6 +810,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     SneakyBuilder3OnDraw(0x3917A841),
     SneakyBuilder3OnDraw(0x6811A33B),
     SneakyBuilder3OnDraw(0xF5AC76A9),
+    SneakyBuilder3OnDraw(0x56369810),
+
         // Custom
     SneakyBuilder2OnDraw(0x3B4291E8),
     SneakyBuilder2OnDraw(0x7D343D34),
