@@ -47,11 +47,16 @@ void main(
   r0.xyz = log2(r0.xyz);
   r0.xyz = cb0[20].xxx * r0.xyz;
   o0.xyz = exp2(r0.xyz);
+  if(injectedData.gammaSpace != 0.f){
+    o0.xyz = renodx::color::srgb::DecodeSafe(o0.xyz);
+  }
   if (injectedData.tonemapCheck == 1.f && (injectedData.count2Old == injectedData.count2New)) {
     o0.xyz = applyUserNoTonemap(o0.xyz);
   }
   if (injectedData.countOld == injectedData.countNew) {
-    o0.xyz = PostToneMapScale(o0.xyz);
+    o0.xyz = PostToneMapScale(o0.xyz, injectedData.gammaSpace != 0.f);
+  } else if(injectedData.gammaSpace != 0.f) {
+    o0.xyz = renodx::color::srgb::EncodeSafe(o0.xyz);
   }
   o0.w = 1;
   return;
