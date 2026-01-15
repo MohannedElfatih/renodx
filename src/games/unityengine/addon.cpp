@@ -1285,7 +1285,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x2D1C3A64, &Count),    // Beat Saber Main effect
     CustomShaderEntryCallback(0x07FD3D55, &CountLinearTonemap1),   // Neva
     CustomShaderEntryCallback(0xECED3960, &CountTonemap1),    // PostProcess
-    CustomShaderEntryCallback(0xB0E8A766, &CountLinearTonemap1),    // PostProcess
+    CustomShaderEntryCallback(0xB0E8A766, &CountTonemap1),    // PostProcess
     //CustomShaderEntry(0x144BC65C),
     CustomShaderEntryCallback(0x4C1E450F, &Count),    // RetroPixelPro
     CustomShaderEntryCallback(0x918C7E0C, &Count),    // ScreenRender
