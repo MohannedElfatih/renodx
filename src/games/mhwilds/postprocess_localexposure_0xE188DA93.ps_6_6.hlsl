@@ -640,7 +640,6 @@ float4 main(
       }
       // This section in local FOR SURE
       float4 _956 = RE_POSTPROCESS_Color.Sample(BilinearBorder, float2(_952, _953));
-      SV_Target.rgb = float3(1, 1, 2);
 
       // Here
       if (!((uint)(useAutoExposure) == 0)) {
@@ -673,8 +672,6 @@ float4 main(
       _1461 = 1.0f;
     } else {
       // This section in local FOR SURE
-      SV_Target.rgb = float3(1, 1, 1);
-
       float _1031 = screenInverseSize.x * SV_Position.x;
       float _1032 = screenInverseSize.y * SV_Position.y;
       if (!_58) {

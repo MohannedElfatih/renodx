@@ -58,6 +58,7 @@ float3 CustomLUTColor(float3 ap1_input, float3 ap1_output) {
 
 void CustomVignette(inout float vignette) {
   vignette = lerp(1.f, vignette, CUSTOM_VIGNETTE);
+  vignette = 1.f;
 }
 
 float3 UpgradeWithSDR(float3 untonemapped_bt709, float3 tonemapped_bt709) {

@@ -26,30 +26,30 @@ namespace {
 
 ShaderInjectData shader_injection;
 
-#define RareExposureShaderEntry(value)                            \
-  {                                                               \
-    value,                                                        \
-        {                                                         \
-            .crc32 = value,                                       \
-            .code = __##value,                                    \
-            .on_draw = [](auto cmd_list) {                        \
-              shader_injection.custom_exposure_shader_draw = 1.f; \
-              return true;                                        \
-            },                                                    \
-        },                                                        \
+#define RareExposureShaderEntry(value)                          \
+  {                                                             \
+      value,                                                    \
+      {                                                         \
+          .crc32 = value,                                       \
+          .code = __##value,                                    \
+          .on_draw = [](auto cmd_list) {                        \
+            shader_injection.custom_exposure_shader_draw = 1.f; \
+            return true;                                        \
+          },                                                    \
+      },                                                        \
   }
 
-#define TypicalExposureShaderEntry(value)                         \
-  {                                                               \
-    value,                                                        \
-        {                                                         \
-            .crc32 = value,                                       \
-            .code = __##value,                                    \
-            .on_drawn = [](auto cmd_list) {                       \
-              shader_injection.custom_exposure_shader_draw = 0.f; \
-              return true;                                        \
-            },                                                    \
-        },                                                        \
+#define TypicalExposureShaderEntry(value)                       \
+  {                                                             \
+      value,                                                    \
+      {                                                         \
+          .crc32 = value,                                       \
+          .code = __##value,                                    \
+          .on_drawn = [](auto cmd_list) {                       \
+            shader_injection.custom_exposure_shader_draw = 0.f; \
+            return true;                                        \
+          },                                                    \
+      },                                                        \
   }
 
 renodx::mods::shader::CustomShaders custom_shaders = {
@@ -72,6 +72,7 @@ renodx::mods::shader::CustomShaders custom_shaders = {
     TypicalExposureShaderEntry(0x89476799),
     TypicalExposureShaderEntry(0xF06499FE),
     TypicalExposureShaderEntry(0x8CAFE864),
+    TypicalExposureShaderEntry(0x441E59B3),
 
     // Exposure
     RareExposureShaderEntry(0x4905680A),
@@ -98,8 +99,7 @@ renodx::mods::shader::CustomShaders custom_shaders = {
               return false;
             },
         },
-    },
-};
+    }};
 
 const std::string build_date = __DATE__;
 const std::string build_time = __TIME__;

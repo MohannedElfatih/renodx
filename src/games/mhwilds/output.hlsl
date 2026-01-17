@@ -115,7 +115,7 @@ float4 OutputTonemap(noperspective float4 SV_Position: SV_Position,
       lut_peak = renodx::color::y::from::BT709(lut_peak.xxx);
 
       // midgray (in/out) controls midtones brightness
-      vanillaSDR = renodx::tonemap::ReinhardScalable(vanillaSDR, lut_peak, 0.f, lut_mid_gray, vanilla_sdr_midgray);  // slightly decrease output midgray to add dynamic range
+      vanillaSDR = renodx::tonemap::ReinhardScalable(vanillaSDR, lut_peak, 0.f, lut_mid_gray, vanilla_sdr_midgray * CUSTOM_VIGNETTE);  // slightly decrease output midgray to add dynamic range
     }
 
     float3 sdr_lut = PrepareLutInput(vanillaSDR);
