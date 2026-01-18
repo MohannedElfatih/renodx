@@ -15,7 +15,7 @@
   const float displayMaxNitSubContrastFactor = 9.4525f;
 */
 float3 VanillaSDRTonemapper(float3 color, bool is_sdr = false) {
-  color = renodx::color::bt709::clamp::BT709(color);  // Deal with AP1 shenanigans
+  // color = renodx::color::bt709::clamp::BT709(color);  // Deal with AP1 shenanigans
 
   float invLinearBegin = 20.f;
   float linearBegin = 0.05f;
@@ -30,13 +30,22 @@ float3 VanillaSDRTonemapper(float3 color, bool is_sdr = false) {
 
   if (RENODX_TONE_MAP_TYPE > 0.f) {
     if (is_sdr) {
-      contrast = 0.3f;
+      // contrast = 0.3f;
       madLinearStartContrastFactor = 0.f;
-      toe = 1.2f;
+      // toe = 1.2f;
+
+      madLinearStartContrastFactor = 0;
     } else {
-      contrast = 0.72f;
-      madLinearStartContrastFactor = 0.f;
-      toe = 1.2f;
+      float contrastScale = lerp(0.3f, 0.72f, saturate(CUSTOM_VIGNETTE * 0.5f));
+      contrast = 0.5f; // Value outta my ass
+      toe = 2.f;
+
+      // madLinearStartContrastFactor = 0.f;
+      float madLinearStartContrastFactorScale = lerp(0.1f, 0.005f, saturate(CUSTOM_VIGNETTE * 0.5f));
+      madLinearStartContrastFactor = -madLinearStartContrastFactorScale;
+      
+      maxNit = 100.f;
+      linearStart = 100.f;
     }
   }
 
@@ -79,4 +88,32 @@ float3 VanillaSDRTonemapper(float3 color, bool is_sdr = false) {
   color.b = ((((((contrast)*color.b) + (madLinearStartContrastFactor)) * (_2699 - _2710)) + (((exp2(((log2(_2691)) * (toe)))) * (1.0f - _2699)) * (linearBegin))) + (((maxNit) - ((exp2((((contrastFactor)*color.b) + (mulLinearStartContrastFactor)))) * (displayMaxNitSubContrastFactor))) * _2710));
 
   return color;
+}
+
+float3 ExponentialRollOffByLum(float3 color, float output_luminance_max, float highlights_shoulder_start = 0.f) {
+  const float source_luminance = renodx::color::y::from::BT709(color);
+
+  [branch]
+  if (source_luminance > 0.0f) {
+    const float compressed_luminance = renodx::tonemap::ExponentialRollOff(source_luminance, highlights_shoulder_start, output_luminance_max);
+    color *= compressed_luminance / source_luminance;
+  }
+
+  return color;
+}
+
+float3 ApplyExponentialRollOff(float3 color) {
+  const float paperWhite = RENODX_DIFFUSE_WHITE_NITS / renodx::color::srgb::REFERENCE_WHITE;
+
+  const float peakWhite = RENODX_PEAK_WHITE_NITS / renodx::color::srgb::REFERENCE_WHITE;
+
+  // const float highlightsShoulderStart = paperWhite;
+  const float highlightsShoulderStart = 1.f;
+
+  [branch]
+  if (RENODX_TONE_MAP_PER_CHANNEL == 0.f) {
+    return ExponentialRollOffByLum(color * paperWhite, peakWhite, highlightsShoulderStart) / paperWhite;
+  } else {
+    return renodx::tonemap::ExponentialRollOff(color * paperWhite, highlightsShoulderStart, peakWhite) / paperWhite;
+  }
 }

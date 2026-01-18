@@ -210,11 +210,10 @@ cbuffer CBControl : register(b6) {
     float InvMagentaSTerm;
     float InvYellowSTerm;
     float InvRollOff;
-  } cbControlRGCParam:
+  }
+cbControlRGCParam:
   packoffset(c005.x);
 };
-
-
 
 SamplerState PointClamp : register(s1, space32);
 

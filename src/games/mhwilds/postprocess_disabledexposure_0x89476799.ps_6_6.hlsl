@@ -189,6 +189,7 @@ float4 main(
     } else {
       _229 = 1.0f;
     }
+
     float _238 = select((_193 < linearStart), 0.0f, 1.0f);
     float _239 = select((_194 < linearStart), 0.0f, 1.0f);
     float _240 = select((_195 < linearStart), 0.0f, 1.0f);
@@ -200,6 +201,7 @@ float4 main(
     _301 = _194;
     _302 = _195;
   }
+  
   SV_Target.x = _300;
   SV_Target.y = _301;
   SV_Target.z = _302;

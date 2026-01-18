@@ -92,10 +92,26 @@ float4 OutputTonemap(noperspective float4 SV_Position: SV_Position,
     float mid_gray_value = 0.18f;
     float vanilla_sdr_midgray = renodx::color::y::from::BT709(VanillaSDRTonemapper(mid_gray_value.xxx, is_sdr));  // Lower brightness by midgray                                                                                                                                                                                       // But not too much lol
 
-    float scaling = 1.f / 4.5f;  // Game's too bright
-    if (is_sdr) {
-      scaling = 1.f / 1.f;  // SDR has different exposure
-    }
+    // The lower the scaling, the higher the brightness boost (0.25f is brighter than 0.75f)
+    float scaling = 1.f;  // minimum scaling
+    // scaling = 0.5f;
+    // float lum = renodx::color::y::from::BT709(untonemapped);
+    // float low = 0.1f;  // below this, no change
+    // float k = 0.2f;    // knee strength
+    // float x = max(lum - low, 0.0f);
+    // float t = x / (x + k);  // Reinhard
+    // scaling = lerp(scaling, 1.f, t);
+    // if (CUSTOM_SHARPNESS > 0.f) {
+    //   float lum = renodx::color::y::from::BT709(untonemapped);
+    //   float low = 0.f;  // below this, no change
+    //   float k = 0.2f;    // knee strength
+    //   float x = max(lum - low, 0.0f);
+    //   float t = x / (x + k);  // Reinhard
+    //   scaling = lerp(0.25f, scaling, t);
+    // } else {
+    //   scaling = 1.f;  // SDR has different exposure
+    // }
+
     untonemapped_graded = untonemapped;
     untonemapped_graded *= scaling;
 
@@ -115,7 +131,7 @@ float4 OutputTonemap(noperspective float4 SV_Position: SV_Position,
       lut_peak = renodx::color::y::from::BT709(lut_peak.xxx);
 
       // midgray (in/out) controls midtones brightness
-      vanillaSDR = renodx::tonemap::ReinhardScalable(vanillaSDR, lut_peak, 0.f, lut_mid_gray, vanilla_sdr_midgray * CUSTOM_VIGNETTE);  // slightly decrease output midgray to add dynamic range
+      // vanillaSDR = renodx::tonemap::ReinhardScalable(vanillaSDR, lut_peak, 0.f, lut_mid_gray, vanilla_sdr_midgray * CUSTOM_VIGNETTE);  // slightly decrease output midgray to add dynamic range
     }
 
     float3 sdr_lut = PrepareLutInput(vanillaSDR);
@@ -140,18 +156,27 @@ float4 OutputTonemap(noperspective float4 SV_Position: SV_Position,
       vanilla_sdr_midgray *= 1.f;  // Controls highlights
 
       lut_config.scaling = CUSTOM_LUT_SCALING;  // 1.f is too harsh
-      float3 hdr_lut = PrepareLutInput(untonemapped * vanilla_sdr_midgray);
-      hdr_lut = renodx::lut::Sample(SrcLUT, lut_config, hdr_lut);
-      hdr_lut = DecodeLutOutput(hdr_lut, is_sdr);
+      float3 hdr_lut = untonemapped;
+      if (CUSTOM_SHARPNESS > 0.f) {
+        hdr_lut = VanillaSDRTonemapper(hdr_lut);
+      } else {
+        // hdr_lut = PrepareLutInput(untonemapped);
+        // hdr_lut = renodx::lut::Sample(SrcLUT, lut_config, hdr_lut);
+        // hdr_lut = DecodeLutOutput(hdr_lut, is_sdr);
+      }
 
-      output_color = renodx::draw::ToneMapPass(hdr_lut, sdr_lut);
-      // output_color = hdr_lut;
+      // output_color = renodx::draw::ToneMapPass(hdr_lut, sdr_lut);
+      output_color = hdr_lut;
     }
 
     renodx::draw::Config swapchainConfig = renodx::draw::BuildConfig();
 
     // Scale back at the end
     output_color *= 1.f / scaling;
+    // output_color = renodx::draw::ToneMapPass(output_color);
+    output_color = ApplyExponentialRollOff(output_color);
+
+    output_color = renodx::color::correct::GamutCompress(output_color);
 
     if (is_sdr) {
       swapchainConfig.swap_chain_gamma_correction = 0.f;
