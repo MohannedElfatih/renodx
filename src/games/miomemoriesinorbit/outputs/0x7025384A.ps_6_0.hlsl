@@ -1,0 +1,892 @@
+#include "../shared.h"
+
+struct Lod_params {
+  struct Lod_brush_params {
+    float4 brush_uv[4];
+    float base_radius;
+    float radius_variation;
+    float radius_random;
+    float blur;
+    float alpha;
+    float stretch;
+  } brushes;
+  struct Lod_noise_params {
+    float chaos;
+    float freq;
+    float brightness;
+    float saturation;
+    float hue;
+  } noise;
+  struct Lod_outlines_params {
+    float2 thickness;
+    float2 softness;
+    float2 displacement;
+    float2 attenuation;
+    float lighting_threshold;
+    float lighting_threshold_softness;
+    float2 lighting_dark;
+    float2 lighting_bright;
+    float2 discretion;
+    float2 alpha;
+  } outlines;
+};
+
+struct Frame_constants {
+  float3 cam_world_pos;
+  float time;
+  float2 inv_near_dim;
+  float proj_scale;
+  uint flags;
+  float2 half_vp_dim;
+  int2 vp_dim;
+  float2 vp_texel_size;
+  int2 mouse_pos;
+  int2 inspected_pix;
+  int2 hi_z_0_dim;
+  int supersampling;
+  int debug_patches;
+  int use_patches;
+  int emissive;
+  float3 target;
+  uint frame_number;
+  uint shot_frame_number;
+  float dt;
+  float4 view_to_world[4];
+  float4 world_to_view[4];
+  float4 view_ndc[4];
+  float4 world_ndc[4];
+  float4 prev_world_ndc[4];
+  float4 ndc_world[4];
+  float4 ndc_to_prev_ndc[4];
+  float4 prev_ndc_to_ndc[4];
+  float4 view_world_z0;
+  float4 pix_to_fog_eq;
+  float3 mio_view;
+  float3 mio_hair_outline_color;
+  float mio_foliage_velocity;
+  int show_wireframe;
+  int ao;
+  int glitch;
+  int no_vertex_color;
+  float paper_mult;
+  int hatching;
+  int mio_halo;
+  int vol_temporal;
+  int heart_attack_active;
+  int heart_attack_secondary_target;
+  int triangular_dissolve_enabled;
+  int color_correct;
+  float starfield_effect_amount;
+  float starfield_fade_amount;
+  float3 starfield_center_view;
+  float starfield_glow_amount;
+  float starfield_pulse_t;
+  float death_anim_t;
+  float3 game_plane_world_origin;
+  float3 game_plane_world_normal;
+  float3 game_plane_world_u;
+  float3 game_plane_world_v;
+  float4 game_plane_transform[4];
+  float4 hatching_xf[4];
+  float4 paper_xf[4];
+  float2 game_plane_blend;
+  float heart_attack_t;
+  float heart_attack_duration;
+  float heart_attack_pulse;
+  float heart_attack_outline_distance;
+  float heart_attack_dissolve_distance;
+  float3 heart_attack_dissolve_color;
+  float heart_attack_dissolve_base;
+  float heart_attack_dissolve_mult;
+  float3 heart_attack_dissolve_world_center;
+  float heart_attack_vertical_dissolve;
+  float triangular_dissolve_base_amount;
+  float triangular_dissolve_amount;
+  float flashback_lut;
+  float evil_mio;
+  float dead_mio;
+  float godlike_mio;
+  float khlia_pulse_t;
+  float khlia__pulse_t;
+  float khlia_pulse_period;
+  float3 khlia_world_pos;
+  float skydome_rotation_offset;
+  float hatch_ambiant_mul;
+  float hatch_ambiant_add;
+  float glitch_scale;
+  uint max_contours;
+  uint max_contour_loops;
+  int death_screen;
+  float death_screen_t;
+  int poetic_death_screen;
+  float poetic_death_screen_t;
+  float tremor_pulse_t;
+  int invert;
+  float surface_fade;
+  struct Postprocess_params {
+    struct AO_params {
+      float3 color;
+      float intensity;
+    } ao;
+    struct Fog_params {
+      float bloom_factor;
+      float space;
+      float outline_density;
+      float outline_attenuation;
+    } fog;
+    struct Ambient_light_params {
+      int undercoat_grad;
+      float3 color;
+      float intensity;
+      float gameplay_intensity;
+      float gameplay_width;
+      float directional_intensity;
+      float directional_shadows;
+      float undercoat_noise_freq;
+      float undercoat_noise_amplitude;
+      float undercoat_noise_threshold;
+      float undercoating;
+    } ambient_light;
+    struct Vignette_params {
+      float intensity;
+      float rounded;
+      float3 color;
+      float golden_intensity;
+      float golden_color;
+    } vignette;
+    struct Bloom_params {
+      float intensity;
+      float threshold_low;
+      float threshold_high;
+    } bloom;
+    struct Mio_params {
+      float light_intensity;
+      float light_radius;
+      float3 light_color;
+      float spec_intensity;
+      float3 halo_color;
+      float halo_intensity;
+    } mio;
+    struct Particles_params {
+      uint count;
+      float cam_near;
+      float cam_far;
+      float fadeoff_near;
+      float2 lifetime;
+      float fadein_duration;
+      float fadeoff_duration;
+      float2 alpha;
+      float2 scale;
+      float2 speed;
+      int gradient;
+      float circle_attenuation;
+    } particles;
+    struct Chroma_aberration_params {
+      float intensity;
+    } chroma_aberration;
+    struct Fade_params {
+      float intensity;
+      float3 color;
+    } fade;
+    struct Dof_params {
+      float plane_01;
+      float plane_01_softness;
+      float plane_12;
+      float plane_12_softness;
+      float foreground;
+      float foreground_softness;
+    } dof;
+    Lod_params lod_foreground;
+    Lod_params lod_game;
+    Lod_params lod_midground;
+    Lod_params lod_background;
+  } params;
+};
+
+
+Texture2D<float4> tex : register(t0);
+
+Texture2D<float> depth_tex : register(t1);
+
+Texture2D<float2> distortion : register(t4);
+
+Texture2D<float> paper_tex : register(t5);
+
+Texture2D<float3> bloom_tex : register(t7);
+
+Texture2D<float3> color_correct_lut : register(t8);
+
+cbuffer frame_consts : register(b0) {
+  Frame_constants frame_consts : packoffset(c000.x);
+};
+
+SamplerState sampler_nearest : register(s0);
+
+SamplerState sampler_bilinear : register(s1);
+
+SamplerState sampler_bilinear_wrap : register(s2);
+
+float4 main(
+  noperspective float4 SV_Position : SV_Position,
+  linear float2 O_Uv : O_Uv
+) : SV_Target {
+  float4 SV_Target;
+  float _16 = float((int)(frame_consts.vp_dim.x));
+  float _17 = float((int)(frame_consts.vp_dim.y));
+  float2 _18 = distortion.SampleLevel(sampler_nearest, float2(O_Uv.x, O_Uv.y), 0.0f);
+  float _21 = _17 / _16;
+  float _26 = saturate((_18.x * _21) + O_Uv.x);
+  float _27 = saturate((_18.y * _21) + O_Uv.y);
+  float _59;
+  float _60;
+  float _61;
+  float _62;
+  float _110;
+  float _121;
+  float _132;
+  float _298;
+  float _309;
+  float _320;
+  float _343;
+  float _344;
+  float _345;
+  float _445;
+  float _446;
+  float _447;
+  float _488;
+  float _489;
+  float _490;
+  float _639;
+  float _640;
+  float _641;
+  float _649;
+  float _1917;
+  float _1918;
+  float _1919;
+  float _1928;
+  float _1929;
+  float _1930;
+  if (frame_consts.params.chroma_aberration.intensity > 0.0f) {
+    float _34 = abs(_26 + -0.5f);
+    float _35 = abs(_27 + -0.5f);
+    float _39 = (rsqrt(dot(float2(_34, _35), float2(_34, _35))) * 0.009999999776482582f) * frame_consts.params.chroma_aberration.intensity;
+    float _40 = _39 * _34;
+    float _41 = _39 * _35;
+    float4 _44 = tex.SampleLevel(sampler_nearest, float2((_40 + _26), (_41 + _27)), 0.0f);
+    float4 _46 = tex.SampleLevel(sampler_nearest, float2(_26, _27), 0.0f);
+    float4 _50 = tex.SampleLevel(sampler_nearest, float2((_26 - _40), (_27 - _41)), 0.0f);
+    _59 = _44.x;
+    _60 = _46.y;
+    _61 = _50.z;
+    _62 = 0.5f;
+  } else {
+    float4 _53 = tex.SampleLevel(sampler_nearest, float2(_26, _27), 0.0f);
+    _59 = _53.x;
+    _60 = _53.y;
+    _61 = _53.z;
+    _62 = _53.w;
+  }
+  float3 untonemapped = float3(_59, _60, _61);
+
+  float3 _63 = bloom_tex.SampleLevel(sampler_bilinear, float2(_26, _27), 0.0f);
+  float _78 = max((((1.0f - (_59 * 0.2125999927520752f)) - (_60 * 0.7152000069618225f)) - (_61 * 0.0722000002861023f)), 0.0010000000474974513f);
+  float _82 = (_59 / _78) + (frame_consts.params.bloom.intensity * _63.x);
+  float _83 = (_60 / _78) + (frame_consts.params.bloom.intensity * _63.y);
+  float _84 = (_61 / _78) + (frame_consts.params.bloom.intensity * _63.z);
+  float _90 = (((_82 * 0.2125999927520752f) + 1.0f) + (_83 * 0.7152000069618225f)) + (_84 * 0.0722000002861023f);
+  float _94 = saturate(_82 / _90);
+  float _95 = saturate(_83 / _90);
+  float _96 = saturate(_84 / _90);
+  uint2 _97; color_correct_lut.GetDimensions(_97.x, _97.y);
+  if (!(!(_94 <= 0.0031308000907301903f))) {
+    _110 = (_94 * 12.920000076293945f);
+  } else {
+    _110 = (((pow(_94, 0.4166666567325592f)) * 1.0549999475479126f) + -0.054999999701976776f);
+  }
+  if (!(!(_95 <= 0.0031308000907301903f))) {
+    _121 = (_95 * 12.920000076293945f);
+  } else {
+    _121 = (((pow(_95, 0.4166666567325592f)) * 1.0549999475479126f) + -0.054999999701976776f);
+  }
+  if (!(!(_96 <= 0.0031308000907301903f))) {
+    _132 = (_96 * 12.920000076293945f);
+  } else {
+    _132 = (((pow(_96, 0.4166666567325592f)) * 1.0549999475479126f) + -0.054999999701976776f);
+  }
+  float _135 = float((uint)(_97.y + -1u));
+  float _138 = _132 * _135;
+  float _139 = frac(_138);
+  float _141 = float((uint)_97.y);
+  float _143 = (_110 * _135) + 0.5f;
+  float _146 = float((uint)_97.x);
+  float _148 = (lerp(_121, 1.0f, _135)) / _141;
+  float3 _149 = color_correct_lut.SampleLevel(sampler_bilinear, float2((((ceil(_138) * _141) + _143) / _146), _148), 0.0f);
+  float3 _157 = color_correct_lut.SampleLevel(sampler_bilinear, float2((((floor(_138) * _141) + _143) / _146), _148), 0.0f);
+  float _167 = ((_149.x - _157.x) * _139) + _157.x;
+  float _168 = ((_149.y - _157.y) * _139) + _157.y;
+  float _169 = ((_149.z - _157.z) * _139) + _157.z;
+  if (!(frame_consts.glitch == 0)) {
+    float _177 = float((int)(int((_16 / _17) * 1080.0f)));
+    float _178 = _177 * _26;
+    float _179 = _27 * 1080.0f;
+    float _180 = _177 * 0.5f;
+    float _183 = max(frame_consts.khlia_pulse_t, 0.0f);
+    float _190 = max((frame_consts.khlia_pulse_t + -0.30000001192092896f), 0.0f);
+    float _196 = ((_190 * 3.0f) * exp2(1.4426950216293335f - (_190 * 4.328084945678711f))) + ((_183 * 5.0f) * exp2(1.4426950216293335f - (_183 * 7.213475227355957f)));
+    float _197 = _196 * 15.0f;
+    float _198 = _197 + 30.0f;
+    float _200 = (_196 * 20.0f) + 80.0f;
+    float _204 = abs(_177 * (_26 + -0.5f));
+    float _205 = abs(_179 + -540.0f);
+    float _208 = ((_204 - _180) + _198) + _200;
+    float _211 = ((_205 + -510.0f) + _197) + _200;
+    float _214 = max(_208, 0.0f);
+    float _215 = max(_211, 0.0f);
+    float _229 = _204 - (_180 - _198);
+    float _230 = _205 - (510.0f - _197);
+    float _231 = max(_229, 0.0f);
+    float _232 = max(_230, 0.0f);
+    float _248 = max(max(0.0f, (1.0f - saturate(abs((min(max(_208, _211), 0.0f) - _200) + sqrt((_215 * _215) + (_214 * _214))) + -0.5f))), ((1.0f - saturate(abs(min(max(_229, _230), 0.0f) + sqrt((_232 * _232) + (_231 * _231))) + -0.5f)) * (1.0f - saturate(_196 * 1.6666666269302368f))));
+    float _259 = frac((_178 + _179) * 0.0012499999720603228f) + -0.5f;
+    float _260 = frac((_179 - _178) * 0.0012499999720603228f) + -0.5f;
+    float _272 = saturate((sin((((_178 * 0.0003124999930150807f) + (_27 * 0.3375000059604645f)) * 20.0f) - (frame_consts.time * 0.8500000238418579f)) * 1.2500001192092896f) + -0.25000008940696716f);
+    float _276 = (_272 * _272) * (3.0f - (_272 * 2.0f));
+    float _278 = saturate(sqrt((_260 * _260) + (_259 * _259)) * 2.0f);
+    float _283 = _276 * 0.20000000298023224f;
+    float _285 = ((_278 * 0.12156862020492554f) + 0.7450979948043823f) + _283;
+    float _286 = ((_278 * 0.3333333134651184f) + 0.34117645025253296f) + _283;
+    do {
+      if (!(!((_283 + 0.9803921580314636f) <= 0.040449999272823334f))) {
+        _298 = ((_276 * 0.015479876659810543f) + 0.07588174939155579f);
+      } else {
+        _298 = exp2(log2((_276 * 0.18957345187664032f) + 0.9814143776893616f) * 2.4000000953674316f);
+      }
+      do {
+        if (!(!(_285 <= 0.040449999272823334f))) {
+          _309 = (_285 * 0.07739938050508499f);
+        } else {
+          _309 = exp2(log2((_285 + 0.054999999701976776f) * 0.9478672742843628f) * 2.4000000953674316f);
+        }
+        do {
+          if (!(!(_286 <= 0.040449999272823334f))) {
+            _320 = (_286 * 0.07739938050508499f);
+          } else {
+            _320 = exp2(log2((_286 + 0.054999999701976776f) * 0.9478672742843628f) * 2.4000000953674316f);
+          }
+          float _326 = (((_298 * 0.2125999927520752f) + 1.0f) + (_309 * 0.7152000069618225f)) + (_320 * 0.0722000002861023f);
+          _343 = (((saturate(_298 / _326) - _167) * _248) + _167);
+          _344 = (((saturate(_309 / _326) - _168) * _248) + _168);
+          _345 = (((saturate(_320 / _326) - _169) * _248) + _169);
+        } while (false);
+      } while (false);
+    } while (false);
+  } else {
+    _343 = _167;
+    _344 = _168;
+    _345 = _169;
+  }
+  float _351 = depth_tex.SampleLevel(sampler_nearest, float2(_26, _27), 0.0f);
+  float _355 = 10000.0f / ((_351.x * 19999.5f) + 0.5f);
+  float _360 = (_355 * ((_26 * 2.0f) + -1.0f)) * frame_consts.inv_near_dim.x;
+  float _362 = (_355 * (((1.0f - _27) * 2.0f) + -1.0f)) * frame_consts.inv_near_dim.y;
+  float _363 = -0.0f - _355;
+  float _387 = mad((frame_consts.paper_xf[2].z), _363, mad((frame_consts.paper_xf[1].z), _362, (_360 * (frame_consts.paper_xf[0].z))));
+  float _399 = exp2(round(log2(max(5.0f, (-0.0f - (_387 - frame_consts.game_plane_blend.x)))) * 10.0f) * 0.10000000149011612f);
+  float _401 = min((1.0f / _399), 0.20000000298023224f);
+  float _402 = frame_consts.game_plane_blend.x - _399;
+  float _409 = paper_tex.SampleLevel(sampler_bilinear_wrap, float2((((_402 * (mad((frame_consts.paper_xf[2].x), _363, mad((frame_consts.paper_xf[1].x), _362, (_360 * (frame_consts.paper_xf[0].x)))) / _387)) + (frame_consts.paper_xf[3].x)) * _401), (((_402 * (mad((frame_consts.paper_xf[2].y), _363, mad((frame_consts.paper_xf[1].y), _362, (_360 * (frame_consts.paper_xf[0].y)))) / _387)) + (frame_consts.paper_xf[3].y)) * _401)), 0.0f);
+  float _414 = (1.0f - _409.x) * frame_consts.paper_mult;
+  float _418 = _343 - (_414 * _343);
+  float _419 = _344 - (_414 * _344);
+  float _420 = _345 - (_414 * _345);
+  if (!(frame_consts.death_screen == 0)) {
+    float _443 = select((frame_consts.death_screen_t <= 0.019999999552965164f), (1.0f - _62), _62);
+    _445 = _443;
+    _446 = _443;
+    _447 = _443;
+  } else {
+    _445 = (lerp(_418, frame_consts.params.fade.color.x, frame_consts.params.fade.intensity));
+    _446 = (lerp(_419, frame_consts.params.fade.color.y, frame_consts.params.fade.intensity));
+    _447 = (lerp(_420, frame_consts.params.fade.color.z, frame_consts.params.fade.intensity));
+  }
+  if (!(frame_consts.triangular_dissolve_enabled == 0)) {
+    float _455 = _26 * _16;
+    float _456 = _27 * _17;
+    float _457 = _455 * 0.06666667014360428f;
+    float _458 = _456 * 0.038490019738674164f;
+    float _460 = ceil(_457 - _458);
+    float _462 = floor(_456 * 0.07698003947734833f);
+    float _463 = _462 + 1.0f;
+    float _466 = ceil((-0.0f - _457) - _458);
+    float _468 = (_460 - _466) * 7.5f;
+    float _469 = _460 * 0.28867512941360474f;
+    float _470 = _463 * 0.5773502588272095f;
+    float _471 = _470 - _469;
+    float _472 = _466 * 0.28867512941360474f;
+    float _475 = _468 / _16;
+    float _476 = ((_471 - _472) * 15.0f) / _17;
+    do {
+      if (((_463 + _460) + _466) == 2.0f) {
+        _488 = (_460 + 1.0f);
+        _489 = (_462 + 2.0f);
+        _490 = (_466 + 1.0f);
+      } else {
+        _488 = (_460 + -1.0f);
+        _489 = _462;
+        _490 = (_466 + -1.0f);
+      }
+      float _491 = _488 - _466;
+      float _494 = _470 - (_488 * 0.28867512941360474f);
+      float _495 = _494 - _472;
+      float _498 = (_489 * 0.5773502588272095f) - _469;
+      float _499 = _498 - _472;
+      float _501 = _460 - _490;
+      float _504 = _471 - (_490 * 0.28867512941360474f);
+      float _508 = (_494 - _498) * 15.0f;
+      float _509 = (_488 - _460) * -7.5f;
+      float _511 = rsqrt(dot(float2(_508, _509), float2(_508, _509)));
+      float _520 = (_499 - _504) * 15.0f;
+      float _521 = (_490 - _466) * -7.5f;
+      float _523 = rsqrt(dot(float2(_520, _521), float2(_520, _521)));
+      float _532 = (_504 - _495) * 15.0f;
+      float _533 = (_501 - _491) * -7.5f;
+      float _535 = rsqrt(dot(float2(_532, _533), float2(_532, _533)));
+      float _548 = _475 + -0.5f;
+      float _549 = _476 + -0.5f;
+      float _596 = _26 + -0.5f;
+      float _597 = _27 + -0.5f;
+      float _604 = ((frame_consts.time - sqrt((_597 * _597) + (_596 * _596))) + (frac(sin(dot(float2((_475 * 5.0f), (_476 * 5.0f)), float2(12.989800453186035f, 78.23300170898438f))) * 43758.5f) * 0.20000000298023224f)) * 0.0555555559694767f;
+      float _608 = frac(abs(_604));
+      float _612 = max((select((_604 >= (-0.0f - _604)), _608, (-0.0f - _608)) * 18.0f), 0.0f);
+      float _628 = min(max((1.0f - (((((_612 * 1.600000023841858f) * exp2(1.4426950216293335f - (_612 * 11.541560173034668f))) + (saturate((((frame_consts.triangular_dissolve_amount + -0.6499999761581421f) + (sqrt((_549 * _549) + (_548 * _548)) * 1.4142135381698608f)) + (frac(sin(dot(float2((_475 * 3.0f), (_476 * 3.0f)), float2(12.989800453186035f, 78.23300170898438f))) * 43758.5f) * 0.10000000149011612f)) * 4.0f) * ((frame_consts.triangular_dissolve_amount * 4.0f) + 1.0f))) * frame_consts.triangular_dissolve_base_amount) * ((saturate((sin((frac(sin(dot(float2(_475, _476), float2(12.989800453186035f, 78.23300170898438f))) * 43758.5f) * 5.0f) + ((frame_consts.time * 1.7999999523162842f) * ((frac(sin(dot(float2((_475 * 2.0f), (_476 * 2.0f)), float2(12.989800453186035f, 78.23300170898438f))) * 43758.5f) * 0.10000000149011612f) + 1.0f))) + 1.0f) * 0.5f) * 0.75f) + 0.25f))), 0.0f), 1.0f);
+      float _634 = 1.0f - saturate(((1.0f - saturate(min(min(min(1000.0f, abs(dot(float2(((_491 * 7.5f) - _455), ((_495 * 15.0f) - _456)), float2((_508 * _511), (_511 * _509))))), abs(dot(float2((_468 - _455), ((_499 * 15.0f) - _456)), float2((_523 * _520), (_523 * _521))))), abs(dot(float2(((_501 * 7.5f) - _455), ((_504 * 15.0f) - _456)), float2((_535 * _532), (_535 * _533))))) * 0.2309400886297226f)) - _628) / ((_628 * 0.10000002384185791f) + 9.999999974752427e-07f));
+      _639 = (_634 * _445);
+      _640 = (_634 * _446);
+      _641 = (_634 * _447);
+    } while (false);
+  } else {
+    _639 = _445;
+    _640 = _446;
+    _641 = _447;
+  }
+  if (!(frame_consts.heart_attack_active == 0)) {
+    _649 = (frame_consts.heart_attack_pulse * 0.10000000149011612f);
+  } else {
+    _649 = 0.0f;
+  }
+  float _656 = frame_consts.params.vignette.intensity + _649;
+  float _659 = _16 / _17;
+  float _671 = exp2(log2(saturate((_656 * abs(_26 + -0.5f)) * (((_659 + -1.0f) * frame_consts.params.vignette.rounded) + 1.0f))) * 5.0f);
+  float _672 = exp2(log2(saturate(_656 * abs(_27 + -0.5f))) * 5.0f);
+  float _678 = exp2(log2(saturate(1.0f - dot(float2(_671, _672), float2(_671, _672)))) * 6.0f);
+  float _683 = 1.0f - _678;
+  float _685 = 1.0f - (_683 * 0.8500000238418579f);
+  float _692 = (_685 * (_639 - frame_consts.params.vignette.color.x)) + frame_consts.params.vignette.color.x;
+  float _693 = (_685 * (_640 - frame_consts.params.vignette.color.y)) + frame_consts.params.vignette.color.y;
+  float _694 = (_685 * (_641 - frame_consts.params.vignette.color.z)) + frame_consts.params.vignette.color.z;
+  float _698 = _26 * _16;
+  float _699 = _27 * _17;
+  float _700 = _699 + _698;
+  float _706 = frac(_700 * 0.0033333334140479565f) + -0.5f;
+  float _707 = frac((_699 - _698) * 0.0033333334140479565f) + -0.5f;
+  float _713 = saturate(sqrt((_707 * _707) + (_706 * _706)) * 2.0f);
+  float _724 = saturate((sin((_700 * 0.01666666753590107f) - (frame_consts.time * 0.8500000238418579f)) * 1.2500001192092896f) + -0.25000008940696716f);
+  float _729 = ((_724 * _724) * 0.2199999988079071f) * (3.0f - (_724 * 2.0f));
+  float _730 = _729 + 0.9777389168739319f;
+  float _731 = ((_713 * 0.13274884223937988f) + 0.7175776362419128f) + _729;
+  float _732 = ((_713 * 0.3335757553577423f) + 0.30871906876564026f) + _729;
+  float _737 = (_26 * 1080.0f) * _659;
+  float _738 = _27 * 1080.0f;
+  float _739 = _737 * 0.04444444552063942f;
+  float _740 = _27 * 27.712812423706055f;
+  float _742 = ceil(_739 - _740);
+  float _745 = floor(_27 * 55.42562484741211f) + 1.0f;
+  float _748 = ceil((-0.0f - _740) - _739);
+  float _750 = (_745 + _742) + _748;
+  float _752 = (_750 * 22.5f) + -33.75f;
+  float _753 = _742 - _748;
+  float _755 = _753 * 11.25f;
+  float _761 = (((_745 * 0.5773502588272095f) - (_742 * 0.28867512941360474f)) - (_748 * 0.28867512941360474f)) * 22.5f;
+  float _764 = _752 + _755;
+  float _765 = _761 + (19.485570907592773f - (_750 * 12.990381240844727f));
+  float _768 = ((_750 * 25.980762481689453f) + -38.97114181518555f) + _761;
+  float _769 = _755 - _752;
+  float _770 = _764 - _737;
+  float _771 = _765 - _738;
+  float _774 = _755 - _737;
+  float _775 = _768 - _738;
+  float _780 = _771 * _771;
+  float _787 = _769 - _737;
+  float _791 = _765 * 2.5f;
+  float _792 = frame_consts.time * 1.5f;
+  float _796 = _765 * 0.004444444552063942f;
+  float _797 = frame_consts.time * 0.15000000596046448f;
+  float _798 = (_764 * 0.04444444552063942f) - _797;
+  float _799 = _796 - _797;
+  float _800 = frame_consts.time * 0.02500000037252903f;
+  float _801 = dot(float3(_798, _799, _800), float3(0.3333333432674408f, 0.3333333432674408f, 0.3333333432674408f));
+  float _805 = floor(_801 + _798);
+  float _806 = floor(_801 + _799);
+  float _807 = floor(_801 + _800);
+  float _811 = dot(float3(_805, _806, _807), float3(0.1666666716337204f, 0.1666666716337204f, 0.1666666716337204f));
+  float _812 = _811 + (_798 - _805);
+  float _813 = _811 + (_799 - _806);
+  float _814 = (_800 - _807) + _811;
+  float _818 = select((_812 < _813), 0.0f, 1.0f);
+  float _819 = select((_813 < _814), 0.0f, 1.0f);
+  float _820 = select((_814 < _812), 0.0f, 1.0f);
+  float _821 = 1.0f - _818;
+  float _822 = 1.0f - _819;
+  float _823 = 1.0f - _820;
+  float _824 = min(_818, _823);
+  float _825 = min(_819, _821);
+  float _826 = min(_820, _822);
+  float _827 = max(_818, _823);
+  float _828 = max(_819, _821);
+  float _829 = max(_820, _822);
+  float _833 = (_812 - _824) + 0.1666666716337204f;
+  float _834 = (_813 - _825) + 0.1666666716337204f;
+  float _835 = (_814 - _826) + 0.1666666716337204f;
+  float _839 = (_812 - _827) + 0.3333333432674408f;
+  float _840 = (_813 - _828) + 0.3333333432674408f;
+  float _841 = (_814 - _829) + 0.3333333432674408f;
+  float _842 = _812 + -0.5f;
+  float _843 = _813 + -0.5f;
+  float _844 = _814 + -0.5f;
+  float _854 = _805 - (floor(_805 * 0.0034602077212184668f) * 289.0f);
+  float _855 = _806 - (floor(_806 * 0.0034602077212184668f) * 289.0f);
+  float _856 = _807 - (floor(_807 * 0.0034602077212184668f) * 289.0f);
+  float _857 = _856 + _826;
+  float _858 = _856 + _829;
+  float _859 = _856 + 1.0f;
+  float _868 = ((_856 * 34.0f) + 1.0f) * _856;
+  float _869 = ((_857 * 34.0f) + 1.0f) * _857;
+  float _870 = ((_858 * 34.0f) + 1.0f) * _858;
+  float _871 = ((_859 * 34.0f) + 1.0f) * _859;
+  float _885 = (_868 - (floor(_868 * 0.0034602077212184668f) * 289.0f)) + _855;
+  float _888 = ((_855 + _825) - (floor(_869 * 0.0034602077212184668f) * 289.0f)) + _869;
+  float _891 = ((_855 + _828) - (floor(_870 * 0.0034602077212184668f) * 289.0f)) + _870;
+  float _894 = ((_855 + 1.0f) - (floor(_871 * 0.0034602077212184668f) * 289.0f)) + _871;
+  float _903 = ((_885 * 34.0f) + 1.0f) * _885;
+  float _904 = ((_888 * 34.0f) + 1.0f) * _888;
+  float _905 = ((_891 * 34.0f) + 1.0f) * _891;
+  float _906 = ((_894 * 34.0f) + 1.0f) * _894;
+  float _920 = (_903 - (floor(_903 * 0.0034602077212184668f) * 289.0f)) + _854;
+  float _923 = ((_854 + _824) - (floor(_904 * 0.0034602077212184668f) * 289.0f)) + _904;
+  float _926 = ((_854 + _827) - (floor(_905 * 0.0034602077212184668f) * 289.0f)) + _905;
+  float _929 = ((_854 + 1.0f) - (floor(_906 * 0.0034602077212184668f) * 289.0f)) + _906;
+  float _938 = ((_920 * 34.0f) + 1.0f) * _920;
+  float _939 = ((_923 * 34.0f) + 1.0f) * _923;
+  float _940 = ((_926 * 34.0f) + 1.0f) * _926;
+  float _941 = ((_929 * 34.0f) + 1.0f) * _929;
+  float _954 = _938 - (floor(_938 * 0.0034602077212184668f) * 289.0f);
+  float _955 = _939 - (floor(_939 * 0.0034602077212184668f) * 289.0f);
+  float _956 = _940 - (floor(_940 * 0.0034602077212184668f) * 289.0f);
+  float _957 = _941 - (floor(_941 * 0.0034602077212184668f) * 289.0f);
+  float _970 = _954 - (floor(_954 * 0.020408164709806442f) * 49.0f);
+  float _971 = _955 - (floor(_955 * 0.020408164709806442f) * 49.0f);
+  float _972 = _956 - (floor(_956 * 0.020408164709806442f) * 49.0f);
+  float _973 = _957 - (floor(_957 * 0.020408164709806442f) * 49.0f);
+  float _978 = floor(_970 * 0.1428571492433548f);
+  float _979 = floor(_971 * 0.1428571492433548f);
+  float _980 = floor(_972 * 0.1428571492433548f);
+  float _981 = floor(_973 * 0.1428571492433548f);
+  float _998 = (_978 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _999 = (_979 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1000 = (_980 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1001 = (_981 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1006 = (floor(_970 - (_978 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1007 = (floor(_971 - (_979 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1008 = (floor(_972 - (_980 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1009 = (floor(_973 - (_981 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1022 = (1.0f - abs(_998)) - abs(_1006);
+  float _1023 = (1.0f - abs(_999)) - abs(_1007);
+  float _1024 = (1.0f - abs(_1000)) - abs(_1008);
+  float _1025 = (1.0f - abs(_1001)) - abs(_1009);
+  float _1054 = select((_1022 > 0.0f), -0.0f, -1.0f);
+  float _1055 = select((_1023 > 0.0f), -0.0f, -1.0f);
+  float _1056 = select((_1024 > 0.0f), -0.0f, -1.0f);
+  float _1057 = select((_1025 > 0.0f), -0.0f, -1.0f);
+  float _1062 = (((floor(_998) * 2.0f) + 1.0f) * _1054) + _998;
+  float _1063 = (((floor(_1006) * 2.0f) + 1.0f) * _1054) + _1006;
+  float _1064 = (((floor(_999) * 2.0f) + 1.0f) * _1055) + _999;
+  float _1065 = (((floor(_1007) * 2.0f) + 1.0f) * _1055) + _1007;
+  float _1070 = (((floor(_1000) * 2.0f) + 1.0f) * _1056) + _1000;
+  float _1071 = (((floor(_1008) * 2.0f) + 1.0f) * _1056) + _1008;
+  float _1072 = (((floor(_1001) * 2.0f) + 1.0f) * _1057) + _1001;
+  float _1073 = (((floor(_1009) * 2.0f) + 1.0f) * _1057) + _1009;
+  float _1082 = 1.7928400039672852f - (dot(float3(_1062, _1063, _1022), float3(_1062, _1063, _1022)) * 0.8537350296974182f);
+  float _1083 = 1.7928400039672852f - (dot(float3(_1064, _1065, _1023), float3(_1064, _1065, _1023)) * 0.8537350296974182f);
+  float _1084 = 1.7928400039672852f - (dot(float3(_1070, _1071, _1024), float3(_1070, _1071, _1024)) * 0.8537350296974182f);
+  float _1085 = 1.7928400039672852f - (dot(float3(_1072, _1073, _1025), float3(_1072, _1073, _1025)) * 0.8537350296974182f);
+  float _1106 = max((0.6000000238418579f - dot(float3(_812, _813, _814), float3(_812, _813, _814))), 0.0f);
+  float _1107 = max((0.6000000238418579f - dot(float3(_833, _834, _835), float3(_833, _834, _835))), 0.0f);
+  float _1108 = max((0.6000000238418579f - dot(float3(_839, _840, _841), float3(_839, _840, _841))), 0.0f);
+  float _1109 = max((0.6000000238418579f - dot(float3(_842, _843, _844), float3(_842, _843, _844))), 0.0f);
+  float _1110 = _1106 * _1106;
+  float _1111 = _1107 * _1107;
+  float _1112 = _1108 * _1108;
+  float _1113 = _1109 * _1109;
+  float _1128 = saturate((((sin(_791 - _792) * 0.15000000596046448f) + 0.050000011920928955f) + (dot(float4((_1110 * _1110), (_1111 * _1111), (_1112 * _1112), (_1113 * _1113)), float4(dot(float3((_1082 * _1062), (_1082 * _1063), (_1082 * _1022)), float3(_812, _813, _814)), dot(float3((_1083 * _1064), (_1083 * _1065), (_1083 * _1023)), float3(_833, _834, _835)), dot(float3((_1084 * _1070), (_1084 * _1071), (_1084 * _1024)), float3(_839, _840, _841)), dot(float3((_1085 * _1072), (_1085 * _1073), (_1085 * _1025)), float3(_842, _843, _844)))) * 21.0f)) * 4.0f);
+  float _1132 = (_1128 * _1128) * (3.0f - (_1128 * 2.0f));
+  float _1134 = (_1132 * 0.6499999761581421f) + 0.3499999940395355f;
+  float _1139 = (_753 * 0.5f) - _797;
+  float _1140 = (_768 * 0.004444444552063942f) - _797;
+  float _1141 = dot(float3(_1139, _1140, _800), float3(0.3333333432674408f, 0.3333333432674408f, 0.3333333432674408f));
+  float _1145 = floor(_1141 + _1139);
+  float _1146 = floor(_1141 + _1140);
+  float _1147 = floor(_1141 + _800);
+  float _1151 = dot(float3(_1145, _1146, _1147), float3(0.1666666716337204f, 0.1666666716337204f, 0.1666666716337204f));
+  float _1152 = _1151 + (_1139 - _1145);
+  float _1153 = _1151 + (_1140 - _1146);
+  float _1154 = (_800 - _1147) + _1151;
+  float _1158 = select((_1152 < _1153), 0.0f, 1.0f);
+  float _1159 = select((_1153 < _1154), 0.0f, 1.0f);
+  float _1160 = select((_1154 < _1152), 0.0f, 1.0f);
+  float _1161 = 1.0f - _1158;
+  float _1162 = 1.0f - _1159;
+  float _1163 = 1.0f - _1160;
+  float _1164 = min(_1158, _1163);
+  float _1165 = min(_1159, _1161);
+  float _1166 = min(_1160, _1162);
+  float _1167 = max(_1158, _1163);
+  float _1168 = max(_1159, _1161);
+  float _1169 = max(_1160, _1162);
+  float _1173 = (_1152 - _1164) + 0.1666666716337204f;
+  float _1174 = (_1153 - _1165) + 0.1666666716337204f;
+  float _1175 = (_1154 - _1166) + 0.1666666716337204f;
+  float _1179 = (_1152 - _1167) + 0.3333333432674408f;
+  float _1180 = (_1153 - _1168) + 0.3333333432674408f;
+  float _1181 = (_1154 - _1169) + 0.3333333432674408f;
+  float _1182 = _1152 + -0.5f;
+  float _1183 = _1153 + -0.5f;
+  float _1184 = _1154 + -0.5f;
+  float _1194 = _1145 - (floor(_1145 * 0.0034602077212184668f) * 289.0f);
+  float _1195 = _1146 - (floor(_1146 * 0.0034602077212184668f) * 289.0f);
+  float _1196 = _1147 - (floor(_1147 * 0.0034602077212184668f) * 289.0f);
+  float _1197 = _1196 + _1166;
+  float _1198 = _1196 + _1169;
+  float _1199 = _1196 + 1.0f;
+  float _1208 = ((_1196 * 34.0f) + 1.0f) * _1196;
+  float _1209 = ((_1197 * 34.0f) + 1.0f) * _1197;
+  float _1210 = ((_1198 * 34.0f) + 1.0f) * _1198;
+  float _1211 = ((_1199 * 34.0f) + 1.0f) * _1199;
+  float _1225 = (_1208 - (floor(_1208 * 0.0034602077212184668f) * 289.0f)) + _1195;
+  float _1228 = ((_1195 + _1165) - (floor(_1209 * 0.0034602077212184668f) * 289.0f)) + _1209;
+  float _1231 = ((_1195 + _1168) - (floor(_1210 * 0.0034602077212184668f) * 289.0f)) + _1210;
+  float _1234 = ((_1195 + 1.0f) - (floor(_1211 * 0.0034602077212184668f) * 289.0f)) + _1211;
+  float _1243 = ((_1225 * 34.0f) + 1.0f) * _1225;
+  float _1244 = ((_1228 * 34.0f) + 1.0f) * _1228;
+  float _1245 = ((_1231 * 34.0f) + 1.0f) * _1231;
+  float _1246 = ((_1234 * 34.0f) + 1.0f) * _1234;
+  float _1260 = (_1243 - (floor(_1243 * 0.0034602077212184668f) * 289.0f)) + _1194;
+  float _1263 = ((_1194 + _1164) - (floor(_1244 * 0.0034602077212184668f) * 289.0f)) + _1244;
+  float _1266 = ((_1194 + _1167) - (floor(_1245 * 0.0034602077212184668f) * 289.0f)) + _1245;
+  float _1269 = ((_1194 + 1.0f) - (floor(_1246 * 0.0034602077212184668f) * 289.0f)) + _1246;
+  float _1278 = ((_1260 * 34.0f) + 1.0f) * _1260;
+  float _1279 = ((_1263 * 34.0f) + 1.0f) * _1263;
+  float _1280 = ((_1266 * 34.0f) + 1.0f) * _1266;
+  float _1281 = ((_1269 * 34.0f) + 1.0f) * _1269;
+  float _1294 = _1278 - (floor(_1278 * 0.0034602077212184668f) * 289.0f);
+  float _1295 = _1279 - (floor(_1279 * 0.0034602077212184668f) * 289.0f);
+  float _1296 = _1280 - (floor(_1280 * 0.0034602077212184668f) * 289.0f);
+  float _1297 = _1281 - (floor(_1281 * 0.0034602077212184668f) * 289.0f);
+  float _1310 = _1294 - (floor(_1294 * 0.020408164709806442f) * 49.0f);
+  float _1311 = _1295 - (floor(_1295 * 0.020408164709806442f) * 49.0f);
+  float _1312 = _1296 - (floor(_1296 * 0.020408164709806442f) * 49.0f);
+  float _1313 = _1297 - (floor(_1297 * 0.020408164709806442f) * 49.0f);
+  float _1318 = floor(_1310 * 0.1428571492433548f);
+  float _1319 = floor(_1311 * 0.1428571492433548f);
+  float _1320 = floor(_1312 * 0.1428571492433548f);
+  float _1321 = floor(_1313 * 0.1428571492433548f);
+  float _1338 = (_1318 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1339 = (_1319 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1340 = (_1320 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1341 = (_1321 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1346 = (floor(_1310 - (_1318 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1347 = (floor(_1311 - (_1319 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1348 = (floor(_1312 - (_1320 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1349 = (floor(_1313 - (_1321 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1362 = (1.0f - abs(_1338)) - abs(_1346);
+  float _1363 = (1.0f - abs(_1339)) - abs(_1347);
+  float _1364 = (1.0f - abs(_1340)) - abs(_1348);
+  float _1365 = (1.0f - abs(_1341)) - abs(_1349);
+  float _1394 = select((_1362 > 0.0f), -0.0f, -1.0f);
+  float _1395 = select((_1363 > 0.0f), -0.0f, -1.0f);
+  float _1396 = select((_1364 > 0.0f), -0.0f, -1.0f);
+  float _1397 = select((_1365 > 0.0f), -0.0f, -1.0f);
+  float _1402 = (((floor(_1338) * 2.0f) + 1.0f) * _1394) + _1338;
+  float _1403 = (((floor(_1346) * 2.0f) + 1.0f) * _1394) + _1346;
+  float _1404 = (((floor(_1339) * 2.0f) + 1.0f) * _1395) + _1339;
+  float _1405 = (((floor(_1347) * 2.0f) + 1.0f) * _1395) + _1347;
+  float _1410 = (((floor(_1340) * 2.0f) + 1.0f) * _1396) + _1340;
+  float _1411 = (((floor(_1348) * 2.0f) + 1.0f) * _1396) + _1348;
+  float _1412 = (((floor(_1341) * 2.0f) + 1.0f) * _1397) + _1341;
+  float _1413 = (((floor(_1349) * 2.0f) + 1.0f) * _1397) + _1349;
+  float _1422 = 1.7928400039672852f - (dot(float3(_1402, _1403, _1362), float3(_1402, _1403, _1362)) * 0.8537350296974182f);
+  float _1423 = 1.7928400039672852f - (dot(float3(_1404, _1405, _1363), float3(_1404, _1405, _1363)) * 0.8537350296974182f);
+  float _1424 = 1.7928400039672852f - (dot(float3(_1410, _1411, _1364), float3(_1410, _1411, _1364)) * 0.8537350296974182f);
+  float _1425 = 1.7928400039672852f - (dot(float3(_1412, _1413, _1365), float3(_1412, _1413, _1365)) * 0.8537350296974182f);
+  float _1446 = max((0.6000000238418579f - dot(float3(_1152, _1153, _1154), float3(_1152, _1153, _1154))), 0.0f);
+  float _1447 = max((0.6000000238418579f - dot(float3(_1173, _1174, _1175), float3(_1173, _1174, _1175))), 0.0f);
+  float _1448 = max((0.6000000238418579f - dot(float3(_1179, _1180, _1181), float3(_1179, _1180, _1181))), 0.0f);
+  float _1449 = max((0.6000000238418579f - dot(float3(_1182, _1183, _1184), float3(_1182, _1183, _1184))), 0.0f);
+  float _1450 = _1446 * _1446;
+  float _1451 = _1447 * _1447;
+  float _1452 = _1448 * _1448;
+  float _1453 = _1449 * _1449;
+  float _1468 = saturate((((sin((_768 * 2.5f) - _792) * 0.15000000596046448f) + 0.050000011920928955f) + (dot(float4((_1450 * _1450), (_1451 * _1451), (_1452 * _1452), (_1453 * _1453)), float4(dot(float3((_1422 * _1402), (_1422 * _1403), (_1422 * _1362)), float3(_1152, _1153, _1154)), dot(float3((_1423 * _1404), (_1423 * _1405), (_1423 * _1363)), float3(_1173, _1174, _1175)), dot(float3((_1424 * _1410), (_1424 * _1411), (_1424 * _1364)), float3(_1179, _1180, _1181)), dot(float3((_1425 * _1412), (_1425 * _1413), (_1425 * _1365)), float3(_1182, _1183, _1184)))) * 21.0f)) * 4.0f);
+  float _1472 = (_1468 * _1468) * (3.0f - (_1468 * 2.0f));
+  float _1474 = (_1472 * 0.6499999761581421f) + 0.3499999940395355f;
+  float _1481 = frame_consts.time * 0.15000000596046448f;
+  float _1482 = (_769 * 0.04444444552063942f) - _1481;
+  float _1483 = _796 - _1481;
+  float _1484 = frame_consts.time * 0.02500000037252903f;
+  float _1485 = dot(float3(_1482, _1483, _1484), float3(0.3333333432674408f, 0.3333333432674408f, 0.3333333432674408f));
+  float _1489 = floor(_1482 + _1485);
+  float _1490 = floor(_1483 + _1485);
+  float _1491 = floor(_1484 + _1485);
+  float _1495 = dot(float3(_1489, _1490, _1491), float3(0.1666666716337204f, 0.1666666716337204f, 0.1666666716337204f));
+  float _1496 = _1495 + (_1482 - _1489);
+  float _1497 = _1495 + (_1483 - _1490);
+  float _1498 = (_1484 - _1491) + _1495;
+  float _1502 = select((_1496 < _1497), 0.0f, 1.0f);
+  float _1503 = select((_1497 < _1498), 0.0f, 1.0f);
+  float _1504 = select((_1498 < _1496), 0.0f, 1.0f);
+  float _1505 = 1.0f - _1502;
+  float _1506 = 1.0f - _1503;
+  float _1507 = 1.0f - _1504;
+  float _1508 = min(_1502, _1507);
+  float _1509 = min(_1503, _1505);
+  float _1510 = min(_1504, _1506);
+  float _1511 = max(_1502, _1507);
+  float _1512 = max(_1503, _1505);
+  float _1513 = max(_1504, _1506);
+  float _1517 = (_1496 - _1508) + 0.1666666716337204f;
+  float _1518 = (_1497 - _1509) + 0.1666666716337204f;
+  float _1519 = (_1498 - _1510) + 0.1666666716337204f;
+  float _1523 = (_1496 - _1511) + 0.3333333432674408f;
+  float _1524 = (_1497 - _1512) + 0.3333333432674408f;
+  float _1525 = (_1498 - _1513) + 0.3333333432674408f;
+  float _1526 = _1496 + -0.5f;
+  float _1527 = _1497 + -0.5f;
+  float _1528 = _1498 + -0.5f;
+  float _1538 = _1489 - (floor(_1489 * 0.0034602077212184668f) * 289.0f);
+  float _1539 = _1490 - (floor(_1490 * 0.0034602077212184668f) * 289.0f);
+  float _1540 = _1491 - (floor(_1491 * 0.0034602077212184668f) * 289.0f);
+  float _1541 = _1540 + _1510;
+  float _1542 = _1540 + _1513;
+  float _1543 = _1540 + 1.0f;
+  float _1552 = ((_1540 * 34.0f) + 1.0f) * _1540;
+  float _1553 = ((_1541 * 34.0f) + 1.0f) * _1541;
+  float _1554 = ((_1542 * 34.0f) + 1.0f) * _1542;
+  float _1555 = ((_1543 * 34.0f) + 1.0f) * _1543;
+  float _1569 = (_1552 - (floor(_1552 * 0.0034602077212184668f) * 289.0f)) + _1539;
+  float _1572 = ((_1539 + _1509) - (floor(_1553 * 0.0034602077212184668f) * 289.0f)) + _1553;
+  float _1575 = ((_1539 + _1512) - (floor(_1554 * 0.0034602077212184668f) * 289.0f)) + _1554;
+  float _1578 = ((_1539 + 1.0f) - (floor(_1555 * 0.0034602077212184668f) * 289.0f)) + _1555;
+  float _1587 = ((_1569 * 34.0f) + 1.0f) * _1569;
+  float _1588 = ((_1572 * 34.0f) + 1.0f) * _1572;
+  float _1589 = ((_1575 * 34.0f) + 1.0f) * _1575;
+  float _1590 = ((_1578 * 34.0f) + 1.0f) * _1578;
+  float _1604 = (_1587 - (floor(_1587 * 0.0034602077212184668f) * 289.0f)) + _1538;
+  float _1607 = ((_1538 + _1508) - (floor(_1588 * 0.0034602077212184668f) * 289.0f)) + _1588;
+  float _1610 = ((_1538 + _1511) - (floor(_1589 * 0.0034602077212184668f) * 289.0f)) + _1589;
+  float _1613 = ((_1538 + 1.0f) - (floor(_1590 * 0.0034602077212184668f) * 289.0f)) + _1590;
+  float _1622 = ((_1604 * 34.0f) + 1.0f) * _1604;
+  float _1623 = ((_1607 * 34.0f) + 1.0f) * _1607;
+  float _1624 = ((_1610 * 34.0f) + 1.0f) * _1610;
+  float _1625 = ((_1613 * 34.0f) + 1.0f) * _1613;
+  float _1638 = _1622 - (floor(_1622 * 0.0034602077212184668f) * 289.0f);
+  float _1639 = _1623 - (floor(_1623 * 0.0034602077212184668f) * 289.0f);
+  float _1640 = _1624 - (floor(_1624 * 0.0034602077212184668f) * 289.0f);
+  float _1641 = _1625 - (floor(_1625 * 0.0034602077212184668f) * 289.0f);
+  float _1654 = _1638 - (floor(_1638 * 0.020408164709806442f) * 49.0f);
+  float _1655 = _1639 - (floor(_1639 * 0.020408164709806442f) * 49.0f);
+  float _1656 = _1640 - (floor(_1640 * 0.020408164709806442f) * 49.0f);
+  float _1657 = _1641 - (floor(_1641 * 0.020408164709806442f) * 49.0f);
+  float _1662 = floor(_1654 * 0.1428571492433548f);
+  float _1663 = floor(_1655 * 0.1428571492433548f);
+  float _1664 = floor(_1656 * 0.1428571492433548f);
+  float _1665 = floor(_1657 * 0.1428571492433548f);
+  float _1682 = (_1662 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1683 = (_1663 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1684 = (_1664 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1685 = (_1665 * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1690 = (floor(_1654 - (_1662 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1691 = (floor(_1655 - (_1663 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1692 = (floor(_1656 - (_1664 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1693 = (floor(_1657 - (_1665 * 7.0f)) * 0.2857142984867096f) + -0.9285714030265808f;
+  float _1706 = (1.0f - abs(_1682)) - abs(_1690);
+  float _1707 = (1.0f - abs(_1683)) - abs(_1691);
+  float _1708 = (1.0f - abs(_1684)) - abs(_1692);
+  float _1709 = (1.0f - abs(_1685)) - abs(_1693);
+  float _1738 = select((_1706 > 0.0f), -0.0f, -1.0f);
+  float _1739 = select((_1707 > 0.0f), -0.0f, -1.0f);
+  float _1740 = select((_1708 > 0.0f), -0.0f, -1.0f);
+  float _1741 = select((_1709 > 0.0f), -0.0f, -1.0f);
+  float _1746 = (((floor(_1682) * 2.0f) + 1.0f) * _1738) + _1682;
+  float _1747 = (((floor(_1690) * 2.0f) + 1.0f) * _1738) + _1690;
+  float _1748 = (((floor(_1683) * 2.0f) + 1.0f) * _1739) + _1683;
+  float _1749 = (((floor(_1691) * 2.0f) + 1.0f) * _1739) + _1691;
+  float _1754 = (((floor(_1684) * 2.0f) + 1.0f) * _1740) + _1684;
+  float _1755 = (((floor(_1692) * 2.0f) + 1.0f) * _1740) + _1692;
+  float _1756 = (((floor(_1685) * 2.0f) + 1.0f) * _1741) + _1685;
+  float _1757 = (((floor(_1693) * 2.0f) + 1.0f) * _1741) + _1693;
+  float _1766 = 1.7928400039672852f - (dot(float3(_1746, _1747, _1706), float3(_1746, _1747, _1706)) * 0.8537350296974182f);
+  float _1767 = 1.7928400039672852f - (dot(float3(_1748, _1749, _1707), float3(_1748, _1749, _1707)) * 0.8537350296974182f);
+  float _1768 = 1.7928400039672852f - (dot(float3(_1754, _1755, _1708), float3(_1754, _1755, _1708)) * 0.8537350296974182f);
+  float _1769 = 1.7928400039672852f - (dot(float3(_1756, _1757, _1709), float3(_1756, _1757, _1709)) * 0.8537350296974182f);
+  float _1790 = max((0.6000000238418579f - dot(float3(_1496, _1497, _1498), float3(_1496, _1497, _1498))), 0.0f);
+  float _1791 = max((0.6000000238418579f - dot(float3(_1517, _1518, _1519), float3(_1517, _1518, _1519))), 0.0f);
+  float _1792 = max((0.6000000238418579f - dot(float3(_1523, _1524, _1525), float3(_1523, _1524, _1525))), 0.0f);
+  float _1793 = max((0.6000000238418579f - dot(float3(_1526, _1527, _1528), float3(_1526, _1527, _1528))), 0.0f);
+  float _1794 = _1790 * _1790;
+  float _1795 = _1791 * _1791;
+  float _1796 = _1792 * _1792;
+  float _1797 = _1793 * _1793;
+  float _1812 = saturate((((sin(_791 - (frame_consts.time * 1.5f)) * 0.15000000596046448f) + 0.050000011920928955f) + (dot(float4((_1794 * _1794), (_1795 * _1795), (_1796 * _1796), (_1797 * _1797)), float4(dot(float3((_1766 * _1746), (_1766 * _1747), (_1766 * _1706)), float3(_1496, _1497, _1498)), dot(float3((_1767 * _1748), (_1767 * _1749), (_1767 * _1707)), float3(_1517, _1518, _1519)), dot(float3((_1768 * _1754), (_1768 * _1755), (_1768 * _1708)), float3(_1523, _1524, _1525)), dot(float3((_1769 * _1756), (_1769 * _1757), (_1769 * _1709)), float3(_1526, _1527, _1528)))) * 21.0f)) * 4.0f);
+  float _1816 = (_1812 * _1812) * (3.0f - (_1812 * 2.0f));
+  float _1818 = (_1816 * 0.6499999761581421f) + 0.3499999940395355f;
+  float _1840 = saturate(_1134);
+  float _1841 = saturate(_1474);
+  float _1863 = (((_678 * 1.2000000476837158f) * _683) * frame_consts.params.vignette.golden_intensity) * ((((saturate(11.0f - (sqrt((_775 * _775) + (_774 * _774)) / ((_1472 * 0.039000000804662704f) + 0.08100000768899918f))) * _1474) + (saturate(11.0f - (sqrt((_770 * _770) + _780) / ((_1132 * 0.039000000804662704f) + 0.08100000768899918f))) * _1134)) + (saturate(11.0f - (sqrt((_787 * _787) + _780) / ((_1816 * 0.039000000804662704f) + 0.08100000768899918f))) * _1818)) + (((((saturate(1.0f - (abs(_771) * 0.8333333134651184f)) * _1840) + (saturate(1.0f - (abs(dot(float2(_774, _775), float2(-0.8660253882408142f, 0.5f))) * 0.8333333134651184f)) * _1841)) * saturate(_1818)) + ((_1840 * saturate(1.0f - (abs(dot(float2(_770, _771), float2(0.8660253882408142f, 0.5f))) * 0.8333333134651184f))) * _1841)) * 0.5f));
+  float _1870 = (_1863 * ((_730 * _730) - _692)) + _692;
+  float _1871 = (_1863 * ((_731 * _731) - _693)) + _693;
+  float _1872 = (_1863 * ((_732 * _732) - _694)) + _694;
+  if (frame_consts.flashback_lut > 0.0f) {
+    float _1881 = ((_1870 * 0.3930000066757202f) + (_1871 * 0.7689999938011169f)) + (_1872 * 0.1889999955892563f);
+    float _1886 = ((_1870 * 0.3490000069141388f) + (_1871 * 0.6859999895095825f)) + (_1872 * 0.1679999977350235f);
+    float _1891 = ((_1870 * 0.2720000147819519f) + (_1871 * 0.5339999794960022f)) + (_1872 * 0.13099999725818634f);
+    float _1892 = frame_consts.flashback_lut * 0.800000011920929f;
+    float _1897 = ((_1870 * 0.2125999927520752f) + (_1871 * 0.7152000069618225f)) + (_1872 * 0.0722000002861023f);
+    _1917 = ((((_1881 - _1870) + ((_1897 - _1881) * 0.6499999761581421f)) * _1892) + _1870);
+    _1918 = ((((_1886 - _1871) + ((_1897 - _1886) * 0.6499999761581421f)) * _1892) + _1871);
+    _1919 = ((((_1891 - _1872) + ((_1897 - _1891) * 0.6499999761581421f)) * _1892) + _1872);
+  } else {
+    _1917 = _1870;
+    _1918 = _1871;
+    _1919 = _1872;
+  }
+  if (!(frame_consts.invert == 0)) {
+    _1928 = (1.0f - _1917);
+    _1929 = (1.0f - _1918);
+    _1930 = (1.0f - _1919);
+  } else {
+    _1928 = _1917;
+    _1929 = _1918;
+    _1930 = _1919;
+  }
+  SV_Target.x = _1928;
+  SV_Target.y = _1929;
+  SV_Target.z = _1930;
+  if (RENODX_TONE_MAP_TYPE) {
+    SV_Target.rgb = renodx::draw::ToneMapPass(untonemapped.rgb, SV_Target.rgb);
+  } else {
+    SV_Target.rgb = saturate(SV_Target.rgb);
+  }
+  SV_Target.rgb = renodx::draw::RenderIntermediatePass(SV_Target.rgb);
+
+  SV_Target.w = 1.0f;
+  return SV_Target;
+}
