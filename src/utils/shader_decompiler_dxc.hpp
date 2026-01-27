@@ -1081,12 +1081,26 @@ class Decompiler {
   struct CBVResource : Resource {
     uint32_t buffer_size;
     std::unordered_map<std::string, std::string_view> data_types;
+    bool dynamic_indexing = false;
+    std::string dynamic_load_function_name;
     explicit CBVResource(
         std::vector<std::string_view>& metadata,
         std::span<ResourceDescription> resource_descriptions,
         std::map<std::string_view, std::vector<std::string_view>>& raw_metadata)
         : Resource(metadata, resource_descriptions, "cb") {
       FromStringView(ParseKeyValue(metadata[6])[1], buffer_size);
+    }
+
+    std::string_view DataName() const {
+      // Preserve the metadata-derived cbuffer name even when we fall back to
+      // raw float4 indexing for dynamic register offsets.
+      return std::string_view(name);
+    }
+
+    std::string_view DynamicLoadFunctionName() const {
+      return dynamic_load_function_name.empty()
+                 ? std::string_view(name)
+                 : std::string_view(dynamic_load_function_name);
     }
   };
 
@@ -1173,6 +1187,17 @@ class Decompiler {
     std::string resource_class;
   };
 
+  struct CBVBinding {
+    CBVResource* resource = nullptr;
+    std::optional<uint32_t> reg_index = std::nullopt;
+    // HLSL expression for the register index (in float4 units).
+    std::string reg_index_expr;
+
+    bool IsDynamic() const {
+      return !reg_index.has_value();
+    }
+  };
+
   struct PreprocessState {
     std::vector<Signature> input_signature;
     std::vector<Signature> output_signature;
@@ -1185,7 +1210,7 @@ class Decompiler {
     std::vector<CBVResource> cbv_resources;
     std::vector<SamplerResource> sampler_resources;
     std::map<std::string_view, TypeDefinition> type_definitions;
-    std::map<std::string_view, std::pair<CBVResource*, uint32_t>> cbv_binding_variables;
+    std::map<std::string_view, CBVBinding> cbv_binding_variables;
     std::map<std::string_view, std::tuple<SRVResource*, std::string, std::string, std::string>> srv_binding_load_variables;
     std::map<std::string_view, std::tuple<UAVResource*, std::string, std::string, std::string>> uav_binding_load_variables;
     std::vector<BufferDefinition> buffer_definitions;
@@ -1850,15 +1875,26 @@ class Decompiler {
           assert(resource_class == "2");
           auto& cbv_resource = preprocess_state.cbv_resources[range_index];
 
+          auto reg_index_expr = ParseInt(regIndex);
           if (regIndex.starts_with("%")) {
-            throw std::exception("Unexpected dynamic cbuffer offset.");
+            cbv_resource.dynamic_indexing = true;
+            if (cbv_resource.dynamic_load_function_name.empty()) {
+              cbv_resource.dynamic_load_function_name = cbv_resource.name + "_load";
+            }
+            preprocess_state.cbv_binding_variables[variable] = {
+                .resource = &cbv_resource,
+                .reg_index = std::nullopt,
+                .reg_index_expr = reg_index_expr,
+            };
+          } else {
+            uint32_t cbv_variable_index;
+            FromStringView(regIndex, cbv_variable_index);
+            preprocess_state.cbv_binding_variables[variable] = {
+                .resource = &cbv_resource,
+                .reg_index = cbv_variable_index,
+                .reg_index_expr = reg_index_expr,
+            };
           }
-          uint32_t cbv_variable_index;
-          FromStringView(regIndex, cbv_variable_index);
-          // auto name = preprocess_state.ResourceVariableNameAtIndex(cbv_resource, cbv_variable_index);
-
-          // decompiled = std::format("// float4 _{} = {}[{}u];", variable, cbv_resource.name, cbv_variable_index);
-          preprocess_state.cbv_binding_variables[variable] = {&cbv_resource, cbv_variable_index};
 
         } else if (functionName == "@dx.op.cbufferLoadLegacy.i32") {
           // %18 = call %dx.types.CBufRet.i32 @dx.op.cbufferLoadLegacy.i32(i32 59, %dx.types.Handle %4, i32 40)  ; CBufferLoadLegacy(handle,regIndex)
@@ -1868,15 +1904,26 @@ class Decompiler {
           assert(resource_class == "2");
           auto& cbv_resource = preprocess_state.cbv_resources[range_index];
 
-          uint32_t cbv_variable_index;
-          FromStringView(regIndex, cbv_variable_index);
+          auto reg_index_expr = ParseInt(regIndex);
           if (regIndex.starts_with("%")) {
-            throw std::exception("Unexpected dynamic cbuffer offset.");
+            cbv_resource.dynamic_indexing = true;
+            if (cbv_resource.dynamic_load_function_name.empty()) {
+              cbv_resource.dynamic_load_function_name = cbv_resource.name + "_load";
+            }
+            preprocess_state.cbv_binding_variables[variable] = {
+                .resource = &cbv_resource,
+                .reg_index = std::nullopt,
+                .reg_index_expr = reg_index_expr,
+            };
+          } else {
+            uint32_t cbv_variable_index;
+            FromStringView(regIndex, cbv_variable_index);
+            preprocess_state.cbv_binding_variables[variable] = {
+                .resource = &cbv_resource,
+                .reg_index = cbv_variable_index,
+                .reg_index_expr = reg_index_expr,
+            };
           }
-          // auto name = preprocess_state.ResourceVariableNameAtIndex(cbv_resource, cbv_variable_index);
-
-          // decompiled = std::format("// int4 _{} = {}[{}u];", variable, cbv_resource.name, cbv_variable_index);
-          preprocess_state.cbv_binding_variables[variable] = {&cbv_resource, cbv_variable_index};
         } else if (functionName == "@dx.op.unary.f32") {
           auto [opNumber, value] = StringViewSplit<2>(functionParamsString, param_regex, 2);
           if (auto pair = UNARY_FLOAT_OPS.find(std::string(opNumber));
@@ -2698,20 +2745,38 @@ class Decompiler {
         auto [type, input, index] = StringViewMatch<3>(assignment, std::regex{R"(extractvalue (\S+) (\S+), (\S+))"});
         if (type == R"(%dx.types.CBufRet.f32)") {
           auto source_variable = ParseVariable(input).substr(1);
-          const auto& [cbv_resource, cbv_variable_index] = preprocess_state.cbv_binding_variables[source_variable];
           int literal_index;
           FromStringView(index, literal_index);
 
-          auto value_from_reflection = preprocess_state.ResourceVariableNameAtIndex(*cbv_resource, (cbv_variable_index * 16) + (literal_index * 4));
+          auto binding_it = preprocess_state.cbv_binding_variables.find(source_variable);
+          if (binding_it == preprocess_state.cbv_binding_variables.end() || binding_it->second.resource == nullptr) {
+            throw std::invalid_argument("Missing cbuffer binding for extractvalue.");
+          }
+          auto& binding = binding_it->second;
+          auto* cbv_resource = binding.resource;
 
-          if (value_from_reflection.empty()) {
-            int real_index = cbv_variable_index;
+          if (binding.IsDynamic()) {
+            cbv_resource->dynamic_indexing = true;
             char sub_index = VECTOR_INDEXES[literal_index];
-            std::string suffix = std::format("{:03}{}", real_index, sub_index);
-            assignment_value = std::format("{}_{}", cbv_resource->name, suffix);
-            cbv_resource->data_types[suffix] = "float";
+            assignment_value = std::format("((int){}({}).{})",
+                                           cbv_resource->DynamicLoadFunctionName(),
+                                           binding.reg_index_expr,
+                                           sub_index);
           } else {
-            assignment_value = value_from_reflection;
+            auto cbv_variable_index = binding.reg_index.value();
+            auto value_from_reflection = preprocess_state.ResourceVariableNameAtIndex(
+                *cbv_resource,
+                (cbv_variable_index * 16) + (literal_index * 4));
+
+            if (value_from_reflection.empty()) {
+              int real_index = cbv_variable_index;
+              char sub_index = VECTOR_INDEXES[literal_index];
+              std::string suffix = std::format("{:03}{}", real_index, sub_index);
+              assignment_value = std::format("{}_{}", cbv_resource->name, suffix);
+              cbv_resource->data_types[suffix] = "float";
+            } else {
+              assignment_value = value_from_reflection;
+            }
           }
 
           assignment_type = "float";
@@ -2720,20 +2785,38 @@ class Decompiler {
           // preprocess_state.variable_aliases.emplace(variable, value);
         } else if (type == R"(%dx.types.CBufRet.i32)") {
           auto source_variable = ParseVariable(input).substr(1);
-          const auto& [cbv_resource, cbv_variable_index] = preprocess_state.cbv_binding_variables[source_variable];
           int literal_index;
           FromStringView(index, literal_index);
 
-          auto value_from_reflection = preprocess_state.ResourceVariableNameAtIndex(*cbv_resource, (cbv_variable_index * 16) + (literal_index * 4));
+          auto binding_it = preprocess_state.cbv_binding_variables.find(source_variable);
+          if (binding_it == preprocess_state.cbv_binding_variables.end() || binding_it->second.resource == nullptr) {
+            throw std::invalid_argument("Missing cbuffer binding for extractvalue.");
+          }
+          auto& binding = binding_it->second;
+          auto* cbv_resource = binding.resource;
 
-          if (value_from_reflection.empty()) {
-            int real_index = cbv_variable_index;
+          if (binding.IsDynamic()) {
+            cbv_resource->dynamic_indexing = true;
             char sub_index = VECTOR_INDEXES[literal_index];
-            std::string suffix = std::format("{:03}{}", real_index, sub_index);
-            assignment_value = std::format("{}_{}", cbv_resource->name, suffix);
-            cbv_resource->data_types[suffix] = "int";
+            assignment_value = std::format("{}({}).{}",
+                                           cbv_resource->DynamicLoadFunctionName(),
+                                           binding.reg_index_expr,
+                                           sub_index);
           } else {
-            assignment_value = value_from_reflection;
+            auto cbv_variable_index = binding.reg_index.value();
+            auto value_from_reflection = preprocess_state.ResourceVariableNameAtIndex(
+                *cbv_resource,
+                (cbv_variable_index * 16) + (literal_index * 4));
+
+            if (value_from_reflection.empty()) {
+              int real_index = cbv_variable_index;
+              char sub_index = VECTOR_INDEXES[literal_index];
+              std::string suffix = std::format("{:03}{}", real_index, sub_index);
+              assignment_value = std::format("{}_{}", cbv_resource->name, suffix);
+              cbv_resource->data_types[suffix] = "int";
+            } else {
+              assignment_value = value_from_reflection;
+            }
           }
 
           assignment_type = "int";
@@ -3043,6 +3126,11 @@ class Decompiler {
       } else if (instruction == "udiv") {
         // %16 = udiv i32 %14, 38
         auto [type, a, b] = StringViewMatch<3>(assignment, std::regex{R"(udiv (\S+) (\S+), (\S+))"});
+        assignment_type = "int";
+        assignment_value = std::format("{} / {}", ParseInt(a), ParseInt(b));
+      } else if (instruction == "sdiv") {
+        // %85 = sdiv i32 %84, 2
+        auto [type, a, b] = StringViewMatch<3>(assignment, std::regex{R"(sdiv (\S+) (\S+), (\S+))"});
         assignment_type = "int";
         assignment_value = std::format("{} / {}", ParseInt(a), ParseInt(b));
       } else if (instruction == "or") {
@@ -4474,14 +4562,19 @@ class Decompiler {
       auto type_name = cbv_resource.pointer.substr(0, cbv_resource.pointer.length() - 1);
       auto definition = preprocess_state.type_definitions[type_name];
       int offset = 0;
+      const bool emit_dynamic_helper = cbv_resource.dynamic_indexing;
+
+      struct DynamicRule {
+        int start_register = 0;
+        int register_count = 1;
+        bool is_range = false;
+        std::string expression;
+      };
+      std::vector<DynamicRule> dynamic_rules;
 
       indent_spacing();
 
-      bool use_cbuffer_float4 = false;
-      if (use_cbuffer_float4) {
-        string_stream << "  float4 " << cbv_resource.name;
-        string_stream << "[" << ceil(static_cast<float>(cbv_resource.buffer_size) / 16.f) << "] : packoffset(c0);\n";
-      } else if (definition.size == cbv_resource.buffer_size || definition.has_offsets) {
+      if (cbv_resource.dynamic_indexing || definition.size == cbv_resource.buffer_size || definition.has_offsets) {
         for (const auto& [declaration, name, type_name, optional_offset] : definition.variables) {
           DataType info(type_name);
           assert(!name.empty());
@@ -4537,7 +4630,72 @@ class Decompiler {
             offset = item_offset;
           }
           string_stream << std::format(" : packoffset(c{:03}.{});\n", item_offset / 16, VECTOR_INDEXES[item_offset % 16 / 4], item_offset);
-          offset += preprocess_state.GetTypeSize(info);
+          const auto type_size_bytes = static_cast<int>(preprocess_state.GetTypeSize(info));
+          const int start_register = static_cast<int>(item_offset / 16);
+          const int register_count = std::max(1, (type_size_bytes + 15) / 16);
+          offset += type_size_bytes;
+
+          if (!emit_dynamic_helper) {
+            continue;
+          }
+
+          const bool is_basic_type =
+              (info.data_type == "float" || info.data_type == "int" || info.data_type == "uint");
+          if (!is_basic_type) {
+            continue;
+          }
+
+          auto make_cast_component = [&](std::string component) {
+            if (info.data_type == "int" || info.data_type == "uint") {
+              return std::format("(float){}", component);
+            }
+            return component;
+          };
+
+          DynamicRule rule = {
+              .start_register = start_register,
+              .register_count = register_count,
+              .is_range = false,
+              .expression = {},
+          };
+
+          if (!info.array_sizes.empty()
+              && info.array_sizes.size() == 1
+              && info.vector_size == 4) {
+            rule.is_range = true;
+            rule.expression = std::format("{}[idx - {}]", name, start_register);
+            dynamic_rules.push_back(std::move(rule));
+            continue;
+          }
+
+          if (info.vector_size == 4) {
+            rule.expression = std::string(name);
+            dynamic_rules.push_back(std::move(rule));
+            continue;
+          }
+
+          if (info.vector_size == 0 || info.vector_size == 1) {
+            const auto c0 = make_cast_component(name);
+            rule.expression = std::format("float4({}, 0.0f, 0.0f, 0.0f)", c0);
+            dynamic_rules.push_back(std::move(rule));
+            continue;
+          }
+
+          if (info.vector_size == 2 || info.vector_size == 3) {
+            const char c0_name = VECTOR_INDEXES[0];
+            const char c1_name = VECTOR_INDEXES[1];
+            const auto c0 = make_cast_component(std::format("{}.{}", name, c0_name));
+            const auto c1 = make_cast_component(std::format("{}.{}", name, c1_name));
+            if (info.vector_size == 2) {
+              rule.expression = std::format("float4({}, {}, 0.0f, 0.0f)", c0, c1);
+            } else {
+              const char c2_name = VECTOR_INDEXES[2];
+              const auto c2 = make_cast_component(std::format("{}.{}", name, c2_name));
+              rule.expression = std::format("float4({}, {}, {}, 0.0f)", c0, c1, c2);
+            }
+            dynamic_rules.push_back(std::move(rule));
+            continue;
+          }
         }
       } else {
         std::vector<std::pair<std::string, std::string_view>> sorted(cbv_resource.data_types.begin(), cbv_resource.data_types.end());
@@ -4565,6 +4723,29 @@ class Decompiler {
       // string_stream << "  } " << cbv_resource.name << " : packoffset(c0);\n";
 
       string_stream << "};\n\n";
+
+      if (emit_dynamic_helper) {
+        string_stream << std::format("float4 {}(int idx) {{\n", cbv_resource.DynamicLoadFunctionName());
+        string_stream << "  switch (idx) {\n";
+        for (const auto& rule : dynamic_rules) {
+          if (rule.is_range && rule.register_count > 1) {
+            string_stream << std::format("    // registers [{}..{}]\n",
+                                         rule.start_register,
+                                         rule.start_register + rule.register_count - 1);
+            string_stream << std::format("    if (idx >= {} && idx < {}) return {};\n",
+                                         rule.start_register,
+                                         rule.start_register + rule.register_count,
+                                         rule.expression);
+            continue;
+          }
+          string_stream << std::format("    case {}: return {};\n",
+                                       rule.start_register,
+                                       rule.expression);
+        }
+        string_stream << "    default: return float4(0.0f, 0.0f, 0.0f, 0.0f);\n";
+        string_stream << "  }\n";
+        string_stream << "}\n\n";
+      }
     }
 
     // sampler

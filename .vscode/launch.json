@@ -14,10 +14,26 @@
       "script": "${workspaceFolder}/scripts/deploy-early-access.ps1",
       "cwd": "${cwd}",
       "args": [
-        "--target", "${command:cmake.buildTargetName}",
-        "--description", "\"${input:deployDescription}\""
-      ],
+        "--target",
+        "${command:cmake.buildTargetName}",
+        "--description",
+        "\"${input:deployDescription}\""
+      ]
     },
+    {
+      "name": "Decomp",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "D:/GitHub/renodx/build/Debug/decomp.exe",
+      "args": [
+        "C:/tools/decompiler/test/gaussian_0xB2751AD7.ps_6_6.cso",
+        "-f",
+        "--use-do-while"
+      ],
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}"
+    }
   ],
   "inputs": [
     {
