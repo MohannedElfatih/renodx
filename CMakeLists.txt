@@ -304,10 +304,41 @@ function(build_shader_target ADDON ADDON_PATH)
     string(REGEX MATCH "(.*)\\.([^.]+)\\.slang$" _ ${FILENAME})
     set(SHADER_NAME ${CMAKE_MATCH_1})
     set(SHADER_TARGET ${CMAKE_MATCH_2})
+    set(SHADER_TARGET_RAW ${SHADER_TARGET})
 
     if(SHADER_NAME)
       string(REGEX MATCH "(0x[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])$" _ ${SHADER_NAME})
       set(SHADER_HASH ${CMAKE_MATCH_1})
+    endif()
+
+    # Allow opting into HLSL-style output from .slang via a top-of-file marker.
+    # Usage: "#define SLANG_HLSL_SHADER" or "#define SLANG_HLSL_SHADER ps_6_0"
+    set(SLANG_FORCE_HLSL FALSE)
+    set(SLANG_FORCE_HLSL_PROFILE "")
+    set(SLANG_HEADER "")
+    file(STRINGS ${FILE} SLANG_HEADER LIMIT_COUNT 1)
+    if(SLANG_HEADER)
+      string(REGEX MATCH "^#define[ \t]+SLANG_HLSL_SHADER([ \t]+[^ \t\r\n]+)?" _ "${SLANG_HEADER}")
+      if(CMAKE_MATCH_0)
+        set(SLANG_FORCE_HLSL TRUE)
+        if(CMAKE_MATCH_1)
+          string(STRIP "${CMAKE_MATCH_1}" SLANG_FORCE_HLSL_PROFILE)
+        endif()
+      endif()
+    endif()
+
+    if(SLANG_FORCE_HLSL)
+      if(SLANG_FORCE_HLSL_PROFILE)
+        set(SHADER_TARGET ${SLANG_FORCE_HLSL_PROFILE})
+      elseif(SHADER_TARGET_RAW STREQUAL "frag")
+        set(SHADER_TARGET "ps_6_0")
+      elseif(SHADER_TARGET_RAW STREQUAL "vert")
+        set(SHADER_TARGET "vs_6_0")
+      elseif(SHADER_TARGET_RAW STREQUAL "comp")
+        set(SHADER_TARGET "cs_6_0")
+      else()
+        set(SHADER_TARGET ${SHADER_TARGET_RAW})
+      endif()
     endif()
 
     set(SHADER_COMPILER ${SLANGC_BIN})
@@ -317,6 +348,7 @@ function(build_shader_target ADDON ADDON_PATH)
     set(SHADER_FLAGS ${SHADER_FLAGS} -entry main)
     set(SHADER_FLAGS ${SHADER_FLAGS} -Wno-30056)
     set(SHADER_FLAGS ${SHADER_FLAGS} -Wno-15205)
+
 
     if(SHADER_TARGET AND (SHADER_HASH OR SHADER_NAME))
       if(SHADER_TARGET STREQUAL "frag" OR SHADER_TARGET STREQUAL "vert" OR SHADER_TARGET STREQUAL "comp")
@@ -365,17 +397,18 @@ function(build_shader_target ADDON ADDON_PATH)
           inspect_hlsl_imports(${FILE} HLSL_CHILD_DEPENDENCIES ".")
           list(APPEND HLSL_DEPENDENCIES ${HLSL_CHILD_DEPENDENCIES})
 
+          # SM5 Slang: compile to DXIL directly.
           if(SHADER_HASH)
             add_custom_command(
               OUTPUT ${EMBED_FOLDER}/${SHADER_HASH}_dx11.cso
-              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET_TYPE}_5_0 ${SHADER_FLAGS} -target dxbc -o ${EMBED_FOLDER}/${SHADER_HASH}_dx11.cso
+              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET_TYPE}_5_0 ${SHADER_FLAGS} -D __SHADER_TARGET_MAJOR=5 -D __SHADER_TARGET_MINOR=0 -target dxil -o ${EMBED_FOLDER}/${SHADER_HASH}_dx11.cso
               DEPENDS ${HLSL_DEPENDENCIES}
             )
             list(APPEND SHADER_BINARIES ${EMBED_FOLDER}/${SHADER_HASH}_dx11.cso)
           else()
             add_custom_command(
               OUTPUT ${EMBED_FOLDER}/${SHADER_NAME}_dx11.cso
-              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET_TYPE}_5_0 ${SHADER_FLAGS} -target dxbc -o ${EMBED_FOLDER}/${SHADER_NAME}_dx11.cso
+              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET_TYPE}_5_0 ${SHADER_FLAGS} -D __SHADER_TARGET_MAJOR=5 -D __SHADER_TARGET_MINOR=0 -target dxil -o ${EMBED_FOLDER}/${SHADER_NAME}_dx11.cso
               DEPENDS ${HLSL_DEPENDENCIES}
             )
             list(APPEND SHADER_BINARIES ${EMBED_FOLDER}/${SHADER_NAME}_dx11.cso)
@@ -384,21 +417,21 @@ function(build_shader_target ADDON ADDON_PATH)
           if(SHADER_HASH)
             add_custom_command(
               OUTPUT ${EMBED_FOLDER}/${SHADER_HASH}_dx12.cso
-              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET_TYPE}_5_1 ${SHADER_FLAGS} -target dxbc -o ${EMBED_FOLDER}/${SHADER_HASH}_dx12.cso
+              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET_TYPE}_5_1 ${SHADER_FLAGS} -D __SHADER_TARGET_MAJOR=5 -D __SHADER_TARGET_MINOR=1 -target dxil -o ${EMBED_FOLDER}/${SHADER_HASH}_dx12.cso
               DEPENDS ${HLSL_DEPENDENCIES}
             )
             list(APPEND SHADER_BINARIES ${EMBED_FOLDER}/${SHADER_HASH}_dx12.cso)
           else()
             add_custom_command(
               OUTPUT ${EMBED_FOLDER}/${SHADER_NAME}_dx12.cso
-              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET_TYPE}_5_1 ${SHADER_FLAGS} -target dxbc -o ${EMBED_FOLDER}/${SHADER_NAME}_dx12.cso
+              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET_TYPE}_5_1 ${SHADER_FLAGS} -D __SHADER_TARGET_MAJOR=5 -D __SHADER_TARGET_MINOR=1 -target dxil -o ${EMBED_FOLDER}/${SHADER_NAME}_dx12.cso
               DEPENDS ${HLSL_DEPENDENCIES}
             )
             list(APPEND SHADER_BINARIES ${EMBED_FOLDER}/${SHADER_NAME}_dx12.cso)
           endif()
 
         else()
-          # Add dependencies
+                    # Add dependencies
           unset(HLSL_DEPENDENCIES)
           unset(HLSL_CHILD_DEPENDENCIES)
           list(APPEND HLSL_DEPENDENCIES ${FILE})
@@ -409,14 +442,14 @@ function(build_shader_target ADDON ADDON_PATH)
             # message("Registering: " ${FILE} " => " ${EMBED_FOLDER}/${SHADER_HASH}.cso)
             add_custom_command(
               OUTPUT ${EMBED_FOLDER}/${SHADER_HASH}.cso
-              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET} ${SHADER_FLAGS} -target dxil -o ${EMBED_FOLDER}/${SHADER_HASH}.cso
+              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET} ${SHADER_FLAGS} -D __SHADER_TARGET_MAJOR=${SHADER_TARGET_MAJOR} -D __SHADER_TARGET_MINOR=${SHADER_TARGET_MINOR} -target dxil -o ${EMBED_FOLDER}/${SHADER_HASH}.cso
               DEPENDS ${HLSL_DEPENDENCIES}
             )
             list(APPEND SHADER_BINARIES ${EMBED_FOLDER}/${SHADER_HASH}.cso)
           else()
             add_custom_command(
               OUTPUT ${EMBED_FOLDER}/${SHADER_NAME}.cso
-              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET} ${SHADER_FLAGS} -target dxil -o ${EMBED_FOLDER}/${SHADER_NAME}.cso
+              COMMAND ${SHADER_COMPILER} ${FILE} -profile ${SHADER_TARGET} ${SHADER_FLAGS} -D __SHADER_TARGET_MAJOR=${SHADER_TARGET_MAJOR} -D __SHADER_TARGET_MINOR=${SHADER_TARGET_MINOR} -target dxil -o ${EMBED_FOLDER}/${SHADER_NAME}.cso
               DEPENDS ${HLSL_DEPENDENCIES}
             )
             list(APPEND SHADER_BINARIES ${EMBED_FOLDER}/${SHADER_NAME}.cso)

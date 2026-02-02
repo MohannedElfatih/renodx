@@ -1,5 +1,55 @@
 #include "./common.hlsl"
 
+// Slang autodiff helper to compute slope at pivot and extend the curve linearly.
+// Keep ApplyNiohCurve as-is; this replaces ApplyNiohExtended usage for Slang builds.
+#ifndef CURVE_PIVOT_X
+#define CURVE_PIVOT_X 0.267011f
+#endif
+#ifndef CURVE_PIVOT_Y
+#define CURVE_PIVOT_Y 0.181423f
+#endif
+#ifndef CURVE_PIVOT_SLOPE
+#define CURVE_PIVOT_SLOPE 0.917470f
+#endif
+
+[Differentiable]
+float CurveAD(
+    no_diff float A = 30.9882221f,
+    no_diff float B = 1.19912136f,
+    no_diff float C = 32.667881f,
+    no_diff float D = 9.87056255f,
+    no_diff float E = 8.97784805f,
+    float x) {
+  return (x * (A * x + B)) / (x * (C * x + D) + E);
+}
+
+[Differentiable]
+float CurveAD_Default(float x) {
+  return CurveAD(30.9882221f, 1.19912136f, 32.667881f, 9.87056255f, 8.97784805f, x);
+}
+
+float CurveVelocityAt(float x) {
+  DifferentialPair<float> dx = diffPair(x, 1.0f);
+  DifferentialPair<float> y = fwd_diff(CurveAD_Default)(dx);
+  return y.d;
+}
+
+float3 ApplyCurveExtendedAD(
+  float3 x, float3 base) {
+#if defined(CURVE_PIVOT_Y) && defined(CURVE_PIVOT_SLOPE)
+  float pivot_x = CURVE_PIVOT_X;
+  float pivot_y = CURVE_PIVOT_Y;
+  float slope = CURVE_PIVOT_SLOPE;
+#else
+  float pivot_x = CURVE_PIVOT_X;
+  float pivot_y = CurveAD_Default(pivot_x);
+  float slope = CurveVelocityAt(pivot_x);
+#endif
+  float offset = pivot_y - slope * pivot_x;
+  float3 extended = slope * x + offset;
+  return lerp(base, extended, step(pivot_x, x));
+}
+
 cbuffer cb4_buf : register(b4) {
   float2 cb4_m0 : packoffset(c0);
   float2 cb4_m1 : packoffset(c0.z);
@@ -286,7 +336,10 @@ float4 vanillaTonemapper(float3 color) {
     float3 W = float3(_538, _539, _540);
 
     float3 base = ApplyNiohCurve(x, A, B, C, D, E);
-    float3 extended = ApplyNiohExtended(x, base, A, B, C, D, E);
+    float3 extended =
+        (CUSTOM_VIGNETTE > 0.f)
+            ? ApplyNiohExtended(x, base, A, B, C, D, E)
+            : ApplyCurveExtendedAD(x, base);
     extended = extended * W;
     extended = renodx::color::bt709::from::AP1(extended);
     extended = CastleDechroma_CVVDPStyle_NakaRushton(extended, 50.f);
@@ -596,3 +649,4 @@ void main(SPIRV_Cross_Input stage_input) {
   gl_GlobalInvocationID = stage_input.gl_GlobalInvocationID;
   comp_main();
 }
+
