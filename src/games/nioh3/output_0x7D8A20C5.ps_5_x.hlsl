@@ -1,4 +1,4 @@
-#include "./common.hlsl"
+#include "../common.hlsl"
 
 // ---- Created with 3Dmigoto v1.3.16 on Thu Jan 29 11:41:46 2026
 
@@ -37,6 +37,9 @@ Texture3D<float4> g_tLdrLut : register(t4);
 // 3Dmigoto declarations
 #define cmp -
 
+#define LUT_EXTENSION_SAMPLE(color) SampleSDRLUT((color), sampleLinear_s, g_tLdrLut)
+#include "../lut_extension.hlsl"
+#undef LUT_EXTENSION_SAMPLE
 void main(
     float4 v0: SV_Position0,
     float2 v1: TEXCOORD0,
@@ -63,7 +66,7 @@ void main(
   r1.x = cmp(0 < g_vVerticalLimbDarkenningTopInfo.x);
   r1.y = cmp(0 < g_vVerticalLimbDarkenningBottomInfo.x);
   r1.z = cmp(g_vCompositeInfo.z < 0);
-  r1.w = g_tExposureScaleInfo.Load(float4(0, 0, 0, 0)).x;
+  r1.w = g_tExposureScaleInfo.Load(int3(0, 0, 0)).x;
   r2.xy = cmp(float2(0, 0) < g_vCompositeInfo.zy);
   r2.x = r2.x ? g_vCompositeInfo.z : 1;
   r1.z = r1.z ? r1.w : r2.x;
@@ -213,6 +216,18 @@ void main(
   }
 
   float3 untonemapped = r3.rgb;
+  const bool kLUTShoulderSelfCheck = false;
+  const bool kLUTShoulderCalibrate = false;
+  if (kLUTShoulderSelfCheck) {
+    o0 = LUTShoulderSelfCheckColor();
+    return;
+  }
+
+  if (kLUTShoulderCalibrate) {
+    o0 = LUTShoulderCalibrateColor();
+    return;
+  }
+
 #if 0
   r0.xyz = r3.xyz * float3(1.00006652, 1.00006652, 1.00006652) + float3(-0.00391646381, -0.00391646381, -0.00391646381);
   r0.xyz = r0.www ? r0.xyz : r3.xyz;
@@ -221,7 +236,7 @@ void main(
   r0.xyz = saturate(r0.xyz * float3(0.0734997839, 0.0734997839, 0.0734997839) + float3(0.386036009, 0.386036009, 0.386036009));
   r0.xyz = g_tHdrLut.SampleLevel(sampleLinear_s, r0.xyz, 0).xyz;
 #else
-  r0.rgb = SampleHDRLUT(untonemapped, sampleLinear_s, g_tHdrLut);
+  r0.rgb = CUSTOM_VIGNETTE ? SampleHDRLUTShoulderExtended(untonemapped) : SampleHDRLUTShoulderExtendedPerChannel(untonemapped);
 #endif
 
   if (r2.y != 0) {
@@ -247,3 +262,4 @@ void main(
   o0 = ProcessColor(o0);
   return;
 }
+

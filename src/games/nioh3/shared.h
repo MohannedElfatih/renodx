@@ -15,7 +15,7 @@
 #define RENODX_TONE_MAP_BLOWOUT              shader_injection.colorGradeBlowout
 #define RENODX_TONE_MAP_FLARE                shader_injection.colorGradeFlare
 #define RENODX_RENO_DRT_TONE_MAP_METHOD      renodx::tonemap::renodrt::config::tone_map_method::HERMITE_SPLINE
-#define RENODX_RENO_DRT_WHITE_CLIP           65.f  // Cause they're using arri
+#define RENODX_RENO_DRT_WHITE_CLIP           20.f  // Cause they're using arri
 #define RENODX_SWAP_CHAIN_CUSTOM_COLOR_SPACE shader_injection.colorGradeColorSpace
 #define RENODX_SWAP_CHAIN_OUTPUT_PRESET      renodx::draw::SWAP_CHAIN_OUTPUT_PRESET_HDR10
 //  Game's UI and render are linear, so we gamma correct everything at the end

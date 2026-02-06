@@ -43,6 +43,10 @@ Texture2D<float4> g_tSceneDepth : register(t11);
 // 3Dmigoto declarations
 #define cmp -
 
+#define LUT_EXTENSION_SAMPLE(color) SampleHDRLUT((color), sampleLinear_s, g_tHdrLut)
+#include "./lut_extension.hlsl"
+#undef LUT_EXTENSION_SAMPLE
+
 void main(
     float4 v0: SV_Position0,
     float2 v1: TEXCOORD0,
@@ -226,7 +230,7 @@ void main(
   r0.xyz = saturate(r0.xyz * float3(0.0734997839, 0.0734997839, 0.0734997839) + float3(0.386036009, 0.386036009, 0.386036009));
   r1.xyz = g_tHdrLut.SampleLevel(sampleLinear_s, r0.xyz, 0).xyz;
 #else
-  r1.rgb = SampleHDRLUT(untonemapped, sampleLinear_s, g_tHdrLut);
+  r1.rgb = CUSTOM_HDR_LUT_SHOULDER_PER_CHANNEL ? SampleHDRLUTShoulderExtendedPerChannel(untonemapped) : SampleHDRLUTShoulderExtended(untonemapped);
 #endif
   if (g_vDramaticHdrLutInfo0[0].w != 0) {
     r0.w = g_tSceneDepth.SampleLevel(samplePoint_s, r2.xz, 0).x;
