@@ -1268,7 +1268,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0x29B597F9),
     UberHDGammaOnDraw(0x4424716A),
     UberHDGammaOnDraw(0xF0DB2F63),
-	  UberHDLinearOnDraw(0x8C592D8D),
+	UberHDLinearOnDraw(0x8C592D8D),
     UberHDLinearOnDraw(0x09012773),
     UberHDLinearOnDraw(0x342E56C7),
     UberHDLinearOnDraw(0xA8A0A101),
@@ -1276,6 +1276,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0x66CCE9A2),
     ////// URP END //////
     ////// CUSTOM START //////
+    Builder3OnDraw(0xF9658F60), // SadCatStudios_ColorGradingLut
+    UberHDLinearOnDraw(0xFF079BBC), // SadCatStudios_FinalBlit
     CustomShaderEntryCallback(0x459D4153, &CountLinear),    // Colour Correction
     CustomShaderEntryCallback(0xB0826385, &CountLinear),
     CustomShaderEntryCallback(0x6D550A49, &CountLinear),  // PS1 Post Processing
@@ -1668,6 +1670,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CountGammaTonemap1ClampedOnDraw(0x84868CA0),
     CountGammaTonemap1ClampedOnDraw(0x363122F4),
     CountGammaTonemap1ClampedOnDraw(0x599066C8),
+    CountGammaTonemap1ClampedOnDraw(0x3806037E),
     CountGammaTonemap1ClampedOnDraw(0xAB3A8C76),
     CountGammaTonemap1ClampedOnDraw(0xAE488FB0),
     CountGammaTonemap1ClampedOnDraw(0xBB36315A),
