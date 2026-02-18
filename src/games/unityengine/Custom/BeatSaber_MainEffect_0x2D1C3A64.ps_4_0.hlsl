@@ -26,7 +26,7 @@ void main(
   r0.x = -0.5 + r0.x;
   r0.x = 0.00392156886 * r0.x;
   r1.xyzw = t1.Sample(s2_s, w1.xy).xyzw;
-  r0.xyz = r1.xyz * cb0[5].zzz + r0.xxx;
+  r0.xyz = r1.xyz * cb0[5].zzz * injectedData.fxBloom + r0.xxx;
   r1.xy = cb0[5].xy * float2(-0.5,0.5) + v1.xy;
   r1.xyzw = t0.Sample(s1_s, r1.xy).xyzw;
   r2.xyzw = cb0[5].xyxy * float4(0,-0.5,0.5,0.5) + v1.xyxy;
