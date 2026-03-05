@@ -901,6 +901,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0xB2FA9650),
     UberLinearOnDraw(0x614D4290),
     UberLinearOnDraw(0x333D4088),
+    UberLinearOnDraw(0x2B398141),
+    UberLinearOnDraw(0xDF97E9E0),
     UberLinearOnDraw(0xA1BB94CF),
     UberLinearOnDraw(0xB75D73F2),
     UberLinearOnDraw(0x4892C014),
@@ -978,6 +980,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x14DFEA72),
     UberLinearOnDraw(0x3A4565C5),
     UberLinearOnDraw(0x4C68E3B1),
+    UberLinearOnDraw(0xAD1DCECB),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1120,6 +1123,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESLinearOnDraw(0xB4323752),
     UberACESLinearOnDraw(0xC9F897D5),
     UberACESLinearOnDraw(0xC593D007),
+    UberACESLinearOnDraw(0xCD0AF2B1),
     UberACESLinearOnDraw(0xD8C3ADEB),
     UberACESLinearOnDraw(0xE651D798),
     UberACESLinearOnDraw(0x6FEECA44),
@@ -1782,6 +1786,7 @@ const ShaderItem INITIAL_SHADERS[] = {
         // LUT
     UberHDGammaOnDraw(0x0CA6FA43),
     UberHDLinearOnDraw(0x0D600615),
+    UberHDGammaOnDraw(0x1AA327C4),
     UberHDGammaOnDraw(0x01AF86C9),
     UberHDLinearOnDraw(0x1BF2161B),
     UberHDLinearOnDraw(0x1F59543C),
@@ -2997,6 +3002,12 @@ const std::unordered_map<
             },
         },
         {
+            "Descenders.exe",
+            {
+              {"Use_Swapchain_Proxy", 1.f},
+            },
+        },
+        {
             "Diplomacy is Not an Option.exe",
             {
                 {"Upgrade_R11G11B10_FLOAT", UPGRADE_TYPE_ANY},
@@ -3309,6 +3320,7 @@ const std::unordered_map<
 
 float g_upgrade_copy_destinations = 0.f;
 float g_use_resource_cloning = 0.f;
+float g_force_pipeline_cloning = 0.f;
 float g_resize_internal_lut = 0.f;
 float toggleBlitHack = 0.f;
 
@@ -3497,6 +3509,27 @@ void AddAdvancedSettings() {
     };
     add_setting(setting);
     g_use_resource_cloning = setting->GetValue();
+  }
+  {
+    auto* setting = new renodx::utils::settings::Setting{
+        .key = "Force_Pipeline_Cloning",
+        .binding = &g_force_pipeline_cloning,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Force Pipeline Cloning",
+        .section = "Resource Upgrades",
+        .tooltip = "Not sure how it works, mostly to solve issues with dx12 (I think).",
+        .labels = {
+            "Off",
+            "On",
+        },
+        .tint = 0xAFD8B5,
+        .is_global = true,
+        .is_visible = []() { return settings[0]->GetValue() >= 2; },
+    };
+    add_setting(setting);
+    g_force_pipeline_cloning = setting->GetValue();
+    renodx::mods::shader::force_pipeline_cloning = g_force_pipeline_cloning == 1.f;
   }
   {
     auto* setting = new renodx::utils::settings::Setting{
