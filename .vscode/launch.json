@@ -8,6 +8,14 @@
       "processId": "${command:pickProcess}"
     },
     {
+      "name": "(msvc) Launch Transistor",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "F:/Games/Transistor/Transistor.exe",
+      "cwd": "F:/Games/Transistor",
+      "preLaunchTask": "CMake: build"
+    },
+    {
       "name": "Deploy Early Access",
       "type": "PowerShell",
       "request": "launch",
