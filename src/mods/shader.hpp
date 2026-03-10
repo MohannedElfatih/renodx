@@ -600,7 +600,7 @@ static void OnInitPipelineLayout(
 
       {
         std::stringstream s;
-        s << "mods::shader::OnInitPipelineLayout(Cloning D3D12 Layout ";
+        s << "mods::shader::OnInitPipelineLayout(Cloning D3D12/Vulkan Layout ";
         s << PRINT_PTR(layout.handle);
         s << ")";
         reshade::log::message(reshade::log::level::debug, s.str().c_str());
@@ -610,7 +610,7 @@ static void OnInitPipelineLayout(
       free(new_params);
       new_params = nullptr;
       std::stringstream s;
-      s << "mods::shader::OnInitPipelineLayout(Cloning D3D12 Layout ";
+      s << "mods::shader::OnInitPipelineLayout(Cloning D3D12/Vulkan Layout ";
       s << PRINT_PTR(layout.handle);
       s << " => ";
       s << PRINT_PTR(injection_layout.handle);
@@ -703,12 +703,12 @@ static void OnInitPipelineLayout(
 
   {
     auto& pipeline_data = *utils::pipeline_layout::GetPipelineLayoutData(layout, true);
-    const auto binding_offset = static_cast<int32_t>(pipeline_data.params[injection_index].push_constants.binding);
     pipeline_data.layout = layout;
     pipeline_data.injection_index = injection_index;
     pipeline_data.injection_layout = injection_layout;
     pipeline_data.injection_register_index = cbv_index;
-    pipeline_data.injection_constant_buffer_offset = std::max((vk_pc_offset - static_cast<int32_t>(shader_injection_size)), 0);
+    // Cloning adds a new param, non cloning appends to an existing param
+    pipeline_data.injection_constant_buffer_offset = use_pipeline_layout_cloning ? vk_pc_offset : std::max((vk_pc_offset - static_cast<int32_t>(shader_injection_size)), 0);
     pipeline_data.failed_injection = false;
 
     std::stringstream s;
@@ -717,7 +717,6 @@ static void OnInitPipelineLayout(
     s << ", injection index: " << injection_index;
     s << ", injection layout: " << PRINT_PTR(injection_layout.handle);
     if (is_vulkan) {
-      s << ", binding offset: " << binding_offset;
       s << ", injection offset: " << pipeline_data.injection_constant_buffer_offset;
     }
     if (is_dx) {
@@ -790,6 +789,7 @@ inline void OnPushDescriptors(
     reshade::api::pipeline_layout layout,
     uint32_t layout_param,
     const reshade::api::descriptor_table_update& update) {
+  const bool is_vulkan = cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan;
   reshade::api::pipeline_layout cloned_layout;
   {
     auto* pipeline_layout_data = utils::pipeline_layout::GetPipelineLayoutData(layout);
@@ -825,8 +825,10 @@ inline void OnPushDescriptors(
 #endif
 
   cmd_list->push_descriptors(stages, cloned_layout, layout_param, update);
-  // Switch back stage
-  cmd_list->push_descriptors(stages, layout, layout_param, update);
+  if (!is_vulkan) {
+    // Pushing twice messes up Vulkan's descriptors, unlike DX12
+    cmd_list->push_descriptors(stages, layout, layout_param, update);
+  }
 }
 
 inline void OnBindDescriptorTables(
@@ -836,6 +838,7 @@ inline void OnBindDescriptorTables(
     uint32_t first,
     uint32_t count,
     const reshade::api::descriptor_table* tables) {
+  const bool is_vulkan = cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan;
   reshade::api::pipeline_layout cloned_layout;
   {
     auto* pipeline_layout_data = utils::pipeline_layout::GetPipelineLayoutData(layout);
@@ -856,7 +859,10 @@ inline void OnBindDescriptorTables(
     reshade::log::message(reshade::log::level::info, s.str().c_str());
 #endif
     cmd_list->bind_descriptor_table(stages, cloned_layout, (first + i), tables[i]);
-    cmd_list->bind_descriptor_table(stages, layout, (first + i), tables[i]);
+    if (!is_vulkan) {
+      // Pushing twice messes up Vulkan's descriptors, unlike DX12
+      cmd_list->bind_descriptor_table(stages, layout, (first + i), tables[i]);
+    }
   }
 }
 
@@ -964,7 +970,11 @@ inline DrawResponse HandleStatesAndBypass(
 #endif
       return response;
     }
-    auto pc_param = state.pipeline_details->layout_data->params[state.pipeline_details->layout_data->injection_index];
+    // NOTE(Ritsu): pipeline layout cloning doesn't save the newly created param
+    auto visibility = reshade::api::shader_stage::all;
+    if (!use_pipeline_layout_cloning) {
+      visibility = state.pipeline_details->layout_data->params[state.pipeline_details->layout_data->injection_index].push_constants.visibility;
+    }
     renodx::utils::constants::PushShaderInjections(
         cmd_list,
         state.pipeline_details->layout_data->injection_layout,
@@ -974,7 +984,7 @@ inline DrawResponse HandleStatesAndBypass(
         constant_buffer_offset != 0 ? constant_buffer_offset : (state.pipeline_details->layout_data->injection_constant_buffer_offset),
         resource_tag_float,
         resource_tag,
-        pc_param.push_constants.visibility);
+        visibility);
     if (revert_constant_buffer_ranges) {
       switch (cmd_list->get_device()->get_api()) {
         case reshade::api::device_api::d3d10:
