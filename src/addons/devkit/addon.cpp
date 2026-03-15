@@ -47,7 +47,7 @@
 #include "../../utils/pipeline_layout.hpp"
 #include "../../utils/shader.hpp"
 #include "../../utils/shader_compiler_directx.hpp"
-#include "../../utils/shader_compiler_slang.hpp"
+#include "../../utils/shader_compiler_vulkan.hpp"
 #include "../../utils/shader_compiler_watcher.hpp"
 #include "../../utils/shader_decompiler_dxc.hpp"
 #include "../../utils/shader_dump.hpp"
@@ -364,7 +364,7 @@ bool ComputeDisassemblyForShaderDetails(reshade::api::device* device, DeviceData
             shader_details->shader_data.data(),
             shader_details->shader_data.data() + shader_details->shader_data.size());
       } else if (device->get_api() == reshade::api::device_api::vulkan) {
-        shader_details->disassembly = renodx::utils::shader::compiler::slang::DisassembleSpirv(shader_details->shader_data, shader_details->shader_hash);
+        shader_details->disassembly = renodx::utils::shader::compiler::vulkan::DisassembleSpirv(shader_details->shader_data, shader_details->shader_hash);
       } else {
         throw std::exception("Unsupported device API.");
       }
@@ -5078,7 +5078,7 @@ void RenderShaderViewDecompilation(reshade::api::device* device, DeviceData* dat
                 .flatten = true,
             });
       } else if (device->get_api() == reshade::api::device_api::vulkan) {
-        shader_details->decompilation = renodx::utils::shader::compiler::slang::DecompileSpirvToGlsl(
+        shader_details->decompilation = renodx::utils::shader::compiler::vulkan::DecompileSpirvToGlsl(
             shader_details->shader_data,
             shader_details->shader_hash);
       } else if (device->get_api() == reshade::api::device_api::opengl) {
@@ -6003,3 +6003,4 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
 
   return TRUE;
 }
+
