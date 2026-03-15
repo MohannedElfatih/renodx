@@ -939,7 +939,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x620B1A71),
     UberLinearOnDraw(0x75812DD3),
     UberLinearOnDraw(0xFA04705A),
-    UberLinearOnDraw(0x3063B396),
     UberLinearOnDraw(0xEC2E44B0),
     UberLinearOnDraw(0x7BB9330C),
     UberLinearOnDraw(0x1618D91F),
@@ -1136,6 +1135,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESLinearOnDraw(0x98999C03),
     UberACESLinearOnDraw(0x65D6A1C7),
     UberACESLinearOnDraw(0x3063B396),
+    UberACESLinearOnDraw(0x03522F65),
     UberACESLinearOnDraw(0x42A50C71),
     UberACESLinearOnDraw(0x60B48ADF),
     UberACESLinearOnDraw(0x0DE9EBCF),
@@ -1403,6 +1403,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     //CustomShaderEntry(0x7976D6A7),
     //CustomShaderEntry(0x5830BEA5),      // Blend for bloom
     //CustomShaderEntry(0x05A07123),      // XULMREDUX bloom
+    //CustomShaderEntryCallback(0xF2636FE5, &CountGamma),
+    CustomShaderEntryCallback(0x05A07123, &CountGammaTonemap1),
     //
     CustomShaderEntryCallback(0x0BF02D38, &CountClamped),               // Noise and Grain
     CustomShaderEntryCallback(0xAECBCB31, &CountClamped),               // Noise and Grain
