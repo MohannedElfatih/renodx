@@ -56,9 +56,11 @@ void main(
   r1.yzw = cb0[5].www * r1.yzw;
   r0.xyz = r0.xyz * r1.xxx + r1.yzw;
   if (injectedData.tonemapCheck == 1.f && (injectedData.count2Old == injectedData.count2New)) {
+    r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
     r0.xyz = applyUserNoTonemap(r0.xyz);
   }
   if (injectedData.fxFilmGrainType == 0.f) {
+  r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
   r1.xyz = cb1[0].xxy * cb0[3].zzz;
   r1.xyz = floor(r1.xyz);
   r0.w = dot(r1.zzy, float3(12.9898,78.233,45.5432014));
@@ -79,6 +81,7 @@ void main(
   r1.xyz = saturate(-r2.xyz * r1.xyz + float3(1,1,1));
   r1.xyz = r1.xyz * r0.www;
   r0.xyz = r1.www * r0.xyz + r1.xyz;
+  r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
   } else {
     r0.xyz = applyFilmGrain(r0.xyz, v1, cb0[3].w * 2.f);
   }
@@ -88,7 +91,9 @@ void main(
   r0.xyzw = r1.xyzw * r0.wwww;
   o0.xyzw = exp2(r0.xyzw);*/
   if (injectedData.countOld == injectedData.countNew) {
-    r0.xyz = PostToneMapScale(r0.xyz);
+    r0.xyz = PostToneMapScale(r0.xyz, true);
+  } else {
+    r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
   }
   r0.w = 0;
   o0 = r0;
