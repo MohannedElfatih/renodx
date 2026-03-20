@@ -3832,7 +3832,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       if (!initialized) {
       MergeShaders();
       //renodx::mods::swapchain::swapchain_proxy_compatibility_mode = false;
-      renodx::mods::swapchain::swapchain_proxy_revert_state = false;
+      renodx::mods::swapchain::swapchain_proxy_revert_state = true;
       //renodx::mods::shader::force_pipeline_cloning = true;
       //renodx::mods::shader::expected_constant_buffer_space = 50;
       renodx::mods::shader::expected_constant_buffer_index = 13;
