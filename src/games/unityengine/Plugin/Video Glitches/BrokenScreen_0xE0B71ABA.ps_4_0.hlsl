@@ -1,4 +1,4 @@
-#include "../common.hlsl"
+#include "../../common.hlsl"
 
 Texture2D<float4> t0 : register(t0);
 SamplerState s0_s : register(s0);
@@ -127,9 +127,7 @@ void main(
   if (injectedData.toneMapType == 0.f) {
     r1.xyz = saturate(r1.xyz);
   }
-  r1.xyz = log2(r1.xyz);
-  r1.xyz = cb0[2].www * r1.xyz;
-  r1.xyz = exp2(r1.xyz);
+  r1.xyz = renodx::math::SignPow(r1.xyz, cb0[2].w);
   r0.w = dot(float3(0.298999995,0.587000012,0.114), r1.xyz);
   r1.xyz = r1.xyz + -r0.www;
   r1.xyz = cb0[3].xxx * r1.xyz + r0.www;
