@@ -844,6 +844,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     Builder3OnDraw(0x31B52561),
     Builder3OnDraw(0x042C6BD1),
     Builder3OnDraw(0x64B708E6),
+    Builder3OnDraw(0x246CE154),
     Builder3OnDraw(0xCE436C36),
     Builder3OnDraw(0xE6EC2E40),
     Builder3OnDraw(0xAE8C0E90),
@@ -867,6 +868,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     Builder1OnDraw(0xFFA5BFB6),
     Builder1OnDraw(0xE736DD70),
     Builder1OnDraw(0x453D9983),
+    Builder1OnDraw(0xABAD60A0),
       // GenUberLut
     Builder1OnDraw(0x894B73C7),
     Builder1OnDraw(0xDA07C0CD),
@@ -1126,6 +1128,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESLinearOnDraw(0xA9329B7F),
     UberACESLinearOnDraw(0xB4323752),
     UberACESLinearOnDraw(0xC9F897D5),
+    UberACESLinearOnDraw(0xC38BA808),
     UberACESLinearOnDraw(0xC593D007),
     UberACESLinearOnDraw(0xCD0AF2B1),
     UberACESLinearOnDraw(0xD8C3ADEB),
@@ -1141,6 +1144,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESLinearOnDraw(0x65D6A1C7),
     UberACESLinearOnDraw(0x3063B396),
     UberACESLinearOnDraw(0x03522F65),
+    UberACESLinearOnDraw(0x6345B89E),
     UberACESLinearOnDraw(0x42A50C71),
     UberACESLinearOnDraw(0x60B48ADF),
     UberACESLinearOnDraw(0x0DE9EBCF),
@@ -1222,13 +1226,16 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0x127B53F7),
     UberHDLinearOnDraw(0x216A76C7),
 	  UberHDGammaOnDraw(0x351B1F11),
+      UberHDLinearOnDraw(0x389B546B),
 	  UberHDLinearOnDraw(0x450C7E5A),
     UberHDLinearOnDraw(0x467F2718),
+    UberHDLinearOnDraw(0x495F21AA),
     UberHDLinearOnDraw(0x715ED95A),
 	  UberHDLinearOnDraw(0x721D4F40),
 	  UberHDLinearOnDraw(0x0733A496),
 	  UberHDGammaOnDraw(0x778CFAC9),
     UberHDGammaOnDraw(0x868D8699),
+    UberHDLinearOnDraw(0x2450FC89),
 	  UberHDLinearOnDraw(0x2781E558),
 	  UberHDLinearOnDraw(0x2998DD23),
 	  UberHDLinearOnDraw(0x3087C1DD),
@@ -1249,6 +1256,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDGammaOnDraw(0x2229222B),
 	  UberHDLinearOnDraw(0xA9DCD389),
 	  UberHDLinearOnDraw(0xA42C0E37),
+      UberHDLinearOnDraw(0xAA5903B4),
 	  UberHDLinearOnDraw(0xADCCB7BB),
 	  UberHDLinearOnDraw(0xADFD88AD),
 	  UberHDLinearOnDraw(0xAE047DF6),
@@ -1307,7 +1315,6 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x459D4153, &CountLinear),    // Colour Correction
     CustomShaderEntryCallback(0xB0826385, &CountLinear),
     CustomShaderEntryCallback(0x6D550A49, &CountLinear),  // PS1 Post Processing
-    CustomShaderEntryCallback(0xE0B71ABA, &CountLinear),  // Video Glitches Broken Screen
     CustomShaderEntryCallback(0x3513581C, &Count),
     CustomShaderEntryCallback(0x457A0F57, &Count),
     CustomShaderEntryCallback(0x700A4C32, &Count),    // ShaderGraphs ScreenFxShader
@@ -1551,6 +1558,12 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x6968824B, &CountLinearTonemap1Clamped),
       // SC Post Effect
     //CustomShaderEntry(0x65F50A96),    // LUT
+      // Video Glitches
+    CustomShaderEntryCallback(0xE0B71ABA, &CountLinear),  // Broken Screen
+    CustomShaderEntryCallback(0x6D9A07CE, &CountLinear),  // something
+    CustomShaderEntryCallback(0xD941025F, &CountLinear),  // something
+    CustomShaderEntryCallback(0x156A2067, &CountLinear),  // something
+    CustomShaderEntryCallback(0x1F2132C7, &CountLinear),  // Spectrum Offset
     ////// DIVISION END //////
     ////// UBER START //////
       /// PostFX ///
@@ -2120,6 +2133,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0xD8CBEF60, &CountLinear),
     CustomShaderEntryCallback(0xC8194FF2, &CountLinear),
     CustomShaderEntryCallback(0x5D490E8A, &CountLinear),
+    CustomShaderEntryCallback(0x3715DB93, &CountLinear),
     CustomShaderEntryCallback(0x1EE4CF1C, &CountLinear),
     CustomShaderEntryCallback(0xD90A4513, &CountGamma),
     CustomShaderEntryCallback(0x780BC110, &CountGamma),
