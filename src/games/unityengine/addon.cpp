@@ -986,6 +986,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x4C68E3B1),
     UberLinearOnDraw(0xAD1DCECB),
     UberLinearOnDraw(0x94BD15F2),
+    UberLinearOnDraw(0xE48189ED),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1152,6 +1153,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESLinearOnDraw(0x9BF686BC),
     UberACESLinearOnDraw(0xE5C37261),
     UberACESLinearOnDraw(0x7B4E81D3),
+    UberACESLinearOnDraw(0x8F6AB88F),
     UberACESLinearOnDraw(0xE1F3EA92),
     UberACESLinearOnDraw(0xDA822A11),
     UberACESLinearOnDraw(0xE9A455B7),
@@ -1167,6 +1169,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESLinearOnDraw(0x02985F48),
     UberACESGammaOnDraw(0x03F17B55),
     UberACESGammaOnDraw(0x8516BF4C),
+    UberACESLinearOnDraw(0x82804C2E),
     UberACESGammaOnDraw(0x343E55D9),
     UberACESGammaOnDraw(0x0D96CCBA),
         // HD
@@ -1323,6 +1326,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x07FD3D55, &CountGammaTonemap1),   // Neva
     CustomShaderEntryCallback(0xECED3960, &CountTonemap1),    // PostProcess
     CustomShaderEntryCallback(0xB0E8A766, &CountTonemap1),    // PostProcess
+    CustomShaderEntryCallback(0x850F1FE0, &CountTonemap1),    // Unlit Fullscreen Overlay
     //CustomShaderEntry(0x144BC65C),
     CustomShaderEntryCallback(0x4C1E450F, &Count),    // RetroPixelPro
     CustomShaderEntryCallback(0x918C7E0C, &Count),    // ScreenRender
@@ -1510,6 +1514,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x970EA5A1, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0xD70AE6DF, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0xA298CF0E, &CountLinearTonemap1Clamped),
+    CustomShaderEntryCallback(0x79DCD887, &CountLinearTonemap1Clamped),
+    CustomShaderEntryCallback(0x1C3CDF5D, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0xDC3C3CFB, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0x5B553876, &CountLinearTonemap1Clamped),
     CustomShaderEntryCallback(0x6CB18C43, &CountLinearTonemap2),
@@ -2203,6 +2209,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     Builder1OnDraw(0xDE54BEC4),  // TLD merger
         // user LUT
     Builder1OnDraw(0x425A05B0),
+    Builder1OnDraw(0x7EAF565D),
     Builder1OnDraw(0xA7199AE8),
         // Neutral
     Builder2OnDraw(0x93CAF565),

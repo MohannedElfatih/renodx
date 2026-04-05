@@ -147,13 +147,6 @@ void main(
   r0.xy = r0.zw * r0.xy + r2.zw;
   r0.xy = r0.xy * cb0[3].yy + v1.xy;
   r0.xyzw = t0.Sample(s0_s, r0.xy).xyzw;
-  /*r3.xyz = log2(r0.xyz);
-  r3.xyz = float3(0.416660011,0.416660011,0.416660011) * r3.xyz;
-  r3.xyz = exp2(r3.xyz);
-  r3.xyz = r3.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
-  r4.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r0.xyz);
-  r0.xyz = float3(12.9232101,12.9232101,12.9232101) * r0.xyz;
-  r0.xyw = r4.yzx ? r0.yzx : r3.yzx;*/
   r0.xyw = renodx::color::srgb::EncodeSafe(r0.yzx);
   r1.w = cmp(r0.x >= r0.y);
   r1.w = r1.w ? 1.000000 : 0;
