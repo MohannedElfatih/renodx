@@ -1176,6 +1176,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0x0E7B6A15),
     UberHDLinearOnDraw(0x0E883404),
     UberHDLinearOnDraw(0x0EC64D75),
+    UberHDLinearOnDraw(0x0D429D27),
+    UberHDLinearOnDraw(0xBCC1D592),
     UberHDGammaOnDraw(0x0F750BE1),
 	  UberHDLinearOnDraw(0x0F4188A5),
 	  UberHDGammaOnDraw(0x1C581A77),
@@ -2194,6 +2196,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     CustomShaderEntryCallback(0x1609F94E, &CountLinear),
     CustomShaderEntryCallback(0xE96B977C, &CountLinear),
     CustomShaderEntryCallback(0xB1DF8B20, &CountLinear),
+    CustomShaderEntryCallback(0x1F20DEB9, &Count),
     CustomShaderEntryCallback(0x1F20DEB9, &Count),
     CustomShaderEntryCallback(0x0D4651C9, &CountLinear),      // gamesfarm postfx
     CustomShaderEntryCallback(0x0299214E, &CountLinear),      // gamesfarm postfx
