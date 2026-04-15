@@ -34,7 +34,7 @@ void main(
   r1.xyz = lutShaper(r1.xyz);
   r1.xyz = r1.xyz * cb0[0].yyy + cb0[0].zzz;
   r1.xyz = t2.SampleLevel(s1_s, r1.xyz, 0).xyz;
-  r0.z = dot(saturate(r1.xyz), float3(0.212672904,0.715152204,0.0721750036));
+  r0.z = dot(r1.xyz, float3(0.212672904,0.715152204,0.0721750036));
   r0.zw = -cb0[4].xz + r0.zz;
   r2.xy = cb0[4].yw + -cb0[4].xz;
   r2.xy = float2(1,1) / r2.xy;
@@ -57,7 +57,7 @@ void main(
   }
   r0.zw = r0.xy * r0.xy + float2(-1,-1);
   r0.x = dot(r0.xy, r0.xy);
-  r0.x = saturate(r0.x * cb0[1].w * injectedData.fxVignette + cb0[2].x);
+  r0.x = saturate(r0.x * cb0[1].w + cb0[2].x);
   r0.yz = saturate(float2(33.3333664,33.3333664) * r0.zw);
   r2.xy = r0.yz * float2(-2,-2) + float2(3,3);
   r0.yz = r0.yz * r0.yz;

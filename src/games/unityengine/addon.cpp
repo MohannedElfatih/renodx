@@ -1316,7 +1316,10 @@ const ShaderItem INITIAL_SHADERS[] = {
     ////// URP END //////
     ////// CUSTOM START //////
     Builder3OnDraw(0xF9658F60), // SadCatStudios_ColorGradingLut
-    UberHDLinearOnDraw(0xFF079BBC), // SadCatStudios_FinalBlit
+    Builder1OnDraw(0x6C531A2E), // SadCatStudios_ColorGradingLut
+    UberHDLinearOnDraw(0xFF079BBC), // SadCatS
+    // tudios_FinalBlit
+    UberHDLinearOnDraw(0x99B7B0BF), // SadCatStudios_FinalBlit
     CustomShaderEntryCallback(0x459D4153, &CountLinear),    // Colour Correction
     CustomShaderEntryCallback(0xB0826385, &CountLinear),
     CustomShaderEntryCallback(0x6D550A49, &CountLinear),  // PS1 Post Processing
@@ -3236,6 +3239,12 @@ const std::unordered_map<
             "Reignbreaker.exe",
             {
                 {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_ANY},
+            },
+        },
+        {
+            "Replaced.exe",
+            {
+                {"Upgrade_R11G11B10_FLOAT", UPGRADE_TYPE_ANY},
             },
         },
         {
