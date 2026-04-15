@@ -50,29 +50,29 @@ struct ShaderInjectData {
   float fxBloom;
 
   float fxLens;
+  float fxDoF;
   float fxVignette;
   float fxCA;
-  float fxNoise;
 
+  float fxNoise;
   float fxFilmGrain;
   float fxFilmGrainType;
   float fxHdrBoost;
-  float random;
 
+  float random;
   float tonemapCheck;
   float countOld;
   float countNew;
-  float count2Old;
 
+  float count2Old;
   float count2New;
   float blitCopyHack;
   float gammaSpace;
-  float isClamped;
 
+  float isClamped;
   float swapchainProxy;
   float rolloffUI;
   float processing_use_scrgb;
-  float padding4;
 };
 
 #ifndef __cplusplus

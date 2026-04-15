@@ -2678,6 +2678,16 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.02f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "fxDoF",
+        .binding = &shader_injection.fxDoF,
+        .default_value = 100.f,
+        .label = "Depth of Field",
+        .section = "Effects",
+        .tint = 0x4D7180,
+        .max = 100.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
         .key = "fxCA",
         .binding = &shader_injection.fxCA,
         .default_value = 50.f,
@@ -2847,6 +2857,7 @@ void OnPresetOff() {
   renodx::utils::settings::UpdateSetting("fxBloom", 50.f);
   renodx::utils::settings::UpdateSetting("fxLens", 50.f);
   renodx::utils::settings::UpdateSetting("fxVignette", 50.f);
+  renodx::utils::settings::UpdateSetting("fxDoF", 100.f);
   renodx::utils::settings::UpdateSetting("fxCA", 50.f);
   renodx::utils::settings::UpdateSetting("fxNoise", 50.f);
   renodx::utils::settings::UpdateSetting("fxFilmGrain", 50.f);

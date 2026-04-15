@@ -22,7 +22,7 @@ void main(
 
   r0.xy = v1.xy * float2(2,2) + float2(-1,-1);
   r0.z = dot(r0.xy, r0.xy);
-  r1.xy = cb0[2].yy * r0.xy;
+  r1.xy = cb0[2].yy * r0.xy * injectedData.fxCA;
   r0.xy = r1.xy * r0.zz + r0.xy;
   r0.xy = r0.xy * cb0[2].zz + float2(0.5,0.5);
   r1.xyz = t1.Sample(s1_s, r0.xy).xyz;
@@ -57,7 +57,7 @@ void main(
   }
   r0.zw = r0.xy * r0.xy + float2(-1,-1);
   r0.x = dot(r0.xy, r0.xy);
-  r0.x = saturate(r0.x * cb0[1].w + cb0[2].x);
+  r0.x = saturate(r0.x * cb0[1].w * injectedData.fxVignette + cb0[2].x);
   r0.yz = saturate(float2(33.3333664,33.3333664) * r0.zw);
   r2.xy = r0.yz * float2(-2,-2) + float2(3,3);
   r0.yz = r0.yz * r0.yz;
