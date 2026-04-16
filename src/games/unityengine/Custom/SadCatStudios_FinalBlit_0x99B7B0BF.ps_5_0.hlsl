@@ -22,7 +22,7 @@ void main(
 
   r0.xy = v1.xy * float2(2,2) + float2(-1,-1);
   r0.z = dot(r0.xy, r0.xy);
-  r1.xy = cb0[2].yy * r0.xy * injectedData.fxCA;
+  r1.xy = cb0[2].yy * r0.xy;
   r0.xy = r1.xy * r0.zz + r0.xy;
   r0.xy = r0.xy * cb0[2].zz + float2(0.5,0.5);
   r1.xyz = t1.Sample(s1_s, r0.xy).xyz;
@@ -34,7 +34,7 @@ void main(
   r1.xyz = lutShaper(r1.xyz);
   r1.xyz = r1.xyz * cb0[0].yyy + cb0[0].zzz;
   r1.xyz = t2.SampleLevel(s1_s, r1.xyz, 0).xyz;
-  r0.z = dot(r1.xyz, float3(0.212672904,0.715152204,0.0721750036));
+  r0.z = dot(saturate(r1.xyz), float3(0.212672904,0.715152204,0.0721750036));
   r0.zw = -cb0[4].xz + r0.zz;
   r2.xy = cb0[4].yw + -cb0[4].xz;
   r2.xy = float2(1,1) / r2.xy;
