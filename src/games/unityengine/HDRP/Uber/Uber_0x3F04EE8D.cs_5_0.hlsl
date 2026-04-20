@@ -157,19 +157,18 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
     r0.xyz = cb1[3].www * r1.xyz + r2.xyz;
   }
   if (cb1[12].x != 0) {
-    r0.rgb = lutShaper(r0.rgb);
+    r0.xyz = lutShaper(r0.xyz);
   } else {
-    r0.w = cmp(0 != cb1[6].w);
-    if (r0.w != 0) {
+    if (cb1[6].w != 0) {
       r1.xyz = cb1[6].zzz * r0.xyz;
-      r1.rgb = lutShaper(r1.rgb);
+      r1.xyz = lutShaper(r1.xyz);
       if (injectedData.colorGradeLUTSampling == 0.f) {
       r1.xyz = cb1[6].yyy * r1.xyz;
       r0.w = 0.5 * cb1[6].x;
       r1.xyz = r1.xyz * cb1[6].xxx + r0.www;
       r0.xyz = t4.SampleLevel(s2_s, r1.xyz, 0).xyz;
       } else {
-        r0.rgb = renodx::lut::SampleTetrahedral(t4, r1.rgb, 1 / cb1[6].x);
+        r0.xyz = renodx::lut::SampleTetrahedral(t4, r1.xyz, 1 / cb1[6].x);
       }
     }
   }

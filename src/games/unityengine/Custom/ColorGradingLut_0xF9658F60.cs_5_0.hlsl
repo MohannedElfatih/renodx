@@ -53,7 +53,7 @@ cbuffer cb0 : register(b0){
   float3 preLGG = r0.xyz;
   r0.xyz = r0.xyz * cb0[11].xyz + cb0[9].xyz;
   r2.wxy = sign(r0.xyz) * pow(abs(r0.xyz), cb0[10].xyz);
-  r2.wxy = liftGammaGainScaling(r2.wxy, preLGG, cb0[9].xyz, cb0[10].xyz, cb0[11].xyz);
+  r2.wxy = liftGammaGainScaling(r2.wxy, preLGG, cb0[9].xyz, cb0[10].xyz, cb0[11].xyz, 1);
   r3.xy = r2.yx;
   r0.xy = r2.xy + -r3.xy;
   r1.x = step(r2.y, r3.y);

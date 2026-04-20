@@ -869,6 +869,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     Builder1OnDraw(0xE736DD70),
     Builder1OnDraw(0x453D9983),
     Builder1OnDraw(0xABAD60A0),
+    Builder1OnDraw(0x63098018),
       // GenUberLut
     Builder1OnDraw(0x894B73C7),
     Builder1OnDraw(0xDA07C0CD),
@@ -987,6 +988,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0xAD1DCECB),
     UberLinearOnDraw(0x94BD15F2),
     UberLinearOnDraw(0xE48189ED),
+    UberLinearOnDraw(0xE715EAC1),
+    UberLinearOnDraw(0x29E4578F),
     UberGammaOnDraw(0xA6918C83),
     UberGammaOnDraw(0xB68E535D),
     UberGammaOnDraw(0xAE4C1F32),
@@ -1103,6 +1106,11 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberNeutralLinearOnDraw(0xD0CC8CE2),
     UberNeutralLinearOnDraw(0xD1FDEBCD),
     UberNeutralLinearOnDraw(0xC680A959),
+    UberNeutralLinearOnDraw(0x00C855E4),
+    UberNeutralLinearOnDraw(0x54CAE2A0),
+    UberNeutralLinearOnDraw(0xC06DEF33),
+    UberNeutralLinearOnDraw(0x59762D4A),
+    UberNeutralLinearOnDraw(0x5F655887),
     UberNeutralGammaOnDraw(0x692D142C),
     UberNeutralGammaOnDraw(0x5C329C6B),
     UberNeutralGammaOnDraw(0xCE6048CA), // no LUT
@@ -1162,6 +1170,9 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESLinearOnDraw(0xFC440F74),
     UberACESLinearOnDraw(0xBBEE8C39),
     UberACESLinearOnDraw(0x8434F830),
+    UberACESLinearOnDraw(0x56DCBA40),
+    UberACESLinearOnDraw(0x464C5DC7),
+    UberACESLinearOnDraw(0xE5AC38E1),
     UberACESGammaOnDraw(0x230619DF),
     UberACESGammaOnDraw(0x74A3CCC8),
     UberACESGammaOnDraw(0x6695772D),
@@ -1170,6 +1181,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberACESGammaOnDraw(0x03F17B55),
     UberACESGammaOnDraw(0x8516BF4C),
     UberACESLinearOnDraw(0x82804C2E),
+    UberACESLinearOnDraw(0xDB1A9E91),
     UberACESGammaOnDraw(0x343E55D9),
     UberACESGammaOnDraw(0x0D96CCBA),
         // HD
@@ -1223,6 +1235,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDLinearOnDraw(0x51D248BE),
     UberHDGammaOnDraw(0x56ABE46D),
     UberHDLinearOnDraw(0x057FB6C7),
+    UberHDLinearOnDraw(0x65A1E707),
     UberHDLinearOnDraw(0x66ADC764),
 	  UberHDLinearOnDraw(0x69FE571B),
 	  UberHDLinearOnDraw(0x70F25296),
@@ -1230,6 +1243,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDLinearOnDraw(0x95B85C10),
 	  UberHDLinearOnDraw(0x127B53F7),
     UberHDLinearOnDraw(0x216A76C7),
+    UberHDLinearOnDraw(0x262EEB5C),
 	  UberHDGammaOnDraw(0x351B1F11),
       UberHDLinearOnDraw(0x389B546B),
 	  UberHDLinearOnDraw(0x450C7E5A),
@@ -1287,6 +1301,7 @@ const ShaderItem INITIAL_SHADERS[] = {
 	  UberHDGammaOnDraw(0xD1E36C9E),
       UberHDLinearOnDraw(0xD3CE0801),
 	  UberHDGammaOnDraw(0xD0045A15),
+      UberHDLinearOnDraw(0xD457F90B),
 	  UberHDLinearOnDraw(0xD4543B6E),
 	  UberHDLinearOnDraw(0xD86170D7),
 	  UberHDLinearOnDraw(0xE0D21C32),
@@ -1305,6 +1320,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDGammaOnDraw(0x21E04E36),
     UberHDGammaOnDraw(0x24A850DA),
     UberHDLinearOnDraw(0x29B597F9),
+    UberHDLinearOnDraw(0x34E2CD45),
     UberHDGammaOnDraw(0x4424716A),
     UberHDGammaOnDraw(0xF0DB2F63),
 	UberHDLinearOnDraw(0x8C592D8D),
@@ -1431,7 +1447,8 @@ const ShaderItem INITIAL_SHADERS[] = {
     //CustomShaderEntry(0x5830BEA5),      // Blend for bloom
     //CustomShaderEntry(0x05A07123),      // XULMREDUX bloom
     //CustomShaderEntryCallback(0xF2636FE5, &CountGamma),
-    CustomShaderEntryCallback(0x05A07123, &CountGammaTonemap1),
+    CustomShaderEntryCallback(0x05A07123, &CountGammaTonemap1), // XULMREDUX bloom
+    CustomShaderEntryCallback(0x93DFC667, &CountGammaTonemap1), // XULMREDUX bloom
     //
     CustomShaderEntryCallback(0x0BF02D38, &CountClamped),               // Noise and Grain
     CustomShaderEntryCallback(0xAECBCB31, &CountClamped),               // Noise and Grain
@@ -2907,6 +2924,15 @@ void AddTGTFoAUpgrades() {
       });
 }
 
+void AddOPUSPPUpgrades() {
+      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+          .old_format = reshade::api::format::r8g8b8a8_typeless,
+          .new_format = reshade::api::format::r16g16b16a16_typeless,
+          .index = 9,
+          .ignore_size = false,
+      });
+}
+
 void AddLISBtSUpgrades() {
       renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
           .old_format = reshade::api::format::r8g8b8a8_typeless,
@@ -2944,6 +2970,9 @@ void AddGamePatches() {
     shader_injection.isClamped = 2.f;
   } else if (filename == "TheEternalDie.exe") {
     AddLiRTEDUpgrades();
+  } else if (filename == "OPUS_ Prism Peak.exe"){
+    AddSmolInternalLutUpgrade();
+    AddOPUSPPUpgrades();
   } else if (filename == "Tales of Xillia Remastered.exe" || filename == "CONSTANCE.exe") {
     AddSmolInternalLutUpgrade();
   } else if(filename == "Ultros.exe" || filename == "Batbarian Testament of the Primordials.exe"
@@ -3225,6 +3254,15 @@ const std::unordered_map<
                 {"Scaling_Offset", 1.f},
                 {"Tonemap_Offset", 1.f},
                 {"Use_Swapchain_Proxy", 1.f},
+            },
+        },
+        {
+            "OPUS_ Prism Peak.exe",
+            {
+                {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_NONE},
+                {"Upgrade_R11G11B10_FLOAT", UPGRADE_TYPE_OUTPUT_RATIO},
+                {"Scaling_Offset", 1.f},
+                {"Tonemap_Offset", 1.f},
             },
         },
         {
