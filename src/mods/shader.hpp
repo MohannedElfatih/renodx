@@ -280,10 +280,10 @@ static bool OnCreatePipelineLayout(
         }
       }
 #if RESHADE_API_VERSION >= 13
-    } else if (is_dx && param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers) {
+    } else if (is_dx && param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags ) {
       if (pdss_index == -1) pdss_index = param_index;
-      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-        auto range = param.descriptor_table_with_static_samplers.ranges[range_index];
+      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags .count; ++range_index) {
+        auto range = param.descriptor_table_with_flags .ranges[range_index];
         if (range.static_samplers != nullptr) {
           if (range.type == reshade::api::descriptor_type::constant_buffer) {
             if (
@@ -534,10 +534,10 @@ static void OnInitPipelineLayout(
         }
       }
 #if RESHADE_API_VERSION >= 13
-    } else if (param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers) {
+    } else if (param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags) {
       if (pdss_index == -1) pdss_index = param_index;
-      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-        auto range = param.descriptor_table_with_static_samplers.ranges[range_index];
+      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags .count; ++range_index) {
+        auto range = param.descriptor_table_with_flags .ranges[range_index];
         if (range.static_samplers != nullptr) {
           if (range.type == reshade::api::descriptor_type::constant_buffer) {
             if (

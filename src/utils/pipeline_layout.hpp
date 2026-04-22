@@ -149,10 +149,10 @@ static void OnInitPipelineLayout(
           }
           break;
         case reshade::api::pipeline_layout_param_type::push_constants:
-        case reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers:
+        case reshade::api::pipeline_layout_param_type::descriptor_table_with_flags:
         case reshade::api::pipeline_layout_param_type::push_descriptors:
         case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges:
-        case reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers:
+        case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
           break;
         default:
           // No other known types

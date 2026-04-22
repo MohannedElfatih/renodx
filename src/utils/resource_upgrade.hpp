@@ -2142,7 +2142,8 @@ inline void OnBindRenderTargetsAndDepthStencil(
 static void OnBeginRenderPass(
     reshade::api::command_list* cmd_list,
     uint32_t count, const reshade::api::render_pass_render_target_desc* rts,
-    const reshade::api::render_pass_depth_stencil_desc* ds) {
+    const reshade::api::render_pass_depth_stencil_desc* ds,
+    reshade::api::render_pass_flags flags) {
   if (!is_primary_hook) return;
   auto* cmd_list_data = renodx::utils::data::Get<CommandListData>(cmd_list);
   if (cmd_list_data == nullptr) return;

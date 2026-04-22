@@ -387,9 +387,9 @@ static void LogLayout(
         break;
       }
 #if RESHADE_API_VERSION >= 13
-      case reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers:
-        for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-          const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+      case reshade::api::pipeline_layout_param_type::descriptor_table_with_flags:
+        for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+          const auto& range = param.descriptor_table_with_flags.ranges[range_index];
           std::stringstream s;
           s << "logPipelineLayout(";
           s << PRINT_PTR(layout.handle) << "[" << param_index << "]";
@@ -413,9 +413,9 @@ static void LogLayout(
           reshade::log::message(reshade::log::level::info, s.str().c_str());
         }
         break;
-      case reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers:
+      case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
         for (uint32_t range_index = 0; range_index < param.descriptor_table.count; ++range_index) {
-          const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+          const auto& range = param.descriptor_table_with_flags.ranges[range_index];
           std::stringstream s;
           s << "logPipelineLayout(";
           s << PRINT_PTR(layout.handle) << "[" << param_index << "]";
@@ -941,7 +941,8 @@ static void OnBarrier(
 static void OnBeginRenderPass(
     reshade::api::command_list* cmd_list,
     uint32_t count, const reshade::api::render_pass_render_target_desc* rts,
-    const reshade::api::render_pass_depth_stencil_desc* ds) {
+    const reshade::api::render_pass_depth_stencil_desc* ds,
+    reshade::api::render_pass_flags flags) {
   if (!is_primary_hook) return;
   if (trace_running_device != cmd_list->get_device() && present_count >= trace_initial_frame_count) return;
   for (uint32_t i = 0; i < count; i++) {
