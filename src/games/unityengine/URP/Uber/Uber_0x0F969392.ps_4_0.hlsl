@@ -4,10 +4,13 @@ Texture2D<float4> t3 : register(t3);
 Texture2D<float4> t2 : register(t2);
 Texture2D<float4> t1 : register(t1);
 Texture2D<float4> t0 : register(t0);
+SamplerState s1_s : register(s1);
 SamplerState s0_s : register(s0);
 cbuffer cb0 : register(b0){
-  float4 cb0[146];
+  float4 cb0[150];
 }
+
+// DAVE THE DIVER
 
 void main(
   float4 v0 : SV_POSITION0,
@@ -21,11 +24,6 @@ void main(
   r0.xy = -cb0[131].xy * float2(0.5,0.5) + cb0[28].xy;
   r0.xy = min(v1.xy, r0.xy);
   r0.xyzw = t0.SampleBias(s0_s, r0.xy, cb0[4].x).xyzw;
-  r1.xy = -cb0[135].xy * float2(0.5,0.5) + cb0[28].xy;
-  r1.xy = min(v1.xy, r1.xy);
-  r1.xyzw = t1.SampleBias(s0_s, r1.xy, cb0[4].x).xyzw;
-  r1.xyz = cb0[138].xxx * r1.xyz * injectedData.fxBloom;
-  r0.xyz = r1.xyz * cb0[138].yzw + r0.xyz;
   if (cb0[145].z > 0) {
     r1.xy = -cb0[145].xy + v1.xy;
     r1.yz = cb0[145].zz * abs(r1.xy) * min(1.f, injectedData.fxVignette);
@@ -43,7 +41,7 @@ void main(
   r0.xyz = cb0[136].www * r0.xyz;
   if (cb0[137].w > 0) {
     r1.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
-    r2.xyz = handleUserLUT(r0.xyz, t3, s0_s, cb0[137].xyz);
+    r2.xyz = handleUserLUT(r0.xyz, t2, s0_s, cb0[137].xyz);
     r2.xyz = r2.xyz + -r1.xyz;
     r1.xyz = cb0[137].www * r2.xyz + r1.xyz;
     r0.xyz = renodx::color::srgb::DecodeSafe(r1.xyz);
@@ -55,17 +53,26 @@ void main(
   r1.xy = float2(0.5,0.5) * cb0[136].xy;
   r1.yz = r0.xy * cb0[136].xy + r1.xy;
   r1.x = r0.w * cb0[136].y + r1.y;
-  r2.xyzw = t2.SampleLevel(s0_s, r1.xz, 0).xyzw;
+  r2.xyzw = t1.SampleLevel(s0_s, r1.xz, 0).xyzw;
   r0.x = cb0[136].y;
   r0.y = 0;
   r0.xy = r1.xz + r0.xy;
-  r1.xyzw = t2.SampleLevel(s0_s, r0.xy, 0).xyzw;
+  r1.xyzw = t1.SampleLevel(s0_s, r0.xy, 0).xyzw;
   r0.x = r0.z * cb0[136].z + -r0.w;
   r0.yzw = r1.xyz + -r2.xyz;
   r0.xyz = r0.xxx * r0.yzw + r2.xyz;
   } else {
-    r0.xyz = renodx::lut::SampleTetrahedral(t2, r0.xyz, cb0[136].z + 1u);
+    r0.xyz = renodx::lut::SampleTetrahedral(t1, r0.xyz, cb0[136].z + 1u);
   }
+  r1.xy = v1.xy * cb0[149].xy + cb0[149].zw;
+  r1.xyzw = t3.SampleBias(s1_s, r1.xy, cb0[4].x).xyzw;
+  r0.w = r1.w * 2 + -1;
+  r1.x = r0.w >= 0 ? 1 : -1;
+  r0.w = 1 + -abs(r0.w);
+  r0.w = sqrt(r0.w);
+  r0.w = 1 + -r0.w;
+  r0.w = r1.x * r0.w;
+  r0.xyz = applyDither(r0.xyz, r0.w * (1.0 / 255.0));
   if (injectedData.countOld == injectedData.countNew) {
     r0.xyz = PostToneMapScale(r0.xyz);
   }
