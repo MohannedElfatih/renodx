@@ -8,7 +8,8 @@
 #include "../../../utils/mcp/types.hpp"
 
 namespace renodx::addons::devkit::mcp::tool_catalog {
-inline const renodx::utils::mcp::ToolCatalog METADATA = {
+inline const renodx::utils::mcp::ToolCatalog& Metadata() {
+    static const auto& metadata_catalog = *new renodx::utils::mcp::ToolCatalog{
     {
         "devkit_status",
         {
@@ -229,6 +230,8 @@ inline const renodx::utils::mcp::ToolCatalog METADATA = {
             },
         },
     },
-};
+    };
+    return metadata_catalog;
+}
 
 }  // namespace renodx::addons::devkit::mcp::tool_catalog

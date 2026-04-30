@@ -274,43 +274,50 @@ struct HandleFrameResult {
   return pipes;
 }
 
-const std::vector<ToolDescriptor> FALLBACK_DEVKIT_TOOLS = [] {
-  std::vector<ToolDescriptor> tools = {};
-  tools.reserve(devkit_tool_catalog::METADATA.size());
-  for (const auto& [tool_name, metadata] : devkit_tool_catalog::METADATA) {
-    tools.push_back(ToolDescriptor{
-        .name = tool_name,
-        .metadata = metadata,
-    });
-  }
+[[nodiscard]] const std::vector<ToolDescriptor>& GetFallbackDevkitTools() {
+  static const auto& tools = *new std::vector<ToolDescriptor>([] {
+    std::vector<ToolDescriptor> fallback_tools = {};
+    const auto& metadata_catalog = devkit_tool_catalog::Metadata();
+    fallback_tools.reserve(metadata_catalog.size());
+    for (const auto& [tool_name, metadata] : metadata_catalog) {
+      fallback_tools.push_back(ToolDescriptor{
+          .name = tool_name,
+          .metadata = metadata,
+      });
+    }
+    return fallback_tools;
+  }());
   return tools;
-}();
+}
 
-const std::array<ToolDescriptor, 2> LOCAL_TOOLS = {
+[[nodiscard]] const std::array<ToolDescriptor, 2>& GetLocalTools() {
+  static const auto& tools = *new std::array<ToolDescriptor, 2>{
     ToolDescriptor{
-        .name = BRIDGE_TOOL_LIST_CONNECTIONS,
-        .metadata = {
-            .title = "List Connections",
-            .description = "List available RenoDX DevKit MCP pipe endpoints and current bridge selection state.",
-            .annotations = {
-                .read_only_hint = true,
-            },
+      .name = BRIDGE_TOOL_LIST_CONNECTIONS,
+      .metadata = {
+        .title = "List Connections",
+        .description = "List available RenoDX DevKit MCP pipe endpoints and current bridge selection state.",
+        .annotations = {
+          .read_only_hint = true,
         },
+      },
     },
     ToolDescriptor{
-        .name = BRIDGE_TOOL_CONNECT,
-        .metadata = {
-            .title = "Connect",
-            .description = "Select a RenoDX DevKit pipe by name or index and connect the bridge to it.",
-            .input_schema = {
-                .properties = {
-                    {"pipe", {.types = {"string"}}},
-                    {"index", {.types = {"integer"}, .minimum = 0}},
-                },
-            },
+      .name = BRIDGE_TOOL_CONNECT,
+      .metadata = {
+        .title = "Connect",
+        .description = "Select a RenoDX DevKit pipe by name or index and connect the bridge to it.",
+        .input_schema = {
+          .properties = {
+            {"pipe", {.types = {"string"}}},
+            {"index", {.types = {"integer"}, .minimum = 0}},
+          },
         },
+      },
     },
-};
+  };
+  return tools;
+}
 
 struct BridgeToolDescriptor {
   std::string name;
@@ -975,11 +982,13 @@ class Bridge {
 
     if (method == mcp::METHOD_TOOLS_LIST) {
       std::vector<BridgeToolDescriptor> tools = {};
-      tools.reserve(LOCAL_TOOLS.size() + FALLBACK_DEVKIT_TOOLS.size());
-      for (const auto& tool : LOCAL_TOOLS) {
+      const auto& local_tools = GetLocalTools();
+      const auto& fallback_devkit_tools = GetFallbackDevkitTools();
+      tools.reserve(local_tools.size() + fallback_devkit_tools.size());
+      for (const auto& tool : local_tools) {
         UpsertTool(tools, MakeBridgeToolDescriptor(tool));
       }
-      for (const auto& tool : FALLBACK_DEVKIT_TOOLS) {
+      for (const auto& tool : fallback_devkit_tools) {
         UpsertTool(tools, MakeBridgeToolDescriptor(tool));
       }
       for (const auto& tool : GetBackendTools()) {

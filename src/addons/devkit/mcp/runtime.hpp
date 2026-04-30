@@ -35,8 +35,9 @@ inline void RegisterTools(renodx::utils::mcp::Server& server, const Registration
   server.ClearTools();
 
   auto register_tool = [&server](std::string_view tool_name, const auto& handler) {
-    const auto metadata_iterator = tool_catalog::METADATA.find(tool_name);
-    if (metadata_iterator == tool_catalog::METADATA.end()) {
+    const auto& metadata_catalog = tool_catalog::Metadata();
+    const auto metadata_iterator = metadata_catalog.find(tool_name);
+    if (metadata_iterator == metadata_catalog.end()) {
       throw std::logic_error("Unknown devkit MCP tool metadata");
     }
 
