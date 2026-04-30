@@ -44,3 +44,7 @@ bin/**
 .env
 .vscode/mcp.json
 .kiro/
+.continue/mcpServers/mcp.json
+.continue/mcpServers/new-mcp-server.yaml
+.vscode/launch.json
+.vscode/settings.json

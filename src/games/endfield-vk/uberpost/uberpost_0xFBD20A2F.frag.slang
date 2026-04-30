@@ -1,0 +1,324 @@
+#include "../common.hlsl"
+
+
+[[vk::binding(8, 3)]]
+cbuffer _5_6 : register(b8, space3)
+{
+    row_major float4x4 _m0;
+    row_major float4x4 _m1;
+    row_major float4x4 _m2;
+    row_major float4x4 _m3;
+    row_major float4x4 _m4;
+    row_major float4x4 _m5;
+    row_major float4x4 _m6;
+    row_major float4x4 _m7;
+    row_major float4x4 _m8;
+    row_major float4x4 _m9;
+    row_major float4x4 _m10;
+    float4 _m11;
+    row_major float4x4 _m12;
+    row_major float4x4 _m13;
+    row_major float4x4 _m14;
+    row_major float4x4 _m15;
+    row_major float4x4 _m16;
+    row_major float4x4 _m17;
+    row_major float4x4 _m18;
+    row_major float4x4 _m19;
+    row_major float4x4 _m20;
+    float4 _m21;
+    float4 _m22;
+    float4 _m23;
+    float4 _m24;
+    float4 _m25;
+    float4 _m26;
+    float4 _m27;
+    float4 _m28[6];
+    float4 _m29[6];
+    float4 _m30;
+    float4 _m31;
+    float4 _m32;
+    float4 _m33;
+    float4 _m34;
+    float4 _m35;
+    float4 _m36;
+    float4 _m37;
+    float _m38;
+    float _m39;
+    float _m40;
+    uint _m41;
+    float4 _m42;
+    int4 _m43;
+    float4 _m44;
+    float4 _m45;
+    float4 _m46;
+    float4 _m47;
+    float4 _m48;
+    float4 _m49;
+    float4 _m50;
+    float4 _m51;
+    float4 _m52;
+    float4 _m53;
+    float4 _m54[4];
+    float4 _m55[4];
+    float4 _m56[4];
+    float4 _m57[4];
+    float4 _m58;
+    float4 _m59;
+    float4 _m60[4];
+    float4 _m61[4];
+    float4 _m62[4];
+    float4 _m63;
+    float4 _m64;
+    float4 _m65;
+    float4 _m66;
+    float4 _m67;
+    float4 _m68;
+    float4 _m69;
+    float4 _m70;
+    float4 _m71;
+    float4 _m72;
+    float4 _m73;
+    float4 _m74;
+    float4 _m75;
+    float4 _m76;
+    float4 _m77;
+    float4 _m78;
+    float4 _m79;
+    float4 _m80;
+    float4 _m81;
+    float4 _m82;
+    float4 _m83;
+    float4 _m84;
+    float4 _m85;
+    float4 _m86;
+    float4 _m87;
+    float4 _m88;
+    float4 _m89;
+    float4 _m90;
+    float4 _m91;
+    float4 _m92;
+    float4 _m93;
+    float4 _m94;
+    float4 _m95;
+    float4 _m96;
+    float4 _m97;
+    float4 _m98;
+    float4 _m99;
+    float4 _m100;
+    float4 _m101;
+    float4 _m102;
+    float4 _m103;
+    float4 _m104;
+    float4 _m105;
+    float4 _m106;
+    float4 _m107;
+    float4 _m108;
+    float4 _m109;
+    float4 _m110;
+    float4 _m111;
+    float4 _m112;
+    float4 _m113;
+    float4 _m114;
+    float4 _m115;
+    float4 _m116;
+    float4 _m117[2];
+    float4 _m118[2];
+    float _m119;
+    float _m120;
+    float _m121;
+    float _m122;
+    float4 _m123;
+    float4 _m124;
+    float4 _m125;
+    float4 _m126;
+    float4 _m127;
+    float4 _m128;
+    float4 _m129;
+    float4 _m130;
+    float4 _m131;
+    float4 _m132;
+    float4 _m133;
+    float4 _m134;
+    float4 _m135;
+    float4 _m136;
+    float4 _m137;
+    float4 _m138;
+    float4 _m139;
+    float4 _m140;
+    float4 _m141;
+    float4 _m142;
+    float4 _m143;
+    float4 _m144;
+    float4 _m145;
+    float4 _m146;
+    float4 _m147;
+    float4 _m148;
+    float4 _m149;
+    float4 _m150;
+    float4 _m151;
+    float4 _m152;
+    row_major float4x4 _m153;
+    float4 _m154;
+    float4 _m155;
+    float4 _m156[32];
+} _6;
+
+[[vk::binding(7, 3)]]
+cbuffer _15_16 : register(b7, space3)
+{
+    float4 _m0;
+    float4 _m1;
+    float4 _m2;
+    float4 _m3;
+    float4 _m4;
+    float4 _m5;
+    float4 _m6;
+    float4 _m7;
+    float4 _m8;
+    float4 _m9;
+    float4 _m10;
+    float4 _m11;
+    float4 _m12;
+    float4 _m13;
+    float4 _m14;
+    float4 _m15;
+    float4 _m16;
+    float4 _m17;
+    float4 _m18;
+    float4 _m19;
+    float4 _m20;
+    float4 _m21;
+    float4 _m22;
+    float4 _m23;
+    float4 _m24;
+    float4 _m25;
+} _16;
+
+[[vk::binding(4, 3)]]
+Texture2D<float4> _9 : register(t4, space3);
+[[vk::binding(6, 3)]]
+Texture2D<float4> _10 : register(t6, space3);
+[[vk::binding(3, 3)]]
+Texture2D<float4> _11 : register(t3, space3);
+[[vk::binding(5, 3)]]
+Texture2D<float4> _12 : register(t5, space3);
+[[vk::binding(2, 3)]]
+SamplerState _13 : register(s2, space3);
+[[vk::binding(1, 3)]]
+SamplerState _14 : register(s1, space3);
+
+
+struct PS_INPUT
+{
+    float2 _3 : TEXCOORD0;
+};
+
+struct PS_OUTPUT
+{
+    float4 _4 : SV_Target0;
+};
+
+PS_OUTPUT main(PS_INPUT input)
+{
+    PS_OUTPUT output;
+    float2 _3 = input._3;
+    float4 _4;
+    
+    float4 _118 = _9.SampleLevel(_14, _3, 0.0);
+    float3 _125 = float3(_6._m22.z, _6._m22.w, 0.0);
+    float2 _128 = _125.zy;
+    float4 _131 = _9.SampleLevel(_14, _3 + _128, 0.0);
+    float2 _134 = _125.xz;
+    float4 _137 = _9.SampleLevel(_14, _3 - _134, 0.0);
+    float4 _142 = _9.SampleLevel(_14, _3 + _134, 0.0);
+    float4 _147 = _9.SampleLevel(_14, _3 - _128, 0.0);
+    float _150 = _131.x;
+    float _151 = _131.y;
+    float _152 = _131.z;
+    float _153 = _137.x;
+    float _154 = _137.y;
+    float _155 = _137.z;
+    float _156 = _118.x;
+    float _157 = _118.y;
+    float _158 = _118.z;
+    float _159 = _142.x;
+    float _160 = _142.y;
+    float _161 = _142.z;
+    float _162 = _147.x;
+    float _163 = _147.y;
+    float _164 = _147.z;
+    float _168 = (_152 * 0.5) + ((_150 * 0.5) + _151);
+    float _172 = (_155 * 0.5) + ((_153 * 0.5) + _154);
+    float _176 = (_158 * 0.5) + ((_156 * 0.5) + _157);
+    float _180 = (_161 * 0.5) + ((_159 * 0.5) + _160);
+    float _184 = (_164 * 0.5) + ((_162 * 0.5) + _163);
+    float _207 = min(min(_150, min(_153, _159)), _162);
+    float _210 = min(min(_151, min(_154, _160)), _163);
+    float _213 = min(min(_152, min(_155, _161)), _164);
+    float _216 = max(max(_150, max(_153, _159)), _162);
+    float _219 = max(max(_151, max(_154, _160)), _163);
+    float _222 = max(max(_152, max(_155, _161)), _164);
+    float _255 = (max(-0.1875, min(max(max(-(_207 * (0.25 / _216)), (1.0 - _216) * (1.0 / ((4.0 * _207) + (-4.0)))), max(max(-(_210 * (0.25 / _219)), (1.0 - _219) * (1.0 / ((4.0 * _210) + (-4.0)))), max(-(_213 * (0.25 / _222)), (1.0 - _222) * (1.0 / ((4.0 * _213) + (-4.0)))))), 0.0)) * _16._m24.x) * (((-0.5) * clamp(abs((0.25 * (((_168 + _172) + _180) + _184)) - _176) * (1.0 / (max(max(_168, max(_172, _176)), max(_180, _184)) - min(min(_168, min(_172, _176)), min(_180, _184)))), 0.0, 1.0)) + 1.0);
+    float _258 = 1.0 / ((4.0 * _255) + 1.0);
+    float3 _280 = float3(((_255 * (((_150 + _153) + _162) + _159)) + _156) * _258, ((_255 * (((_151 + _154) + _163) + _160)) + _157) * _258, ((_255 * (((_152 + _155) + _164) + _161)) + _158) * _258) * _6._m42.x;
+    float3 _285 = _10.SampleLevel(_14, _3, 0.0).xyz;
+    float _303 = max(max(_280.x, _280.y), _280.z);
+    float _307 = clamp(_303 - _16._m10.y, 0.0, _16._m10.z);
+    float4 _330 = _12.SampleLevel(_13, _3, 0.0);
+    float2 _358 = abs(_3 - _16._m1.xy) * lerp(_16._m2.x, 1.0, _16._m1.w);
+    float _373 = _358.x * lerp(1.0, 1.5 * clamp(_16._m2.x * 1.0499999523162841796875, 0.0, 1.0), _16._m1.w);
+    float2 _374 = float2(_373, clamp((_358.y * lerp(1.0, _16._m2.x * 2.0, _16._m1.w)) + (clamp(_16._m2.x - 2.7999999523162841796875, 0.0, 1.0) * 5.0), 0.0, 1.0));
+    float _379 = _6._m22.x / _6._m22.y;
+    _374.x = _373 * lerp(lerp(1.0, _379, _16._m2.w), _379 * 0.5625, _16._m1.w);
+    float2 _391 = pow(clamp(_374, float2(0.0), float2(1.0)), float2(_16._m2.z));
+    float3 _407 = ((lerp(_280, (_280 - ((_280 * (max((_16._m10.w * _307) * _307, _303 - _16._m10.x) / max(_303, 9.9999997473787516355514526367188e-05))) * _16._m9.z)) + (lerp(_285, (pow(_285, float3(0.3300000131130218505859375)) * 1.49380004405975341796875) - float3(0.699999988079071044921875), (_285 * (1.0 - _16._m9.z) > float3(0.300000011920928955078125))) * _16._m11.xyz), float3(_16._m9.x)) * lerp(float3(1.0), _330.xyz, float3(lerp(_16._m3.x, clamp((_16._m3.x * 3.0) - 2.0, 0.0, 1.0), step(0.0, min(min(_330.x, _330.y), _330.z) - 0.20000000298023223876953125))))) * lerp(_16._m4.xyz, float3(1.0), float3(pow(clamp(1.0 - dot(_391, _391), 0.0, 1.0), _16._m2.y)))) * _16._m7.w;
+    float3 untonemapped = _407;
+    renodx::lut::Config lut_config = renodx::lut::config::Create(
+        _14,
+        shader_injection.color_grade_strength,
+        0.f,
+        renodx::lut::config::type::ARRI_C1000_NO_CUT,
+        renodx::lut::config::type::LINEAR,
+        _16._m7.xyz
+    );
+    float3 graded = renodx::lut::Sample(_11, lut_config, untonemapped);
+
+    float y = renodx::color::y::from::BT709(graded);
+    float3 graded_ap1 = renodx::color::ap1::from::BT709(graded);
+    [branch]
+    if (shader_injection.tone_map_type == 0.f) {
+        float3 hue_chrominance_reference_color = renodx::color::bt709::from::AP1(renodx::tonemap::ReinhardPiecewise(graded_ap1, 2.f, 1.0f));
+        UserGradingConfig cg_config;
+        cg_config.saturation = 1.f;
+        cg_config.dechroma = .1f;
+        cg_config.hue_emulation_strength = 1.f;
+        cg_config.chrominance_emulation_strength = .7f;
+        cg_config.highlight_saturation = 0.f;
+        _4.xyz = ApplySaturationBlowoutHueCorrectionHighlightSaturation(graded, hue_chrominance_reference_color, y, cg_config);
+        _4.xyz = renodx::color::bt2020::from::BT709(_4.xyz);
+        _4.xyz = renodx::tonemap::neutwo::MaxChannel(_4.xyz, 1.0f, 2.0f);
+        _4.xyz = renodx::color::bt709::from::BT2020(_4.xyz);
+    } else {
+        float3 hue_chrominance_reference_color = renodx::color::bt709::from::AP1(renodx::tonemap::ReinhardPiecewise(graded_ap1, 2.f, 0.5f));
+        UserGradingConfig cg_config = CreateColorGradeConfig();
+        float3 graded_bt709 = ApplyExposureContrastFlareHighlightsShadowsByLuminance(graded, y, cg_config);
+        _4.xyz = ApplySaturationBlowoutHueCorrectionHighlightSaturation(graded_bt709, hue_chrominance_reference_color, y, cg_config);
+        _4.xyz = renodx::color::bt2020::from::BT709(_4.xyz);
+        _4.xyz = renodx::tonemap::neutwo::MaxChannel(_4.xyz, shader_injection.peak_white_nits / shader_injection.diffuse_white_nits, 65.f);
+        _4.xyz = renodx::color::bt709::from::BT2020(_4.xyz);
+    }
+
+    if (CUSTOM_GRAIN_STRENGTH > 0) {
+        _4.xyz = renodx::effects::ApplyFilmGrain(
+            _4.xyz,
+            _3,
+            CUSTOM_RANDOM,
+            CUSTOM_GRAIN_STRENGTH * 0.03f);
+    }
+
+    _4.xyz = renodx::draw::RenderIntermediatePass(_4.xyz);
+    _4.w = min(1, _118.w);
+    
+    output._4 = _4;
+    return output;
+}

@@ -1,0 +1,10 @@
+[16-03-2026 10:05:09:129][D:\Jenkins\workspace\Repo\FW4\Release\Stable\LSProjects\Framework\Code\RenderFramework\vk\API.cpp 1354 rf::vk::API::CreateVkDevice]: Driver info:
+  ID: NVIDIA_PROPRIETARY
+  Name: NVIDIA
+  Info: 595.79
+
+[16-03-2026 10:05:12:675][D:\Jenkins\workspace\Repo\FW4\Release\Stable\LSProjects\Framework\Code\RenderFramework\vk\RenderFrame.cpp 540 rf::vk::RenderFrame::CreateSwapChain]: SwapChain: created
+[16-03-2026 10:05:20:556][D:\Jenkins\workspace\Repo\FW4\Release\Stable\LSProjects\Framework\Code\RenderFramework\vk\RenderFrame.cpp 681 rf::vk::RenderFrame::DestroySwapChain]: SwapChain: destroying old SwapChain
+[16-03-2026 10:05:20:646][D:\Jenkins\workspace\Repo\FW4\Release\Stable\LSProjects\Framework\Code\RenderFramework\vk\RenderFrame.cpp 540 rf::vk::RenderFrame::CreateSwapChain]: SwapChain: created
+[16-03-2026 10:05:32:021][D:\Jenkins\workspace\Repo\FW4\Release\Stable\LSProjects\Apps\Gustav\Code\EoCClient\Client\GameStateThreaded.cpp 32 ecl::GameStateThreaded::GameStateWorker::DoWork]: Client Thread start: ClientInit
+[16-03-2026 10:05:33:971][D:\Jenkins\workspace\Repo\FW4\Release\Stable\LSProjects\Apps\Gustav\Code\EoCClient\Client\GameStateThreaded.cpp 54 ecl::GameStateThreaded::GameStateWorker::DoWork]: Client Thread ended: ClientInit

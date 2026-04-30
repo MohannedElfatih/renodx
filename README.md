@@ -11,6 +11,13 @@ RenoDX, short for "Renovation Engine for DirectX Games", is a toolset to mod gam
 * See [CONTRIBUTING.md](./docs/CONTRIBUTING.md)
 * For the live devkit and MCP workflow, see [DEVKIT_MCP.md](./docs/DEVKIT_MCP.md)
 
+# Project Docs
+
+* `AGENTS.md` - Collaboration and workflow rules for agents/humans.
+* `docs/TASKS.md` - Lightweight project task board.
+* `docs/HANDOFF.md` - Session-to-session continuity notes.
+* `docs/DECISIONS.md` - Architecture/process decision log.
+
 # Mods
 
 * See [Mods page](https://github.com/clshortfuse/renodx/wiki/Mods)

@@ -23,6 +23,8 @@ struct ShaderInjectData {
   float custom_bloom;
   float custom_dof;
   float swap_chain_output_dither_bits;
+
+  float output_has_drawn;
 };
 
 #define RENODX_PEAK_WHITE_NITS                        shader_injection.peak_white_nits
@@ -42,14 +44,15 @@ struct ShaderInjectData {
 #define RENODX_RENO_DRT_NEUTRAL_SDR_CLAMP_PEAK        -1.0f
 #define RENODX_RENO_DRT_NEUTRAL_SDR_CLAMP_COLOR_SPACE -1.0f
 #define RENODX_RENO_DRT_NEUTRAL_SDR_TONE_MAP_METHOD   renodx::tonemap::renodrt::config::tone_map_method::HERMITE_SPLINE
-#define RENODX_SWAP_CHAIN_OUTPUT_PRESET               SWAP_CHAIN_OUTPUT_PRESET_HDR10
+#define RENODX_SWAP_CHAIN_OUTPUT_PRESET               SWAP_CHAIN_OUTPUT_PRESET_SCRGB
 #define RENODX_GAMMA_CORRECTION                       shader_injection.gamma_correction
 #define CUSTOM_BLOOM                                  shader_injection.custom_bloom
 #define CUSTOM_DOF                                    shader_injection.custom_dof
+#define CUSTOM_OUTPUT_SHADER_DRAWN                    shader_injection.output_has_drawn
 #define RENODX_INTERMEDIATE_ENCODING                  renodx::draw::ENCODING_NONE
 #define RENODX_SWAP_CHAIN_DECODING                    renodx::draw::ENCODING_NONE
-#define RENODX_SWAP_CHAIN_GAMMA_CORRECTION            RENODX_GAMMA_CORRECTION
-#define RENODX_TONE_MAP_PASS_AUTOCORRECTION           1.f
+#define RENODX_SWAP_CHAIN_GAMMA_CORRECTION  RENODX_GAMMA_CORRECTION
+#define RENODX_TONE_MAP_PASS_AUTOCORRECTION 1.f
 
 #ifndef __cplusplus
 #ifdef __SLANG__
@@ -62,10 +65,9 @@ struct ShaderInjectData {
 #define PUSH_CONSTANTS_OFFSET 0
 #endif
 
-struct PushData
-{
-    [[vk::offset(PUSH_CONSTANTS_OFFSET)]]
-    ShaderInjectData shader_injection;
+struct PushData {
+  [[vk::offset(PUSH_CONSTANTS_OFFSET)]]
+  ShaderInjectData shader_injection;
 };
 
 [[vk::push_constant]]
