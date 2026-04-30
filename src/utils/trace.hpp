@@ -1036,7 +1036,7 @@ static void OnInitResource(
   switch (desc.type) {
     case reshade::api::resource_type::buffer:
       s << ", size: " << desc.buffer.size;
-      s << ", stride: " << desc.buffer.stride;
+      s << ", stride: " << desc.buffer.structured.stride;
       break;
     case reshade::api::resource_type::texture_1d:
     case reshade::api::resource_type::texture_2d:

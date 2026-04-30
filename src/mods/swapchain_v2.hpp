@@ -736,6 +736,10 @@ static bool OnCreateSwapchain(reshade::api::swapchain_desc& desc, void* hwnd) {
       }
       if (has_flag) s << ")";
     }
+  } else if (is_vulkan) {
+    if (set_color_space) {
+      desc.color_space = target_color_space;
+    }
   }
 
   s << ", buffers:" << old_buffer_count << " => " << desc.back_buffer_count;

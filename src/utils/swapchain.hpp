@@ -461,7 +461,7 @@ static bool ChangeColorSpace(reshade::api::swapchain* swapchain, reshade::api::c
     swapchain4->Release();
     swapchain4 = nullptr;
   } else {
-    // Vulkan ???
+    // Vulkan modifies colorspace from create_swapchain event
   }
 
   auto* device = swapchain->get_device();

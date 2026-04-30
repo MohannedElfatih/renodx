@@ -383,84 +383,41 @@ class RenderPass {
 
     if (this->auto_generate_descriptor_table_updates) {
       descriptor_table_updates.clear();
-      if (is_vulkan) {
-        uint32_t current_vk_binding = 0;
 
-        // Match HLSL register declaration order in Vulkan set 0.
-        if (!this->shader_resource_slots.views.empty()) {
-          const auto srv_count = static_cast<uint32_t>(this->shader_resource_slots.views.size());
-          descriptor_table_updates.push_back({
-              .table = {},
-              .binding = current_vk_binding++,
-              .array_offset = 0,
-              .count = srv_count,
-              .type = reshade::api::descriptor_type::texture_shader_resource_view,
-              .descriptors = this->shader_resource_slots.views.data(),
-          });
-          current_vk_binding += (srv_count > 0u ? (srv_count - 1u) : 0u);
-        }
+      // SRVs
+      if (!this->shader_resource_slots.views.empty()) {
+        descriptor_table_updates.push_back({
+            .table = {},
+            .binding = 0,
+            .array_offset = 0,
+            .count = static_cast<uint32_t>(this->shader_resource_slots.views.size()),
+            .type = reshade::api::descriptor_type::texture_shader_resource_view,
+            .descriptors = this->shader_resource_slots.views.data(),
+        });
+      }
 
-        if (!samplers.empty()) {
-          const auto sampler_count = static_cast<uint32_t>(samplers.size());
-          descriptor_table_updates.push_back({
-              .table = {},
-              .binding = current_vk_binding++,
-              .array_offset = 0,
-              .count = sampler_count,
-              .type = reshade::api::descriptor_type::sampler,
-              .descriptors = samplers.data(),
-          });
-          current_vk_binding += (sampler_count > 0u ? (sampler_count - 1u) : 0u);
-        }
+      // Samplers
+      if (!samplers.empty()) {
+        descriptor_table_updates.push_back({
+            .table = {},
+            .binding = 0,
+            .array_offset = 0,
+            .count = static_cast<uint32_t>(samplers.size()),
+            .type = reshade::api::descriptor_type::sampler,
+            .descriptors = samplers.data(),
+        });
+      }
 
-        if (!this->unordered_access_slots.views.empty()) {
-          const auto uav_count = static_cast<uint32_t>(this->unordered_access_slots.views.size());
-          descriptor_table_updates.push_back({
-              .table = {},
-              .binding = current_vk_binding++,
-              .array_offset = 0,
-              .count = uav_count,
-              .type = reshade::api::descriptor_type::texture_unordered_access_view,
-              .descriptors = this->unordered_access_slots.views.data(),
-          });
-          current_vk_binding += (uav_count > 0u ? (uav_count - 1u) : 0u);
-        }
-      } else {
-        // Samplers
-        if (!samplers.empty()) {
-          descriptor_table_updates.push_back({
-              .table = {},
-              .binding = 0,
-              .array_offset = 0,
-              .count = static_cast<uint32_t>(samplers.size()),
-              .type = reshade::api::descriptor_type::sampler,
-              .descriptors = samplers.data(),
-          });
-        }
-
-        // SRVs
-        if (!this->shader_resource_slots.views.empty()) {
-          descriptor_table_updates.push_back({
-              .table = {},
-              .binding = 0,
-              .array_offset = 0,
-              .count = static_cast<uint32_t>(this->shader_resource_slots.views.size()),
-              .type = reshade::api::descriptor_type::texture_shader_resource_view,
-              .descriptors = this->shader_resource_slots.views.data(),
-          });
-        }
-
-        // UAVs
-        if (!this->unordered_access_slots.views.empty()) {
-          descriptor_table_updates.push_back({
-              .table = {},
-              .binding = 0,
-              .array_offset = 0,
-              .count = static_cast<uint32_t>(this->unordered_access_slots.views.size()),
-              .type = reshade::api::descriptor_type::texture_unordered_access_view,
-              .descriptors = this->unordered_access_slots.views.data(),
-          });
-        }
+      // UAVs
+      if (!this->unordered_access_slots.views.empty()) {
+        descriptor_table_updates.push_back({
+            .table = {},
+            .binding = 0,
+            .array_offset = 0,
+            .count = static_cast<uint32_t>(this->unordered_access_slots.views.size()),
+            .type = reshade::api::descriptor_type::texture_unordered_access_view,
+            .descriptors = this->unordered_access_slots.views.data(),
+        });
       }
       this->auto_generate_descriptor_table_updates = false;
     }
@@ -481,89 +438,30 @@ class RenderPass {
     // Build pipeline layout if not supplied
     if (this->layout.handle == 0u) {
       std::vector<reshade::api::pipeline_layout_param> layout_params = {};
-      std::vector<reshade::api::descriptor_range> vk_set0_ranges;
 
-      // DXGI assigns to different registers, but vulkan relies on order so we add textures first
-      if (is_vulkan) {
-        uint32_t current_vk_binding = 0;  // Keeps track of the Vulkan binding index
+      if (!this->shader_resource_slots.views.empty()) {
+        reshade::api::pipeline_layout_param param_srv = {};
+        param_srv.type = reshade::api::pipeline_layout_param_type::push_descriptors;
+        param_srv.push_descriptors.count = this->shader_resource_slots.views.size();
+        param_srv.push_descriptors.type = reshade::api::descriptor_type::texture_shader_resource_view;
+        layout_params.push_back(param_srv);
+      }
 
-        /*
-          [[vk::binding(0, 0)]]
-          Texture2D t0 : register(t0);
-          [[vk::binding(1, 0)]]
-          SamplerState s0 : register(s0);
-          [[vk::binding(2, 0)]]
-          RWTexture2D<float4> u0 : register(u0);
-        */
+      if (!samplers.empty()) {
+        reshade::api::pipeline_layout_param param_sampler = {};
+        param_sampler.type = reshade::api::pipeline_layout_param_type::push_descriptors;
+        param_sampler.push_descriptors.count = samplers.size();
+        param_sampler.push_descriptors.type = reshade::api::descriptor_type::sampler;
+        layout_params.push_back(param_sampler);
+      }
 
-        // Textures (SRVs) Define t0 (Texture) for Set 0, Binding 0
-        if (!this->shader_resource_slots.views.empty()) {
-          const auto srv_count = static_cast<uint32_t>(this->shader_resource_slots.views.size());
-          reshade::api::descriptor_range srv_range = {};
-          srv_range.binding = current_vk_binding++;
-          srv_range.count = srv_count;
-          srv_range.type = reshade::api::descriptor_type::texture_shader_resource_view;
-          vk_set0_ranges.push_back(srv_range);
-          current_vk_binding += (srv_count > 0u ? (srv_count - 1u) : 0u);
-        }
-
-        // Samplers
-        if (!samplers.empty()) {
-          const auto sampler_count = static_cast<uint32_t>(samplers.size());
-          reshade::api::descriptor_range sampler_range = {};
-          sampler_range.binding = current_vk_binding++;
-          sampler_range.count = sampler_count;
-          sampler_range.type = reshade::api::descriptor_type::sampler;
-          vk_set0_ranges.push_back(sampler_range);
-          current_vk_binding += (sampler_count > 0u ? (sampler_count - 1u) : 0u);
-        }
-
-        if (!this->unordered_access_slots.views.empty()) {
-          const auto uav_count = static_cast<uint32_t>(this->unordered_access_slots.views.size());
-          reshade::api::descriptor_range uav_range = {};
-          uav_range.binding = current_vk_binding++;
-          uav_range.count = uav_count;
-          // Use the UAV descriptor type
-          uav_range.type = reshade::api::descriptor_type::texture_unordered_access_view;
-          vk_set0_ranges.push_back(uav_range);
-          current_vk_binding += (uav_count > 0u ? (uav_count - 1u) : 0u);
-        }
-
-        // Pack them into a single pipeline parameter (Set 0)
-        if (!vk_set0_ranges.empty()) {
-          reshade::api::pipeline_layout_param param_set0 = {};
-          // Use the specific type that reads the 'descriptor_table' struct but flags as pushed
-          param_set0.type = reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges;
-          param_set0.descriptor_table.count = static_cast<uint32_t>(vk_set0_ranges.size());
-          param_set0.descriptor_table.ranges = vk_set0_ranges.data();
-
-          layout_params.push_back(param_set0);  // Pushed at index 0 -> Becomes Set 0
-        }
-      } else {
-        if (!samplers.empty()) {
-          reshade::api::pipeline_layout_param param_sampler;
-          param_sampler.type = reshade::api::pipeline_layout_param_type::push_descriptors;
-          param_sampler.push_descriptors.count = samplers.size();
-          param_sampler.push_descriptors.type = reshade::api::descriptor_type::sampler;
-          layout_params.push_back(param_sampler);
-        }
-
-        if (!this->shader_resource_slots.views.empty()) {
-          reshade::api::pipeline_layout_param param_srv;
-          param_srv.type = reshade::api::pipeline_layout_param_type::push_descriptors;
-          param_srv.push_descriptors.count = this->shader_resource_slots.views.size();
-          param_srv.push_descriptors.type = reshade::api::descriptor_type::texture_shader_resource_view;
-          layout_params.push_back(param_srv);
-        }
-
-        // UAVs
-        if (!this->unordered_access_slots.views.empty()) {
-          reshade::api::pipeline_layout_param param_uav;
-          param_uav.type = reshade::api::pipeline_layout_param_type::push_descriptors;
-          param_uav.push_descriptors.count = this->unordered_access_slots.views.size();
-          param_uav.push_descriptors.type = reshade::api::descriptor_type::texture_unordered_access_view;
-          layout_params.push_back(param_uav);
-        }
+      // UAVs
+      if (!this->unordered_access_slots.views.empty()) {
+        reshade::api::pipeline_layout_param param_uav = {};
+        param_uav.type = reshade::api::pipeline_layout_param_type::push_descriptors;
+        param_uav.push_descriptors.count = this->unordered_access_slots.views.size();
+        param_uav.push_descriptors.type = reshade::api::descriptor_type::texture_unordered_access_view;
+        layout_params.push_back(param_uav);
       }
 
       if (!push_constants.empty()) {
@@ -707,13 +605,11 @@ class RenderPass {
                                 : reshade::api::shader_stage::all_graphics;
 
     {
-      const uint32_t descriptor_layout_param_count = is_vulkan
-                                                         ? (descriptor_table_updates.empty() ? 0u : 1u)
-                                                         : static_cast<uint32_t>(descriptor_table_updates.size());
+      const uint32_t descriptor_layout_param_count = static_cast<uint32_t>(descriptor_table_updates.size());
       auto current_layout_param_index = 0u;
 
       for (uint32_t i = 0; i < descriptor_table_updates.size(); ++i) {
-        const uint32_t layout_param_index = is_vulkan ? 0u : i;
+        const uint32_t layout_param_index = i;
 #ifdef DEBUG_LEVEL_2
         {
           std::stringstream s;

@@ -2154,16 +2154,9 @@ static void OnBeginRenderPass(
   auto* new_rts = ApplyRenderTargetClones(rts, count);
   if (new_rts == nullptr) return;
 
-  if (cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan) {
-    const size_t size = count * sizeof(reshade::api::render_pass_render_target_desc);
-    auto* mutable_rts = const_cast<reshade::api::render_pass_render_target_desc*>(rts);
-    memcpy(mutable_rts, new_rts, size);
-    free(new_rts);
-    return;
-  }
 
   cmd_list->end_render_pass();
-  cmd_list->begin_render_pass(count, new_rts, ds);
+  cmd_list->begin_render_pass(count, new_rts, ds, reshade::api::render_pass_flags::none);
   free(new_rts);
 }
 
