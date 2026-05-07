@@ -1200,6 +1200,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0x0E883404),
     UberHDLinearOnDraw(0x0EC64D75),
     UberHDLinearOnDraw(0x0D429D27),
+    UberHDLinearOnDraw(0x0C271B4A),
     UberHDLinearOnDraw(0xBCC1D592),
     UberHDGammaOnDraw(0x0F750BE1),
 	  UberHDLinearOnDraw(0x0F4188A5),
@@ -1358,6 +1359,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0xD44C30D0, &Count),    // Beat Saber Main effect
     CustomShaderEntryCallback(0x07FD3D55, &CountGammaTonemap1),   // Neva
     CustomShaderEntryCallback(0xECED3960, &CountTonemap1),    // PostProcess
+    CustomShaderEntryCallback(0xE4D51B68, &CountTonemap1),    // PostProcess
     CustomShaderEntryCallback(0xB0E8A766, &CountTonemap1),    // PostProcess
     CustomShaderEntryCallback(0x850F1FE0, &CountTonemap1),    // Unlit Fullscreen Overlay
     //CustomShaderEntry(0x144BC65C),
@@ -1850,6 +1852,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberGammaOnDraw(0xBC98901E),
     UberGammaOnDraw(0xC85DC52C),
     UberLinearOnDraw(0xC493FA01),
+    UberLinearOnDraw(0xC7503CA9),
     UberLinearOnDraw(0xD92C0A23),
     UberGammaOnDraw(0xDEF5AB02),
     UberLinearOnDraw(0xE002CDC8),
@@ -2998,7 +3001,7 @@ void AddGamePatches() {
   || filename == "Copycat.exe" || filename == "Make Way.exe" || filename == "Digimon World Next Order.exe"
   || filename == "Quern.exe" || filename == "reverse1999.exe" || filename == "NineSols.exe" || filename == "Distance.exe"
   || filename == "SlimeRancher.exe" || filename == "Source of Madness.exe" || filename == "Stirring Abyss.exe"
-  || filename == "thief.exe" || filename == "STASIS2.exe"){
+  || filename == "thief.exe" || filename == "STASIS2.exe" || filename == "Elementallis.exe"){
     shader_injection.isClamped = 2.f;
     } else if(filename == "It Steals.exe"){
     shader_injection.isClamped = 3.f;
