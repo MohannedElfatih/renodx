@@ -1368,7 +1368,8 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0x918C7E0C, &Count),    // ScreenRender
     CustomShaderEntryCallback(0x4C6C9444, &Count),    // Blend MorganTweak
     CustomShaderEntryCallback(0xBD332C3A, &CountLinearTonemap1),   // PostFx GlowComposite
-    CustomShaderEntryCallback(0x3E8A6AF2, &CountLinearTonemap1),   // CameraFilterPack 2Lut
+    CustomShaderEntryCallback(0x3E8A6AF2, &CountTonemap1),   // CameraFilterPack 2Lut
+    CustomShaderEntryCallback(0x6EA997C7, &CountTonemap1),   // CameraFilterPack 2Lut
     CustomShaderEntryCallback(0x16F8A02E, &Count),   // CameraFilterPack TV Arcade 2
     CustomShaderEntryCallback(0x12F06F96, &CountLinearTonemap1),   // CameraFilterPack Lut Plus
     //CustomShaderEntryCallback(0xB47E4A58, &CountLinear),    // Water Effect
@@ -1948,6 +1949,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0x783ABD54),
     UberHDLinearOnDraw(0x808BC2A2),
     UberHDGammaOnDraw(0x821B9FB1),
+    UberHDGammaOnDraw(0x869CB3F0),
     UberHDLinearOnDraw(0x916E68A2),
     UberHDLinearOnDraw(0x957EC72A),
     UberHDLinearOnDraw(0x995B36D9),
