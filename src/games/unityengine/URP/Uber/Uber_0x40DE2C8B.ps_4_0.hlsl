@@ -50,19 +50,6 @@ void main(
   r0.xyz = cb0[132].www * r0.xyz;
   if (cb0[133].w > 0) {
     r1.xyz = fastSrgbEncodeSafe(r0.xyz);
-    r2.xyz = cb0[133].zzz * r1.zxy;
-    r0.w = floor(r2.x);
-    r2.xw = float2(0.5,0.5) * cb0[133].xy;
-    r2.yz = r2.yz * cb0[133].xy + r2.xw;
-    r2.x = r0.w * cb0[133].y + r2.y;
-    r3.xyzw = t4.SampleLevel(s0_s, r2.xz, 0).xyzw;
-    r4.x = cb0[133].y;
-    r4.y = 0;
-    r2.xy = r4.xy + r2.xz;
-    r2.xyzw = t4.SampleLevel(s0_s, r2.xy, 0).xyzw;
-    r0.w = r1.z * cb0[133].z + -r0.w;
-    r2.xyz = r2.xyz + -r3.xyz;
-    r2.xyz = r0.www * r2.xyz + r3.xyz;
     r2.xyz = handleUserLUT(r0.xyz, t4, s0_s, cb0[133].xyz, 1);
     r2.xyz = r2.xyz + -r1.xyz;
     r1.xyz = cb0[133].www * r2.xyz + r1.xyz;
