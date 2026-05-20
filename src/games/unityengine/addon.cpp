@@ -13,6 +13,7 @@
 
 #include "../../mods/shader.hpp"
 #include "../../mods/swapchain.hpp"
+#include "../../utils/shader.hpp"
 #include "../../utils/date.hpp"
 #include "../../utils/settings.hpp"
 #include "../../utils/random.hpp"
@@ -2912,6 +2913,65 @@ void OnPresetOff() {
   renodx::utils::settings::UpdateSetting("fxFilmGrainType", 0.f);
 }
 
+struct __declspec(uuid("A1B2C3D4-5678-90AB-CDEF-0123456789AB")) BlendOnlyData {
+  reshade::api::pipeline pipeline = {};
+};
+
+constexpr reshade::api::pipeline_layout PIPELINE_LAYOUT{0};
+
+void CreateBlendPipeline(reshade::api::device *device) {
+  auto *d = device->create_private_data<BlendOnlyData>();
+
+  reshade::api::blend_desc bd = {};
+  bd.blend_enable[0] = true;
+  bd.source_color_blend_factor[0] = reshade::api::blend_factor::one;
+  bd.dest_color_blend_factor[0]   = reshade::api::blend_factor::one;
+  bd.color_blend_op[0]            = reshade::api::blend_op::add;
+  bd.source_alpha_blend_factor[0] = reshade::api::blend_factor::one;
+  bd.dest_alpha_blend_factor[0]   = reshade::api::blend_factor::one;
+  bd.alpha_blend_op[0]            = reshade::api::blend_op::add;
+
+  reshade::api::pipeline_subobject sub = {};
+  sub.type  = reshade::api::pipeline_subobject_type::blend_state;
+  sub.count = 1;
+  sub.data  = &bd;
+
+  device->create_pipeline(PIPELINE_LAYOUT, 1, &sub, &d->pipeline);
+}
+
+void DestroyBlendPipeline(reshade::api::device *device) {
+  auto *d = device->get_private_data<BlendOnlyData>();
+  if (d != nullptr && d->pipeline.handle != 0) {
+    device->destroy_pipeline(d->pipeline);
+    d->pipeline = {};
+    device->destroy_private_data<BlendOnlyData>();
+  }
+}
+
+bool Blend_OnDrawIndexed(reshade::api::command_list* cmd_list,
+                         uint32_t index_count, uint32_t instance_count,
+                         uint32_t first_index, int32_t vertex_offset,
+                         uint32_t first_instance)
+{
+  // get RenoDX shader state and pixel state (same pattern used in the Unreal addon)
+  auto* shader_state = renodx::utils::shader::GetCurrentState(cmd_list);
+  if (shader_state == nullptr) return false;
+
+  auto* pixel_state = renodx::utils::shader::GetCurrentPixelState(shader_state);
+  const uint32_t pixel_hash = renodx::utils::shader::GetCurrentPixelShaderHash(pixel_state);
+  if (pixel_hash == 0u) return false;
+  if (pixel_hash == 0x807D5E31u) {
+    auto *device = cmd_list->get_device();
+    auto *d = device->get_private_data<BlendOnlyData>();
+    if (d != nullptr && d->pipeline.handle != 0) {
+      // bind only the output-merger stage to change blend state only
+      cmd_list->bind_pipeline(reshade::api::pipeline_stage::output_merger, d->pipeline);
+    }
+  }
+
+  return false;
+}
+
 void AddLiRTEDUpgrades() {
       renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
           .old_format = reshade::api::format::r8g8b8a8_typeless,
@@ -3833,11 +3893,11 @@ void AddAdvancedSettings() {
   }
 }
 
-void OnInitDevice(reshade::api::device* device) {
+/*void OnInitDevice(reshade::api::device* device) {
   if (device->get_api() == reshade::api::device_api::d3d12) {
     renodx::mods::shader::force_pipeline_cloning = true;
   }
-}
+}*/
 
 bool fired_on_init_swapchain = false;
 
@@ -3965,7 +4025,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       });
       AddGamePatches();
       //reshade::register_event<reshade::addon_event::init_device>(OnInitDevice);
+      reshade::register_event<reshade::addon_event::init_device>(CreateBlendPipeline);
+      reshade::register_event<reshade::addon_event::destroy_device>(DestroyBlendPipeline);
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
+      reshade::register_event<reshade::addon_event::draw_indexed>(Blend_OnDrawIndexed);
       reshade::register_event<reshade::addon_event::present>(OnPresent);
         initialized = true;
       }
