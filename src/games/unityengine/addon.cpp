@@ -911,6 +911,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0x2B398141),
     UberLinearOnDraw(0xDF97E9E0),
     UberLinearOnDraw(0xA1BB94CF),
+    UberLinearOnDraw(0xA9C30A53),
     UberLinearOnDraw(0xB75D73F2),
     UberLinearOnDraw(0x4892C014),
     UberLinearOnDraw(0x077C4EBE),
