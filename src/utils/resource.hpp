@@ -51,7 +51,9 @@ const ResourceViewUpgradeMap VIEW_UPGRADES_RGBA16F = {
     ViewUpgradeAll(r8g8b8a8_unorm, r16g16b16a16_float),
     ViewUpgradeAll(b8g8r8a8_unorm, r16g16b16a16_float),
     ViewUpgradeAll(r8g8b8a8_snorm, r16g16b16a16_float),
+    ViewUpgradeAll(r8g8b8x8_unorm, r16g16b16a16_float),
     ViewUpgradeAll(r8g8b8a8_unorm_srgb, r16g16b16a16_float),
+    ViewUpgradeAll(r8g8b8x8_unorm_srgb, r16g16b16a16_float),
     ViewUpgradeAll(b8g8r8a8_unorm_srgb, r16g16b16a16_float),
     ViewUpgradeAll(r11g11b10_float, r16g16b16a16_float),
     ViewUpgradeAll(b8g8r8x8_unorm, r16g16b16a16_float),
@@ -74,8 +76,10 @@ const ResourceViewUpgradeMap VIEW_UPGRADES_R10G10B10A2_UNORM = {
     ViewUpgradeAll(r10g10b10a2_unorm, r10g10b10a2_unorm),
     ViewUpgradeAll(b10g10r10a2_unorm, r10g10b10a2_unorm),
     ViewUpgradeAll(r8g8b8a8_unorm, r10g10b10a2_unorm),
+    ViewUpgradeAll(r8g8b8x8_unorm, r10g10b10a2_unorm),
     ViewUpgradeAll(b8g8r8a8_unorm, r10g10b10a2_unorm),
     ViewUpgradeAll(r8g8b8a8_unorm_srgb, r10g10b10a2_unorm),
+    ViewUpgradeAll(r8g8b8x8_unorm_srgb, r10g10b10a2_unorm),
     ViewUpgradeAll(b8g8r8a8_unorm_srgb, r10g10b10a2_unorm),
     ViewUpgradeAll(b8g8r8x8_unorm, r10g10b10a2_unorm),
     ViewUpgradeAll(b8g8r8x8_unorm_srgb, r10g10b10a2_unorm),
@@ -87,8 +91,10 @@ const ResourceViewUpgradeMap VIEW_UPGRADES_R11G11B10_FLOAT = {
     ViewUpgradeAll(r10g10b10a2_unorm, r11g11b10_float),
     ViewUpgradeAll(b10g10r10a2_unorm, r11g11b10_float),
     ViewUpgradeAll(r8g8b8a8_unorm, r11g11b10_float),
+    ViewUpgradeAll(r8g8b8x8_unorm, r11g11b10_float),
     ViewUpgradeAll(b8g8r8a8_unorm, r11g11b10_float),
     ViewUpgradeAll(r8g8b8a8_unorm_srgb, r11g11b10_float),
+    ViewUpgradeAll(r8g8b8x8_unorm_srgb, r11g11b10_float),
     ViewUpgradeAll(b8g8r8a8_unorm_srgb, r11g11b10_float),
     ViewUpgradeAll(b8g8r8x8_unorm, r11g11b10_float),
     ViewUpgradeAll(b8g8r8x8_unorm_srgb, r11g11b10_float),
@@ -104,9 +110,11 @@ const ResourceViewUpgradeMap VIEW_UPGRADES_R9G9B9E5 = {
     ViewUpgradeAll(r10g10b10a2_unorm, r9g9b9e5),
     ViewUpgradeAll(b10g10r10a2_unorm, r9g9b9e5),
     ViewUpgradeAll(r8g8b8a8_unorm, r9g9b9e5),
+    ViewUpgradeAll(r8g8b8x8_unorm, r9g9b9e5),
     ViewUpgradeAll(b8g8r8a8_unorm, r9g9b9e5),
     ViewUpgradeAll(r8g8b8a8_snorm, r9g9b9e5),
     ViewUpgradeAll(r8g8b8a8_unorm_srgb, r9g9b9e5),
+    ViewUpgradeAll(r8g8b8x8_unorm_srgb, r9g9b9e5),
     ViewUpgradeAll(b8g8r8a8_unorm_srgb, r9g9b9e5),
     ViewUpgradeAll(r11g11b10_float, r9g9b9e5),
     ViewUpgradeAll(r9g9b9e5, r9g9b9e5),
@@ -141,6 +149,19 @@ struct ResourceUpgradeInfo {
 
   ResourceViewUpgradeMap view_upgrades = VIEW_UPGRADES_RGBA16F;
 
+  [[nodiscard]] reshade::api::format FindViewUpgrade(reshade::api::resource_usage usage, reshade::api::format format) const {
+    if (auto it = view_upgrades.find({usage, format}); it != view_upgrades.end()) {
+      return it->second;
+    }
+    for (const auto& [key, target_format] : view_upgrades) {
+      if (key.second != format) continue;
+      if (renodx::utils::bitwise::HasAnyFlag(usage, key.first)) {
+        return target_format;
+      }
+    }
+    return reshade::api::format::unknown;
+  }
+
   struct Dimensions {
     int16_t width = ANY;
     int16_t height = ANY;
@@ -148,6 +169,7 @@ struct ResourceUpgradeInfo {
   };
   Dimensions dimensions = {.width = BACK_BUFFER, .height = BACK_BUFFER, .depth = BACK_BUFFER};
   Dimensions new_dimensions = {.width = ANY, .height = ANY, .depth = ANY};
+  Dimensions min_dimensions = {.width = ANY, .height = ANY, .depth = ANY};
 
   reshade::api::resource_usage usage_include = reshade::api::resource_usage::undefined;
   reshade::api::resource_usage usage_exclude = reshade::api::resource_usage::undefined;
@@ -171,37 +193,58 @@ struct ResourceUpgradeInfo {
     if (this->state != reshade::api::resource_usage::undefined) {
       if (this->state != state) return false;
     }
-    if (!this->ignore_size) {
-      if (this->aspect_ratio == ANY) {
-        if (dimensions.width == BACK_BUFFER) {
-          if (back_buffer_desc.type == reshade::api::resource_type::unknown) return false;
-          if (desc.texture.width != back_buffer_desc.texture.width) return false;
-        } else if (dimensions.width > 0) {
-          if (desc.texture.width != dimensions.width) return false;
-        }
 
-        if (dimensions.height == BACK_BUFFER) {
-          if (back_buffer_desc.type == reshade::api::resource_type::unknown) return false;
-          if (desc.texture.height != back_buffer_desc.texture.height) return false;
-        } else if (dimensions.height > 0) {
-          if (desc.texture.height != dimensions.height) return false;
-        }
+    if (this->ignore_size) return true;
 
-        if (dimensions.depth >= 0) {
-          if (desc.texture.depth_or_layers != dimensions.depth) return false;
-        }
-      } else {
-        const float view_ratio = static_cast<float>(desc.texture.width) / static_cast<float>(desc.texture.height);
-        float target_ratio;
-        if (this->aspect_ratio == BACK_BUFFER) {
-          if (back_buffer_desc.type == reshade::api::resource_type::unknown) return false;
-          target_ratio = static_cast<float>(back_buffer_desc.texture.width) / static_cast<float>(back_buffer_desc.texture.height);
-        } else {
-          target_ratio = this->aspect_ratio;
-        }
-        const float diff = std::abs(view_ratio - target_ratio);
-        if (diff > this->aspect_ratio_tolerance) return false;
+    const auto matches_min_dimensions = [&]() {
+      if (min_dimensions.height >= 0) {
+        if (desc.texture.height < min_dimensions.height) return false;
       }
+
+      if (min_dimensions.width >= 0) {
+        if (desc.texture.width < min_dimensions.width) return false;
+      }
+
+      if (min_dimensions.depth >= 0) {
+        if (desc.texture.depth_or_layers < min_dimensions.depth) return false;
+      }
+
+      return true;
+    };
+
+    if (this->aspect_ratio == ANY) {
+      if (dimensions.width == BACK_BUFFER) {
+        if (back_buffer_desc.type == reshade::api::resource_type::unknown) return false;
+        if (desc.texture.width != back_buffer_desc.texture.width) return false;
+      } else if (dimensions.width > 0) {
+        if (desc.texture.width != dimensions.width) return false;
+      }
+
+      if (dimensions.height == BACK_BUFFER) {
+        if (back_buffer_desc.type == reshade::api::resource_type::unknown) return false;
+        if (desc.texture.height != back_buffer_desc.texture.height) return false;
+      } else if (dimensions.height > 0) {
+        if (desc.texture.height != dimensions.height) return false;
+      }
+
+      if (dimensions.depth >= 0) {
+        if (desc.texture.depth_or_layers != dimensions.depth) return false;
+      }
+
+      if (!matches_min_dimensions()) return false;
+    } else {
+      const float view_ratio = static_cast<float>(desc.texture.width) / static_cast<float>(desc.texture.height);
+      float target_ratio;
+      if (this->aspect_ratio == BACK_BUFFER) {
+        if (back_buffer_desc.type == reshade::api::resource_type::unknown) return false;
+        target_ratio = static_cast<float>(back_buffer_desc.texture.width) / static_cast<float>(back_buffer_desc.texture.height);
+      } else {
+        target_ratio = this->aspect_ratio;
+      }
+      const float diff = std::abs(view_ratio - target_ratio);
+      if (diff > this->aspect_ratio_tolerance) return false;
+
+      if (!matches_min_dimensions()) return false;
     }
     return true;
   }
@@ -577,6 +620,7 @@ inline reshade::api::resource_view_desc GetResourceViewDesc(
   if (device == nullptr || view.handle == 0u) return {};
 
   switch (device->get_api()) {
+    case reshade::api::device_api::vulkan:
     case reshade::api::device_api::d3d12:
     case reshade::api::device_api::opengl: {
       reshade::api::resource_view_desc desc = {};
@@ -604,7 +648,8 @@ inline reshade::api::resource GetResourceFromView(
   if (device == nullptr || view.handle == 0u) return {0u};
 
   switch (device->get_api()) {
-    case reshade::api::device_api::d3d12: {
+    case reshade::api::device_api::vulkan:
+    case reshade::api::device_api::d3d12:  {
       reshade::api::resource resource = {0u};
       bool destroyed = true;
       const auto found = GetResourceViewInfo(view, [&resource, &destroyed](const ResourceViewInfo& resource_view_info) {
@@ -670,6 +715,24 @@ inline std::pair<ResourceViewInfo*, bool> EmplaceResourceViewInfoOrReuse(
   return {&it->second, inserted};
 }
 
+// Vulkan resource views are always undefined
+// Derive intended view usage from resource usage flags
+inline reshade::api::resource_usage NormalizeResourceViewUsage(
+    reshade::api::device* device,
+    reshade::api::resource_usage usage_type,
+    const reshade::api::resource_desc& resource_desc) {
+  if (device == nullptr
+      || device->get_api() != reshade::api::device_api::vulkan) {
+    return usage_type;
+  }
+
+  if (usage_type != reshade::api::resource_usage::undefined) {
+    return usage_type;
+  }
+
+  return resource_desc.usage;
+}
+
 inline void RegisterSwapchainInitialized(reshade::api::swapchain* swapchain, bool resize) {
   auto* device = swapchain->get_device();
 
@@ -730,7 +793,7 @@ inline void RegisterSwapchainInitialized(reshade::api::swapchain* swapchain, boo
         s << ", depth_or_layers: " << desc.texture.depth_or_layers;
         s << ", levels: " << desc.texture.levels;
       }
-      s << ", usage: " << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
+      s << ", usage: 0x" << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
       s << ", inserted: " << (inserted ? "true" : "false");
       s << ", was_destroyed: " << (was_destroyed ? "true" : "false");
       s << ")";
@@ -929,7 +992,7 @@ inline void OnInitResource(
       s << ", depth_or_layers: " << desc.texture.depth_or_layers;
       s << ", levels: " << desc.texture.levels;
     }
-    s << ", usage: " << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
+    s << ", usage: 0x" << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
     if (initial_data != nullptr) {
       s << ", initial_data: " << initial_data;
     } else {
@@ -1035,14 +1098,16 @@ inline reshade::api::resource_view_desc PopulateUnknownResourceViewDesc(
     const reshade::api::resource_usage usage_type,
     const reshade::api::resource_desc& resource_desc) {
   reshade::api::resource_view_desc new_desc = desc;
+
   switch (device->get_api()) {
     case reshade::api::device_api::d3d9:
       // DX9 will always be unknown. Games may used special Nvidia types or 'NULL'
       return new_desc;
     case reshade::api::device_api::d3d10:
     case reshade::api::device_api::d3d11:
-      // Set this parameter to NULL to create a view that accesses the entire
-      // resource (using the format the resource was created with).
+    // Set this parameter to NULL to create a view that accesses the entire
+    // resource (using the format the resource was created with).
+    case reshade::api::device_api::vulkan:
     case reshade::api::device_api::d3d12:
       // A null pDesc is used to initialize a default descriptor, if possible.
       // This behavior is identical to the D3D11 null descriptor behavior,
@@ -1054,7 +1119,7 @@ inline reshade::api::resource_view_desc PopulateUnknownResourceViewDesc(
       switch (resource_desc.type) {
         case reshade::api::resource_type::buffer:
           new_desc.type = reshade::api::resource_view_type::buffer;
-          new_desc.format = reshade::api::format::unknown;
+          if (new_desc.format == reshade::api::format::unknown) new_desc.format = reshade::api::format::unknown;
           break;
         case reshade::api::resource_type::texture_1d:
           if (resource_desc.texture.depth_or_layers > 1) {
@@ -1064,7 +1129,7 @@ inline reshade::api::resource_view_desc PopulateUnknownResourceViewDesc(
           }
           new_desc.texture.level_count = UINT32_MAX;
           new_desc.texture.layer_count = resource_desc.texture.depth_or_layers;
-          new_desc.format = resource_desc.texture.format;
+          if (new_desc.format == reshade::api::format::unknown) new_desc.format = resource_desc.texture.format;
           break;
         case reshade::api::resource_type::surface:
         case reshade::api::resource_type::texture_2d:
@@ -1091,11 +1156,11 @@ inline reshade::api::resource_view_desc PopulateUnknownResourceViewDesc(
           } else {
             new_desc.type = reshade::api::resource_view_type::texture_2d;
           }
-          new_desc.format = resource_desc.texture.format;
+          if (new_desc.format == reshade::api::format::unknown) new_desc.format = resource_desc.texture.format;
           break;
         case reshade::api::resource_type::texture_3d:
           new_desc.type = reshade::api::resource_view_type::texture_3d;
-          new_desc.format = resource_desc.texture.format;
+          if (new_desc.format == reshade::api::format::unknown) new_desc.format = resource_desc.texture.format;
           new_desc.texture.level_count = UINT32_MAX;
           new_desc.texture.layer_count = UINT32_MAX;
           break;
@@ -1160,6 +1225,7 @@ inline void OnInitResourceView(
     const auto found = UpdateResourceInfo(resource, [&](ResourceInfo* resource_info) {
       resource_info->resource_view_handles.insert(view.handle);
       new_data.resource_info = resource_info;
+      new_data.usage = NormalizeResourceViewUsage(device, new_data.usage, resource_info->desc);
       new_data.clone_target = resource_info->clone_target;
       new_data.clone_enabled = resource_info->clone_enabled;
       new_data.clone_can_deactivate = resource_info->clone_can_deactivate;
@@ -1189,7 +1255,7 @@ inline void OnInitResourceView(
     if (!has_populated_resource_desc) {
       assert(resource.handle != 0u);
     } else {
-      new_data.desc = PopulateUnknownResourceViewDesc(device, desc, usage_type, populated_resource_desc);
+      new_data.desc = PopulateUnknownResourceViewDesc(device, desc, new_data.usage, populated_resource_desc);
     }
   }
 
