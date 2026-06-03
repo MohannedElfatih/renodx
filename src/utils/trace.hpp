@@ -1032,7 +1032,7 @@ static void OnInitResource(
   s << ", flags: " << std::hex << static_cast<uint32_t>(desc.flags) << std::dec;
   s << ", state: " << std::hex << static_cast<uint32_t>(initial_state) << std::dec;
   s << ", type: " << desc.type;
-  s << ", usage: " << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
+  s << ", usage: 0x" << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
 
   switch (desc.type) {
     case reshade::api::resource_type::buffer:
@@ -1305,6 +1305,14 @@ static void OnBindDescriptorTables(
 
         // Skip unbounded ranges
         if (range.count == UINT32_MAX) continue;
+
+        // ReShade lets these pass through on Vulkan.
+        constexpr auto k_vk_uniform_buffer_dynamic = static_cast<reshade::api::descriptor_type>(8u);  // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+        constexpr auto k_vk_storage_buffer_dynamic = static_cast<reshade::api::descriptor_type>(9u);  // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
+        if (device->get_api() == reshade::api::device_api::vulkan
+            && (range.type == k_vk_uniform_buffer_dynamic || range.type == k_vk_storage_buffer_dynamic)) {
+          continue;
+        }
 
         switch (range.type) {
           case reshade::api::descriptor_type::sampler_with_resource_view:

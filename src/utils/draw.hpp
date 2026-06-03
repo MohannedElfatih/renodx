@@ -18,6 +18,7 @@
 #include <span>
 #include <utility>
 
+#include "./device.hpp"
 #include "./mutex.hpp"
 #include "./render.hpp"
 #include "./resource.hpp"
@@ -49,6 +50,7 @@ struct SwapchainProxyPass {
     auto* cmd_list = queue->get_immediate_command_list();
     auto current_back_buffer = swapchain->get_current_back_buffer();
     auto* device = swapchain->get_device();
+    const bool is_vulkan = device->get_api() == reshade::api::device_api::vulkan;
 
 #ifdef DEBUG_LEVEL_2
     {
@@ -155,7 +157,38 @@ struct SwapchainProxyPass {
         reshade::log::message(reshade::log::level::info, s.str().c_str());
       }
 #endif
+      if (is_vulkan) {
+        const reshade::api::resource pre_copy_resources[] = {current_back_buffer, swapchain_clone};
+        const reshade::api::resource_usage pre_copy_old_states[] = {
+            reshade::api::resource_usage::present
+                | reshade::api::resource_usage::render_target
+                | reshade::api::resource_usage::general,
+            reshade::api::resource_usage::general
+                | reshade::api::resource_usage::shader_resource};
+        const reshade::api::resource_usage pre_copy_new_states[] = {
+            reshade::api::resource_usage::copy_source,
+            reshade::api::resource_usage::copy_dest};
+        cmd_list->barrier(
+            2u,
+            pre_copy_resources,
+            pre_copy_old_states,
+            pre_copy_new_states);
+      }
       cmd_list->copy_resource(current_back_buffer, swapchain_clone);
+      if (is_vulkan) {
+        const reshade::api::resource post_copy_resources[] = {swapchain_clone, current_back_buffer};
+        const reshade::api::resource_usage post_copy_old_states[] = {
+            reshade::api::resource_usage::copy_dest,
+            reshade::api::resource_usage::copy_source};
+        const reshade::api::resource_usage post_copy_new_states[] = {
+            reshade::api::resource_usage::shader_resource,
+            reshade::api::resource_usage::render_target};
+        cmd_list->barrier(
+            2u,
+            post_copy_resources,
+            post_copy_old_states,
+            post_copy_new_states);
+      }
 #ifdef DEBUG_LEVEL_2
       reshade::log::message(reshade::log::level::info, "utils::draw::SwapchainProxyPass::Render(copy_resource end)");
 #endif
@@ -211,6 +244,12 @@ struct SwapchainProxyPass {
     }
 #endif
     pass.revert_state_after_render = revert_state;
+    if (is_vulkan) {
+      pass.render_target_load_op = reshade::api::render_pass_load_op::discard;
+    } else {
+      pass.render_target_load_op = reshade::api::render_pass_load_op::load;
+    }
+    pass.render_target_store_op = reshade::api::render_pass_store_op::store;
     pass.pipeline_subobjects.vertex_shader = vertex_shader;
     pass.pipeline_subobjects.pixel_shader = pixel_shader;
     pass.pipeline_subobjects.compute_shader = {};
@@ -220,9 +259,8 @@ struct SwapchainProxyPass {
     }
     pass.push_constants.clear();
 
+    const bool is_modern_api = renodx::utils::device::IsModernAPI(device);
     if (shader_injection_size != 0u) {
-      const bool is_modern_api = device->get_api() == reshade::api::device_api::d3d12
-                                 || device->get_api() == reshade::api::device_api::vulkan;
       uint8_t register_index;
       if (expected_constant_buffer_index == -1) {
         register_index = is_modern_api ? 0 : 13;
@@ -239,7 +277,7 @@ struct SwapchainProxyPass {
       pass.push_constants[slot] = std::span<const float>(shader_injection, shader_injection_size);
     }
 
-    if (auto_device_flush && device->get_api() != reshade::api::device_api::d3d12) {
+    if (auto_device_flush && !is_modern_api) {
       pass.flush_after_render = true;
     }
 
@@ -248,6 +286,19 @@ struct SwapchainProxyPass {
       reshade::log::message(reshade::log::level::warning, "utils::draw::SwapchainProxyPass::Render(RenderPass::Render failed)");
 #endif
       return false;
+    }
+
+    if (is_vulkan) {
+      const reshade::api::resource final_resources[] = {current_back_buffer};
+      const reshade::api::resource_usage final_old_states[] = {
+          reshade::api::resource_usage::render_target};
+      const reshade::api::resource_usage final_new_states[] = {
+          reshade::api::resource_usage::present};
+      cmd_list->barrier(
+          1u,
+          final_resources,
+          final_old_states,
+          final_new_states);
     }
 
     return true;
