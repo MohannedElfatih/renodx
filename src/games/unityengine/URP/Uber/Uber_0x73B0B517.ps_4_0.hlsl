@@ -19,20 +19,32 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
-  r0.xyzw = t0.SampleBias(s0_s, v1.xy, cb0[19].x).xyzw;
+  r0.xyzw = v1.xyxy * float4(2,2,2,2) + float4(-1,-1,-1,-1);
+  r1.x = dot(r0.zw, r0.zw);
+  r0.xyzw = r1.xxxx * r0.xyzw;
+  r0.xyzw = cb0[136].xxxx * r0.xyzw * injectedData.fxCA;
+  r1.xyzw = t0.SampleBias(s0_s, v1.xy, cb0[19].x).xyzw;
+  r0.xyzw = r0.xyzw * float4(-0.333333343,-0.333333343,-0.666666687,-0.666666687) + v1.xyxy;
+  r2.xyzw = t0.SampleBias(s0_s, r0.xy, cb0[19].x).xyzw;
+  r0.xyzw = t0.SampleBias(s0_s, r0.zw, cb0[19].x).xyzw;
   if (cb0[138].z > 0) {
-    r1.xy = -cb0[138].xy + v1.xy;
-    r1.yz = cb0[138].zz * abs(r1.xy) * min(1.f, injectedData.fxVignette);
-    r1.x = cb0[137].w * r1.y;
-    r0.w = dot(r1.xz, r1.xz);
+    r1.yz = -cb0[138].xy + v1.xy;
+    r3.yz = cb0[138].zz * abs(r1.yz) * min(1.f, injectedData.fxVignette);
+    r3.x = cb0[137].w * r3.y;
+    r0.w = dot(r3.xz, r3.xz);
     r0.w = 1 + -r0.w;
     r0.w = max(0, r0.w);
     r0.w = log2(r0.w);
     r0.w = cb0[138].w * r0.w * max(1.f, injectedData.fxVignette);
     r0.w = exp2(r0.w);
-    r1.xyz = float3(1,1,1) + -cb0[137].xyz;
-    r1.xyz = r0.www * r1.xyz + cb0[137].xyz;
-    r0.xyz = r1.xyz * r0.xyz;
+    r1.yzw = float3(1,1,1) + -cb0[137].xyz;
+    r1.yzw = r0.www * r1.yzw + cb0[137].xyz;
+    r0.x = r1.x;
+    r0.y = r2.y;
+    r0.xyz = r0.xyz * r1.yzw;
+  } else {
+    r0.x = r1.x;
+    r0.y = r2.y;
   }
   r0.xyz = cb0[128].www * r0.zxy;
   if (cb0[129].w > 0) {
@@ -86,18 +98,6 @@ void main(
     r3.yzx = handleUserLUT(r0.yzx, t2, s0_s, cb0[129].xyz);
     r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
     r5.yw = float2(0,0);
-    /*r3.xyz = cb0[129].zzz * r0.xyz;
-    r0.w = floor(r3.x);
-    r3.xw = float2(0.5,0.5) * cb0[129].xy;
-    r3.yz = r3.yz * cb0[129].xy + r3.xw;
-    r3.x = r0.w * cb0[129].y + r3.y;
-    r4.xyzw = t2.SampleLevel(s0_s, r3.xz, 0).xyzw;
-    r5.x = cb0[129].y;
-    r3.xy = r5.xy + r3.xz;
-    r3.xyzw = t2.SampleLevel(s0_s, r3.xy, 0).xyzw;
-    r0.w = r0.x * cb0[129].z + -r0.w;
-    r3.xyz = r3.zxy + -r4.zxy;
-    r3.xyz = r0.www * r3.xyz + r4.zxy;*/
     r3.xyz = r3.xyz + -r0.xyz;
     r0.xyz = cb0[129].www * r3.xyz + r0.xyz;
     r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);

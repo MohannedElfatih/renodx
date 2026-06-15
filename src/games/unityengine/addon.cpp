@@ -702,6 +702,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDRPOnDraw(0x16F88A15),
     UberHDRPOnDraw(0x23F1EC4F),
     UberHDRPOnDraw(0x87DFDDEA),
+    UberHDRPOnDraw(0x719C0C73),
     UberHDRPOnDraw(0x744F5F34),
     UberHDRPOnDraw(0x802BDE1D),
     UberHDRPOnDraw(0x2194C4A3),
@@ -712,6 +713,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberHDRPOnDraw(0x10525777),
     UberHDRPOnDraw(0xA322A00F),
     UberHDRPOnDraw(0xB81F1E24),
+    UberHDRPOnDraw(0xC6B954D6),
     UberHDRPOnDraw(0xC6F22BEE),
     UberHDRPOnDraw(0xC52310D2),
     UberHDRPOnDraw(0xCF6E0603),
@@ -922,6 +924,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0xA57C372D),
     UberLinearOnDraw(0x943DD65F),
     UberLinearOnDraw(0x6BC3D81A),
+    UberLinearOnDraw(0x6BFABBE2),
     UberLinearOnDraw(0x5EE0EFE9),
     UberLinearOnDraw(0x7C36C890),
     UberLinearOnDraw(0x8596AD69),
@@ -1140,6 +1143,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberNeutralGammaOnDraw(0xCE6048CA), // no LUT
         // ACES
     UberACESLinearOnDraw(0x1C42C445),
+    UberACESLinearOnDraw(0x2B44DD32),
     UberACESLinearOnDraw(0x2C36979C),
     UberACESLinearOnDraw(0x4B92CD8E),
     UberACESLinearOnDraw(0xEF39E7C4),
@@ -1383,6 +1387,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0x918C7E0C, &Count),    // ScreenRender
     CustomShaderEntryCallback(0x4C6C9444, &Count),    // Blend MorganTweak
     CustomShaderEntryCallback(0xBD332C3A, &CountLinearTonemap1),   // PostFx GlowComposite
+    CustomShaderEntryCallback(0xFDB96CFD, &CountLinearTonemap1),   // Brightness Contrast Gamma
     CustomShaderEntryCallback(0x3E8A6AF2, &CountTonemap1),   // CameraFilterPack 2Lut
     CustomShaderEntryCallback(0x6EA997C7, &CountTonemap1),   // CameraFilterPack 2Lut
     CustomShaderEntryCallback(0x16F8A02E, &Count),   // CameraFilterPack TV Arcade 2
@@ -2319,6 +2324,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     BlitCopyOnDraw(0x8674BE1F),
     BlitCopyOnDraw(0x49E25D6C),
     BlitCopyOnDraw(0x1FDE7AD7),
+    BlitCopyOnDraw(0xC605BA2F),
     CustomShaderEntryCallback(0x20133A8B, [](reshade::api::command_list* cmd_list) {
     finalBlitCheck = renodx::utils::swapchain::HasBackBufferRenderTarget(cmd_list);
     return renodx::utils::swapchain::HasBackBufferRenderTarget(cmd_list);
