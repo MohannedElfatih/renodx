@@ -33,6 +33,7 @@
 
 #include "../utils/bitwise.hpp"
 #include "../utils/data.hpp"
+#include "../utils/device.hpp"
 #include "../utils/descriptor.hpp"
 #include "../utils/directx.hpp"
 #include "../utils/format.hpp"
@@ -752,13 +753,13 @@ static void SetupSwapchainProxyLayout(reshade::api::device* device, DeviceData* 
     reshade::api::pipeline_layout_param param_constants;
     param_constants.type = reshade::api::pipeline_layout_param_type::push_constants;
     param_constants.push_constants.count = 1;
-    if (device->get_api() == reshade::api::device_api::d3d12 || device->get_api() == reshade::api::device_api::vulkan) {
+    if (renodx::utils::device::IsModernAPI(device)) {
       param_constants.push_constants.count = shader_injection_size;
     } else {
       param_constants.push_constants.count = 1;
     }
     if (data->expected_constant_buffer_index == -1) {
-      if (device->get_api() == reshade::api::device_api::d3d12 || device->get_api() == reshade::api::device_api::vulkan) {
+      if (renodx::utils::device::IsModernAPI(device)) {
         param_constants.push_constants.dx_register_index = 0;
       } else {
         param_constants.push_constants.dx_register_index = 13;
@@ -766,7 +767,7 @@ static void SetupSwapchainProxyLayout(reshade::api::device* device, DeviceData* 
     } else {
       param_constants.push_constants.dx_register_index = data->expected_constant_buffer_index;
     }
-    if (device->get_api() == reshade::api::device_api::d3d12 || device->get_api() == reshade::api::device_api::vulkan) {
+    if (renodx::utils::device::IsModernAPI(device)) {
       param_constants.push_constants.dx_register_space = data->expected_constant_buffer_space;
     } else {
       param_constants.push_constants.dx_register_space = 0;
@@ -1909,7 +1910,7 @@ inline bool OnCreateResource(
       std::stringstream s;
       s << "mods::swapchain::OnCreateResource(counting target";
       s << ", format: " << target->old_format;
-      s << ", usage: " << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
+      s << ", usage: 0x" << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
       s << ", index: " << target->index;
       s << ", counted: " << target->counted;
       // s << ", data: " << PRINT_PTR(initial_data);
@@ -2111,7 +2112,7 @@ inline void OnInitResourceInfo(renodx::utils::resource::ResourceInfo* resource_i
         std::stringstream s;
         s << "mods::swapchain::OnInitResource(counting target";
         s << ", format: " << target->old_format;
-        s << ", usage: " << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
+        s << ", usage: 0x" << std::hex << static_cast<uint32_t>(desc.usage) << std::dec;
         s << ", index: " << target->index;
         s << ", counted: " << target->counted;
         s << ") [" << i << "/" << len << "]";
