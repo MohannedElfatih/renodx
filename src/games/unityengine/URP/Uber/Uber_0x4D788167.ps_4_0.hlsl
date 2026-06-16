@@ -28,7 +28,7 @@ void main(
   r2.xyzw = v1.xyxy * float4(2,2,2,2) + float4(-1,-1,-1,-1);
   r1.y = dot(r2.zw, r2.zw);
   r2.xyzw = r2.xyzw * r1.yyyy;
-  r2.xyzw = cb0[143].xxxx * r2.xyzw * injectedData.fxChroma;
+  r2.xyzw = cb0[143].xxxx * r2.xyzw * injectedData.fxCA;
   r2.xyzw = r2.xyzw * float4(-0.333333343,-0.333333343,-0.666666687,-0.666666687) + v1.xyxy;
   r0.xyzw = min(r2.xyzw, r0.xyzw);
   r2.xyzw = t0.SampleBias(s0_s, r0.xy, cb0[4].x).xyzw;
