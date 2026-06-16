@@ -924,7 +924,7 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberLinearOnDraw(0xA57C372D),
     UberLinearOnDraw(0x943DD65F),
     UberLinearOnDraw(0x6BC3D81A),
-    UberLinearOnDraw(0x6BFABBE2),
+    UberGammaOnDraw(0x6BFABBE2),
     UberLinearOnDraw(0x5EE0EFE9),
     UberLinearOnDraw(0x7C36C890),
     UberLinearOnDraw(0x8596AD69),
@@ -1144,7 +1144,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberNeutralGammaOnDraw(0xCE6048CA), // no LUT
         // ACES
     UberACESLinearOnDraw(0x1C42C445),
-    UberACESLinearOnDraw(0x2B44DD32),
+    UberACESGammaOnDraw(0x2B44DD32),
     UberACESLinearOnDraw(0x2C36979C),
     UberACESLinearOnDraw(0x4B92CD8E),
     UberACESLinearOnDraw(0xEF39E7C4),
