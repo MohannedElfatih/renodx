@@ -1022,15 +1022,15 @@ bool OnDispatch(
                 descriptor_table_count = param.descriptor_table.count;
                 descriptor_table_ranges = param.descriptor_table.ranges;
                 break;
-              case reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers:
+              case reshade::api::pipeline_layout_param_type::descriptor_table_with_flags:
                 if (table.handle == 0u) continue;
-                descriptor_table_count = param.descriptor_table_with_static_samplers.count;
-                descriptor_table_ranges = param.descriptor_table_with_static_samplers.ranges;
+                descriptor_table_count = param.descriptor_table_with_flags.count;
+                descriptor_table_ranges = param.descriptor_table_with_flags.ranges;
                 break;
               case reshade::api::pipeline_layout_param_type::push_constants:
               case reshade::api::pipeline_layout_param_type::push_descriptors:
               case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges:
-              case reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers:
+              case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
                 continue;
             }
 

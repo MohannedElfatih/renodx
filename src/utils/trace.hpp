@@ -389,9 +389,9 @@ static void LogLayout(
         break;
       }
 #if RESHADE_API_VERSION >= 13
-      case reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers:
-        for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-          const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+      case reshade::api::pipeline_layout_param_type::descriptor_table_with_flags:
+        for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+          const auto& range = param.descriptor_table_with_flags.ranges[range_index];
           std::stringstream s;
           s << "logPipelineLayout(";
           s << PRINT_PTR(layout.handle) << "[" << param_index << "]";
@@ -415,9 +415,9 @@ static void LogLayout(
           reshade::log::message(reshade::log::level::info, s.str().c_str());
         }
         break;
-      case reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers:
+      case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
         for (uint32_t range_index = 0; range_index < param.descriptor_table.count; ++range_index) {
-          const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+          const auto& range = param.descriptor_table_with_flags.ranges[range_index];
           std::stringstream s;
           s << "logPipelineLayout(";
           s << PRINT_PTR(layout.handle) << "[" << param_index << "]";
@@ -938,12 +938,13 @@ static void OnBarrier(
   }
 }
 
-static void OnBeginRenderPass(
+static bool OnBeginRenderPass(
     reshade::api::command_list* cmd_list,
     uint32_t count, const reshade::api::render_pass_render_target_desc* rts,
-    const reshade::api::render_pass_depth_stencil_desc* ds) {
-  if (!IsTrackedCommandList(cmd_list)) return;
-  if (trace_running_device != cmd_list->get_device() && present_count >= trace_initial_frame_count) return;
+    const reshade::api::render_pass_depth_stencil_desc* ds,
+    reshade::api::render_pass_flags flags) {
+  if (!IsTrackedCommandList(cmd_list)) return false;
+  if (trace_running_device != cmd_list->get_device() && present_count >= trace_initial_frame_count) return false;
   for (uint32_t i = 0; i < count; i++) {
     std::stringstream s;
     s << "OnBeginRenderPass(" << PRINT_PTR(rts[i].view.handle);
@@ -958,14 +959,17 @@ static void OnBeginRenderPass(
     s << ")";
     reshade::log::message(reshade::log::level::info, s.str().c_str());
   }
+
+  return false;
 }
 
-static void OnEndRenderPass(reshade::api::command_list* cmd_list) {
-  if (!IsTrackedCommandList(cmd_list)) return;
-  if (trace_running_device != cmd_list->get_device() && present_count >= trace_initial_frame_count) return;
+static bool OnEndRenderPass(reshade::api::command_list* cmd_list) {
+  if (!IsTrackedCommandList(cmd_list)) return false;
+  if (trace_running_device != cmd_list->get_device() && present_count >= trace_initial_frame_count) return false;
   std::stringstream s;
   s << "OnEndRenderPass()";
   reshade::log::message(reshade::log::level::info, s.str().c_str());
+  return false;
 }
 
 static void OnBindRenderTargetsAndDepthStencil(
@@ -1035,7 +1039,7 @@ static void OnInitResource(
   switch (desc.type) {
     case reshade::api::resource_type::buffer:
       s << ", size: " << desc.buffer.size;
-      s << ", stride: " << desc.buffer.stride;
+      s << ", stride: " << desc.buffer.structured.stride;
       break;
     case reshade::api::resource_type::texture_1d:
     case reshade::api::resource_type::texture_2d:
@@ -1290,9 +1294,9 @@ static void OnBindDescriptorTables(
           descriptor_table_count = param.descriptor_table.count;
           descriptor_table_ranges = param.descriptor_table.ranges;
           break;
-        case reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers:
-          descriptor_table_count = param.descriptor_table_with_static_samplers.count;
-          descriptor_table_ranges = param.descriptor_table_with_static_samplers.ranges;
+        case reshade::api::pipeline_layout_param_type::descriptor_table_with_flags:
+          descriptor_table_count = param.descriptor_table_with_flags.count;
+          descriptor_table_ranges = param.descriptor_table_with_flags.ranges;
           break;
         default:
           continue;

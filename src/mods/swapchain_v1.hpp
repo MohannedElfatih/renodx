@@ -3103,27 +3103,29 @@ inline void OnBindRenderTargetsAndDepthStencil(
   RewriteRenderTargets(cmd_list, count, rtvs, dsv);
 }
 
-static void OnBeginRenderPass(
+static bool OnBeginRenderPass(
     reshade::api::command_list* cmd_list,
     uint32_t count, const reshade::api::render_pass_render_target_desc* rts,
-    const reshade::api::render_pass_depth_stencil_desc* ds) {
+    const reshade::api::render_pass_depth_stencil_desc* ds,
+    reshade::api::render_pass_flags flags) {
   auto* cmd_list_data = renodx::utils::data::Get<CommandListData>(cmd_list);
-  if (cmd_list_data == nullptr) return;
+  if (cmd_list_data == nullptr) return false;
 
   // Ignore subpasses
-  if (cmd_list_data->pass_count++ != 0) return;
+  if (cmd_list_data->pass_count++ != 0) return false;
 
   auto* new_rts = ApplyRenderTargetClones(rts, count);
-  if (new_rts == nullptr) return;
-  cmd_list->end_render_pass();
-  cmd_list->begin_render_pass(count, new_rts, ds);
+  if (new_rts == nullptr) return false;
+  cmd_list->begin_render_pass2(count, new_rts, ds, flags);
   free(new_rts);
+  return true;
 }
 
-static void OnEndRenderPass(reshade::api::command_list* cmd_list) {
+static bool OnEndRenderPass(reshade::api::command_list* cmd_list) {
   auto* cmd_list_data = renodx::utils::data::Get<CommandListData>(cmd_list);
-  if (cmd_list_data == nullptr) return;
+  if (cmd_list_data == nullptr) return false;
   cmd_list_data->pass_count--;
+  return false;
 }
 
 inline bool OnClearRenderTargetView(

@@ -1062,14 +1062,17 @@ inline void OnBindRenderTargetsAndDepthStencil(
     reshade::api::resource_view dsv) {
 }
 
-static void OnBeginRenderPass(
+static bool OnBeginRenderPass(
     reshade::api::command_list* cmd_list,
     uint32_t count,
     const reshade::api::render_pass_render_target_desc* rts,
-    const reshade::api::render_pass_depth_stencil_desc* ds) {
+    const reshade::api::render_pass_depth_stencil_desc* ds,
+    reshade::api::render_pass_flags flags) {
+  return false;
 }
 
-static void OnEndRenderPass(reshade::api::command_list* cmd_list) {
+static bool OnEndRenderPass(reshade::api::command_list* cmd_list) {
+  return false;
 }
 
 inline bool OnClearRenderTargetView(

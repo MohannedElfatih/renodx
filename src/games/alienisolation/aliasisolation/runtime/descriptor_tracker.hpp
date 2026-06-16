@@ -57,8 +57,8 @@ inline bool ResolveRegister(
       return true;
     case reshade::api::pipeline_layout_param_type::descriptor_table:
     case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges:
-    case reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers:
-    case reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers: {
+    case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
+    case reshade::api::pipeline_layout_param_type::descriptor_table_with_flags: {
       if (layout_param >= layout_data->ranges.size()) return false;
       for (const auto& range : layout_data->ranges[layout_param]) {
         const bool in_range = binding >= range.binding && (range.count == UINT32_MAX || binding < range.binding + range.count);
