@@ -2252,7 +2252,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     CustomShaderEntryCallback(0x22216D01, &Count),
     CustomShaderEntryCallback(0x8C0BCB63, &Count),
     CustomShaderEntryCallback(0xA52F70F8, &Count),
-    CustomShaderEntryCallback(0x9E60BC82, &CountLinearTonemap1),
+    CustomShaderEntryCallback(0x9E60BC82, &CountTonemap1),
     CustomShaderEntryCallback(0xB13A3CBB, &CountLinear),
     CustomShaderEntryCallback(0xB8B233F1, &CountLinear),
       // Unknown space
