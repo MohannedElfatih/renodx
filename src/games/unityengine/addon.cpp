@@ -1936,6 +1936,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDGammaOnDraw(0x10A31D94),
     UberHDLinearOnDraw(0x13E3E9C2),
     UberHDLinearOnDraw(0x18DC6A24),
+    UberHDLinearOnDraw(0x19B5C9D3),
     UberHDGammaOnDraw(0x30B1D393),
     UberHDGammaOnDraw(0x30E315A6),
     UberHDLinearOnDraw(0x32AFF662),
@@ -1981,6 +1982,7 @@ UberNeutralLinearOnDraw(0xB68DCF9E),
     UberHDLinearOnDraw(0x957EC72A),
     UberHDLinearOnDraw(0x995B36D9),
     UberHDLinearOnDraw(0x1666C38C),
+    UberHDLinearOnDraw(0x2258B26B),
     UberHDLinearOnDraw(0x2706BB7A),
     UberHDLinearOnDraw(0x5032F099),
     UberHDGammaOnDraw(0x5616E459),
@@ -3048,6 +3050,16 @@ void AddOPUSPPUpgrades() {
       });
 }
 
+void AddDimhavenUpgrades() {
+      renodx::mods::swapchain::resource_upgrade_infos.push_back({
+          .old_format = reshade::api::format::r8g8b8a8_typeless,
+          .new_format = reshade::api::format::r16g16b16a16_typeless,
+          .index = 0,
+          .ignore_size = false,
+          .usage_include = reshade::api::resource_usage::render_target,
+      });
+}
+
 void AddLISBtSUpgrades() {
       renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
           .old_format = reshade::api::format::r8g8b8a8_typeless,
@@ -3085,6 +3097,8 @@ void AddGamePatches() {
     shader_injection.isClamped = 2.f;
   } else if (filename == "TheEternalDie.exe") {
     AddLiRTEDUpgrades();
+  } else if (filename == "Dimhaven Enigmas.exe" || filename == "Dimhaven - The Lost Source.exe") {
+    AddDimhavenUpgrades();
   } else if (filename == "OPUS_ Prism Peak.exe"){
     AddSmolInternalLutUpgrade();
     AddOPUSPPUpgrades();
@@ -3216,6 +3230,12 @@ const std::unordered_map<
             "Descenders.exe",
             {
               {"Use_Swapchain_Proxy", 1.f},
+            },
+        },
+        {
+            "Dimhaven - The Lost Source.exe",
+            {
+                {"Upgrade_R8G8B8A8_TYPELESS", UPGRADE_TYPE_NONE},
             },
         },
         {
