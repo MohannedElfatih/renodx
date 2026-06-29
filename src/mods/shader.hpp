@@ -556,12 +556,12 @@ static bool OnCreatePipelineLayout(
           cbv_index = param.push_descriptors.dx_register_index + param.push_descriptors.count;
         }
       }
-    } else if (is_dx && param.type == reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers) {
+    } else if (is_dx && param.type == reshade::api::pipeline_layout_param_type::descriptor_table_with_flags) {
       if (device_api == reshade::api::device_api::d3d12) {
-        if (param.descriptor_table_with_static_samplers.count != 0u
-            && param.descriptor_table_with_static_samplers.ranges[0].count != 0u) {
-          for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-            const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+        if (param.descriptor_table_with_flags.count != 0u
+            && param.descriptor_table_with_flags.ranges[0].count != 0u) {
+          for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+            const auto& range = param.descriptor_table_with_flags.ranges[range_index];
             if (range.count == 0u) continue;
             if (range.type == reshade::api::descriptor_type::sampler && range.static_samplers != nullptr) continue;
             dword_count += 1u;
@@ -571,8 +571,8 @@ static bool OnCreatePipelineLayout(
       } else {
         dword_count += 1u;
       }
-      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-        const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+        const auto& range = param.descriptor_table_with_flags.ranges[range_index];
         if (range.type == reshade::api::descriptor_type::constant_buffer) {
           if (
               range.dx_register_space == data->expected_constant_buffer_space
@@ -581,19 +581,19 @@ static bool OnCreatePipelineLayout(
           }
         }
       }
-    } else if (is_dx && param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers) {
-      const bool static_sampler_param = param.descriptor_table_with_static_samplers.count != 0u
-                                        && param.descriptor_table_with_static_samplers.ranges[0].static_samplers != nullptr;
+    } else if (is_dx && param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags) {
+      const bool static_sampler_param = param.descriptor_table_with_flags.count != 0u
+                                        && param.descriptor_table_with_flags.ranges[0].static_samplers != nullptr;
       if (static_sampler_param && pdss_index == -1) pdss_index = param_index;
       if (static_sampler_param) {
         // Static samplers are not root parameters and do not count against the D3D12 root signature DWORD budget.
       } else if (device_api == reshade::api::device_api::d3d12) {
-        if (param.descriptor_table_with_static_samplers.count != 0u
-            && param.descriptor_table_with_static_samplers.ranges[0].count != 0u) {
-          if (param.descriptor_table_with_static_samplers.count == 1u
-              && param.descriptor_table_with_static_samplers.ranges[0].count == 1u
-              && param.descriptor_table_with_static_samplers.ranges[0].binding == 0u) {
-            switch (param.descriptor_table_with_static_samplers.ranges[0].type) {
+        if (param.descriptor_table_with_flags.count != 0u
+            && param.descriptor_table_with_flags.ranges[0].count != 0u) {
+          if (param.descriptor_table_with_flags.count == 1u
+              && param.descriptor_table_with_flags.ranges[0].count == 1u
+              && param.descriptor_table_with_flags.ranges[0].binding == 0u) {
+            switch (param.descriptor_table_with_flags.ranges[0].type) {
               case reshade::api::descriptor_type::constant_buffer:
               case reshade::api::descriptor_type::buffer_shader_resource_view:
               case reshade::api::descriptor_type::buffer_unordered_access_view:
@@ -605,8 +605,8 @@ static bool OnCreatePipelineLayout(
                 break;
             }
           } else {
-            for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-              const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+            for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+              const auto& range = param.descriptor_table_with_flags.ranges[range_index];
               if (range.count == 0u) continue;
               if (range.type == reshade::api::descriptor_type::sampler && range.static_samplers != nullptr) continue;
               dword_count += 1u;
@@ -617,8 +617,8 @@ static bool OnCreatePipelineLayout(
       } else {
         dword_count += 2;
       }
-      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-        auto range = param.descriptor_table_with_static_samplers.ranges[range_index];
+      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+        auto range = param.descriptor_table_with_flags.ranges[range_index];
         if (range.type == reshade::api::descriptor_type::constant_buffer) {
           if (
               range.dx_register_space == data->expected_constant_buffer_space
@@ -1016,20 +1016,20 @@ static void OnInitPipelineLayout(
           cbv_index = param.push_descriptors.dx_register_index + param.push_descriptors.count;
         }
       }
-    } else if (param.type == reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers) {
+    } else if (param.type == reshade::api::pipeline_layout_param_type::descriptor_table_with_flags) {
       if (device_api == reshade::api::device_api::d3d12
-          && param.descriptor_table_with_static_samplers.count != 0u
-          && param.descriptor_table_with_static_samplers.ranges[0].count != 0u) {
-        for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-          const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+          && param.descriptor_table_with_flags.count != 0u
+          && param.descriptor_table_with_flags.ranges[0].count != 0u) {
+        for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+          const auto& range = param.descriptor_table_with_flags.ranges[range_index];
           if (range.count == 0u) continue;
           if (range.type == reshade::api::descriptor_type::sampler && range.static_samplers != nullptr) continue;
           dword_count += 1u;
           break;
         }
       }
-      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-        auto range = param.descriptor_table_with_static_samplers.ranges[range_index];
+      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+        auto range = param.descriptor_table_with_flags.ranges[range_index];
         if (range.type == reshade::api::descriptor_type::constant_buffer) {
           if (
               range.dx_register_space == data->expected_constant_buffer_space
@@ -1038,17 +1038,17 @@ static void OnInitPipelineLayout(
           }
         }
       }
-    } else if (param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers) {
-      const bool static_sampler_param = param.descriptor_table_with_static_samplers.count != 0u
-                                        && param.descriptor_table_with_static_samplers.ranges[0].static_samplers != nullptr;
+    } else if (param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags) {
+      const bool static_sampler_param = param.descriptor_table_with_flags.count != 0u
+                                        && param.descriptor_table_with_flags.ranges[0].static_samplers != nullptr;
       if (!static_sampler_param
           && device_api == reshade::api::device_api::d3d12
-          && param.descriptor_table_with_static_samplers.count != 0u
-          && param.descriptor_table_with_static_samplers.ranges[0].count != 0u) {
-        if (param.descriptor_table_with_static_samplers.count == 1u
-            && param.descriptor_table_with_static_samplers.ranges[0].count == 1u
-            && param.descriptor_table_with_static_samplers.ranges[0].binding == 0u) {
-          switch (param.descriptor_table_with_static_samplers.ranges[0].type) {
+          && param.descriptor_table_with_flags.count != 0u
+          && param.descriptor_table_with_flags.ranges[0].count != 0u) {
+        if (param.descriptor_table_with_flags.count == 1u
+            && param.descriptor_table_with_flags.ranges[0].count == 1u
+            && param.descriptor_table_with_flags.ranges[0].binding == 0u) {
+          switch (param.descriptor_table_with_flags.ranges[0].type) {
             case reshade::api::descriptor_type::constant_buffer:
             case reshade::api::descriptor_type::buffer_shader_resource_view:
             case reshade::api::descriptor_type::buffer_unordered_access_view:
@@ -1060,8 +1060,8 @@ static void OnInitPipelineLayout(
               break;
           }
         } else {
-          for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-            const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+          for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+            const auto& range = param.descriptor_table_with_flags.ranges[range_index];
             if (range.count == 0u) continue;
             if (range.type == reshade::api::descriptor_type::sampler && range.static_samplers != nullptr) continue;
             dword_count += 1u;
@@ -1070,8 +1070,8 @@ static void OnInitPipelineLayout(
         }
       }
       if (static_sampler_param && pdss_index == -1) pdss_index = param_index;
-      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-        auto range = param.descriptor_table_with_static_samplers.ranges[range_index];
+      for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+        auto range = param.descriptor_table_with_flags.ranges[range_index];
         if (range.type == reshade::api::descriptor_type::constant_buffer) {
           if (
               range.dx_register_space == data->expected_constant_buffer_space
@@ -1113,7 +1113,7 @@ static void OnInitPipelineLayout(
       uint32_t new_count = old_count;
       reshade::api::pipeline_layout_param* new_params = nullptr;
       const auto existing_set_param_indexes = is_vulkan
-                      ? GetVulkanDescriptorSetParamIndexes(params, old_count)
+                                                  ? GetVulkanDescriptorSetParamIndexes(params, old_count)
                                                   : std::vector<uint32_t>{};
       const auto existing_set_count = static_cast<uint32_t>(existing_set_param_indexes.size());
       uint32_t added_descriptor_param_count = 0u;
@@ -1593,7 +1593,13 @@ inline void OnBindDescriptorTables(
     reshade::api::pipeline_layout layout,
     uint32_t first,
     uint32_t count,
-    const reshade::api::descriptor_table* tables) {
+    const reshade::api::descriptor_table* tables
+#if RESHADE_API_VERSION >= 20
+    ,
+    uint32_t dynamic_offset_count,
+    const uint32_t* dynamic_offsets
+#endif
+) {
   const bool is_vulkan = cmd_list->get_device()->get_api() == reshade::api::device_api::vulkan;
   reshade::api::pipeline_layout cloned_layout;
   {
@@ -1740,8 +1746,8 @@ inline constexpr auto OnCommandAction = []<typename T, typename Context>(
         visibility = state.pipeline_details->injection_visibility;
       }
       const uint32_t injection_offset = constant_buffer_offset != 0
-                                          ? constant_buffer_offset
-                                          : state.pipeline_details->injection_constant_buffer_offset;
+                                            ? constant_buffer_offset
+                                            : state.pipeline_details->injection_constant_buffer_offset;
       renodx::utils::constants::PushShaderInjections(
           context.cmd_list,
           state.pipeline_details->injection_layout,

@@ -672,16 +672,17 @@ inline void OnBindRenderTargetsAndDepthStencil(
   cmd_list_data->current_depth_stencil = dsv;
 }
 
-static void OnBeginRenderPass(
+static bool OnBeginRenderPass(
     reshade::api::command_list* cmd_list,
     uint32_t count, const reshade::api::render_pass_render_target_desc* rts,
-    const reshade::api::render_pass_depth_stencil_desc* ds) {
+    const reshade::api::render_pass_depth_stencil_desc* ds,
+    reshade::api::render_pass_flags flags) {
   auto* cmd_list_data = renodx::utils::data::Get<CommandListData>(cmd_list);
-  if (cmd_list_data == nullptr) return;
+  if (cmd_list_data == nullptr) return false;
   const bool found_swapchain_rtv = false;
 
   // Ignore subpasses
-  if (cmd_list_data->pass_count++ != 0) return;
+  if (cmd_list_data->pass_count++ != 0) return false;
 
   cmd_list_data->current_render_targets.reserve(count);
   for (const auto& rt : std::span<const reshade::api::render_pass_render_target_desc>(rts, count)) {
@@ -693,18 +694,22 @@ static void OnBeginRenderPass(
     cmd_list_data->current_depth_stencil = {0};
   }
   cmd_list_data->has_swapchain_render_target_dirty = true;
+
+  return false;
 }
 
-static void OnEndRenderPass(reshade::api::command_list* cmd_list) {
+static bool OnEndRenderPass(reshade::api::command_list* cmd_list) {
   auto* cmd_list_data = renodx::utils::data::Get<CommandListData>(cmd_list);
-  if (cmd_list_data == nullptr) return;
+  if (cmd_list_data == nullptr) return false;
 
   // Ignore subpasses
-  if (--cmd_list_data->pass_count != 0) return;
+  if (--cmd_list_data->pass_count != 0) return false;
 
   cmd_list_data->current_render_targets.clear();
   cmd_list_data->current_depth_stencil = {0};
   cmd_list_data->has_swapchain_render_target_dirty = true;
+
+  return false;
 }
 
 static void OnPresent(

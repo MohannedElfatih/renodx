@@ -88,9 +88,9 @@ inline bool OnCreateResourceView(
     desc.format = resource_desc.texture.format;
   }
   desc.texture.first_level = 0u;
-  desc.texture.level_count = usage_type == reshade::api::resource_usage::unordered_access ? 1u : UINT32_MAX;
+  desc.texture.levels = usage_type == reshade::api::resource_usage::unordered_access ? 1u : UINT32_MAX;
   desc.texture.first_layer = 0u;
-  desc.texture.layer_count = UINT32_MAX;
+  desc.texture.layers = UINT32_MAX;
 
   if (!logged_texture_3d_default_view) {
     logged_texture_3d_default_view = true;

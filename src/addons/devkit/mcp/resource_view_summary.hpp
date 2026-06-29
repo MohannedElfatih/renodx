@@ -85,9 +85,9 @@ struct ViewSummary {
       case reshade::api::resource_view_type::texture_cube_array:
         texture = TextureViewSummary{
             .first_level = resource_view_desc.texture.first_level,
-            .level_count = resource_view_desc.texture.level_count,
+            .level_count = resource_view_desc.texture.levels,
             .first_layer = resource_view_desc.texture.first_layer,
-            .layer_count = resource_view_desc.texture.layer_count,
+            .layer_count = resource_view_desc.texture.layers,
         };
         break;
     }

@@ -142,12 +142,12 @@ static void OnInitPipelineLayout(
             layout_data.params[i].descriptor_table.ranges = layout_data.ranges[i].data();
           }
           break;
-        case reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers:
-          if (param.descriptor_table_with_static_samplers.count == 0u) continue;
+        case reshade::api::pipeline_layout_param_type::descriptor_table_with_flags:
+          if (param.descriptor_table_with_flags.count == 0u) continue;
           {
-            layout_data.ranges[i].reserve(param.descriptor_table_with_static_samplers.count);
-            for (uint32_t range_index = 0; range_index < param.descriptor_table_with_static_samplers.count; ++range_index) {
-              const auto& range = param.descriptor_table_with_static_samplers.ranges[range_index];
+            layout_data.ranges[i].reserve(param.descriptor_table_with_flags.count);
+            for (uint32_t range_index = 0; range_index < param.descriptor_table_with_flags.count; ++range_index) {
+              const auto& range = param.descriptor_table_with_flags.ranges[range_index];
               layout_data.ranges[i].push_back(range);
               if (range.static_samplers != nullptr && range.count != UINT32_MAX) {
                 layout_data.static_samplers[i].insert(
@@ -161,7 +161,7 @@ static void OnInitPipelineLayout(
         case reshade::api::pipeline_layout_param_type::push_constants:
         case reshade::api::pipeline_layout_param_type::push_descriptors:
         case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges:
-        case reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers:
+        case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
           break;
         default:
           // No other known types

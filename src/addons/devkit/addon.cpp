@@ -4888,16 +4888,16 @@ void OnPushDescriptors(
             auto buffer_range = static_cast<const reshade::api::buffer_range*>(update.descriptors)[i];
             auto slot = std::pair<uint32_t, uint32_t>(pair_a, pair_b);
             data->constants[slot] = buffer_range;
-          } else if (param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges
-                     || param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers) {
+            } else if (param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges
+                 || param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags) {
             const auto descriptor_table_count =
                 param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges
                     ? param.descriptor_table.count
-                    : param.descriptor_table_with_static_samplers.count;
+                : param.descriptor_table_with_flags.count;
             const auto* descriptor_table_ranges =
                 param.type == reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges
                     ? param.descriptor_table.ranges
-                    : param.descriptor_table_with_static_samplers.ranges;
+                : param.descriptor_table_with_flags.ranges;
             const reshade::api::descriptor_range* matching_range = nullptr;
             const bool is_vulkan = device->get_api() == reshade::api::device_api::vulkan;
             if (is_vulkan) {
@@ -5118,15 +5118,15 @@ bool OnDraw(reshade::api::command_list* cmd_list, DrawDetails::DrawMethods draw_
                   descriptor_table_count = param.descriptor_table.count;
                   descriptor_table_ranges = param.descriptor_table.ranges;
                   break;
-                case reshade::api::pipeline_layout_param_type::descriptor_table_with_static_samplers:
+                case reshade::api::pipeline_layout_param_type::descriptor_table_with_flags:
                   if (table.handle == 0u) continue;
-                  descriptor_table_count = param.descriptor_table_with_static_samplers.count;
-                  descriptor_table_ranges = param.descriptor_table_with_static_samplers.ranges;
+                  descriptor_table_count = param.descriptor_table_with_flags.count;
+                  descriptor_table_ranges = param.descriptor_table_with_flags.ranges;
                   break;
                 case reshade::api::pipeline_layout_param_type::push_constants:
                 case reshade::api::pipeline_layout_param_type::push_descriptors:
                 case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges:
-                case reshade::api::pipeline_layout_param_type::push_descriptors_with_static_samplers:
+                case reshade::api::pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
                   continue;
               }
 
