@@ -22,6 +22,7 @@
 #include "../../utils/shader_compiler_directx.hpp"
 #include "../../utils/shader_dump.hpp"
 #include "../../utils/state.hpp"
+#include "../../utils/swapchain.hpp"
 
 namespace dump_uber {
 
@@ -53,6 +54,18 @@ struct TargetMatch {
   std::string binding;
 };
 
+struct DetectionSignals {
+  bool has_swapchain_sized_srv = false;
+  bool has_swapchain_sized_render_target = false;
+  bool is_fullscreen_draw = false;
+
+  [[nodiscard]] bool IsConfirmed() const {
+    return has_swapchain_sized_srv
+           && has_swapchain_sized_render_target
+           && is_fullscreen_draw;
+  }
+};
+
 struct __declspec(uuid("a4c8e2f1-6b3d-4a9e-8f7c-1d2e3b4c5d6e")) CommandListData {
   std::map<std::pair<std::uint32_t, std::uint32_t>, reshade::api::resource_view> pixel_srv_binds;
   std::map<std::pair<std::uint32_t, std::uint32_t>, reshade::api::resource_view> compute_srv_binds;
@@ -75,6 +88,33 @@ inline bool IsInternalLutDesc(const reshade::api::resource_desc& desc) {
 inline bool IsInternalLutResource(reshade::api::device* device, reshade::api::resource resource) {
   if (device == nullptr || resource.handle == 0u) return false;
   return IsInternalLutDesc(device->get_resource_desc(resource));
+}
+
+inline bool IsSwapchainSizedDesc(
+    const reshade::api::resource_desc& desc,
+    const reshade::api::resource_desc& back_buffer_desc) {
+  switch (desc.type) {
+    case reshade::api::resource_type::texture_2d:
+    case reshade::api::resource_type::surface:
+      break;
+    default:
+      return false;
+  }
+
+  if (back_buffer_desc.texture.width == 0u || back_buffer_desc.texture.height == 0u) return false;
+  return desc.texture.width == back_buffer_desc.texture.width
+         && desc.texture.height == back_buffer_desc.texture.height;
+}
+
+inline bool IsSwapchainSizedView(
+    reshade::api::device* device,
+    reshade::api::resource_view view,
+    const reshade::api::resource_desc& back_buffer_desc) {
+  if (device == nullptr || view.handle == 0u) return false;
+
+  const auto resource = renodx::utils::resource::GetResourceFromView(device, view);
+  if (resource.handle == 0u) return false;
+  return IsSwapchainSizedDesc(device->get_resource_desc(resource), back_buffer_desc);
 }
 
 inline bool IsInternalLutView(
@@ -243,6 +283,39 @@ inline std::optional<TargetMatch> FindInternalLutSrv(
   return std::nullopt;
 }
 
+inline DetectionSignals GetDetectionSignals(
+    reshade::api::command_list* cmd_list,
+    const std::map<std::pair<std::uint32_t, std::uint32_t>, reshade::api::resource_view>& srv_binds) {
+  DetectionSignals signals;
+  if (cmd_list == nullptr) return signals;
+
+  auto* device = cmd_list->get_device();
+  if (device == nullptr) return signals;
+
+  const auto back_buffer_desc = renodx::utils::swapchain::GetBackBufferDesc(device);
+  if (back_buffer_desc.texture.width == 0u || back_buffer_desc.texture.height == 0u) return signals;
+
+  for (const auto& [slot, view] : srv_binds) {
+    (void)slot;
+    if (IsSwapchainSizedView(device, view, back_buffer_desc)) {
+      signals.has_swapchain_sized_srv = true;
+      break;
+    }
+  }
+
+  auto* state = renodx::utils::state::GetCurrentState(cmd_list);
+  if (state == nullptr) return signals;
+
+  for (const auto& rtv : state->render_targets) {
+    if (IsSwapchainSizedView(device, rtv, back_buffer_desc)) {
+      signals.has_swapchain_sized_render_target = true;
+      break;
+    }
+  }
+
+  return signals;
+}
+
 inline void DumpCurrentShader(
     reshade::api::command_list* cmd_list,
     renodx::utils::shader::StageState* stage_state,
@@ -250,18 +323,26 @@ inline void DumpCurrentShader(
     reshade::api::pipeline_subobject_type shader_type,
     std::uint32_t shader_hash,
     const TargetMatch& match,
+    const DetectionSignals& signals,
     const char* stage_name) {
-  if (shader_hash == 0u || dumped_shaders.contains(shader_hash)) return;
-  dumped_shaders.emplace(shader_hash);
+  if (shader_hash == 0u) return;
 
   const bool is_known_shader = IsShaderInAddon(shader_hash);
+  if (!is_known_shader && !signals.IsConfirmed()) return;
+  if (dumped_shaders.contains(shader_hash)) return;
+  dumped_shaders.emplace(shader_hash);
+
   const char* dump_prefix = is_known_shader ? DUMP_PREFIX_KNOWN : DUMP_PREFIX_NEW;
+  const char* classification = is_known_shader ? "already in addon" : "new";
 
   std::stringstream log_message;
-  log_message << "Unity uber dump: dumping " << stage_name << " shader " << PRINT_CRC32(shader_hash)
-              << (is_known_shader ? " (already in addon)" : " (new)")
+  log_message << "Unity uber dump: matched " << stage_name << " shader " << PRINT_CRC32(shader_hash)
+              << " (" << classification << ")"
               << " with internal LUT SRV 0x" << std::hex << match.resource.handle << std::dec
-              << " via " << match.binding;
+              << " via " << match.binding
+              << ", swapchain-sized SRV: " << (signals.has_swapchain_sized_srv ? "yes" : "no")
+              << ", swapchain-sized RTV: " << (signals.has_swapchain_sized_render_target ? "yes" : "no")
+              << ", fullscreen draw: " << (signals.is_fullscreen_draw ? "yes" : "no");
   reshade::log::message(reshade::log::level::info, log_message.str().c_str());
 
   try {
@@ -278,6 +359,19 @@ inline void DumpCurrentShader(
 
     renodx::utils::path::default_output_folder = "renodx";
     renodx::utils::shader::dump::default_dump_folder = ".";
+    const auto dump_path = renodx::utils::shader::dump::GetShaderDumpPath(
+        shader_hash,
+        shader_data.value(),
+        shader_type,
+        dump_prefix,
+        cmd_list->get_device()->get_api());
+    if (renodx::utils::path::CheckExistsFile(dump_path)) {
+      std::stringstream s;
+      s << "Unity uber dump: file already exists for " << PRINT_CRC32(shader_hash)
+        << "; skipping " << dump_path.string();
+      reshade::log::message(reshade::log::level::info, s.str().c_str());
+      return;
+    }
     renodx::utils::shader::dump::DumpShader(
         shader_hash,
         shader_data.value(),
@@ -291,7 +385,9 @@ inline void DumpCurrentShader(
   }
 }
 
-inline bool DumpPixelShaderIfLutSrvBound(reshade::api::command_list* cmd_list) {
+inline bool DumpPixelShaderIfLutSrvBound(
+    reshade::api::command_list* cmd_list,
+    bool is_fullscreen_draw) {
   if (!IsDumpEnabled()) return false;
 
   auto* data = renodx::utils::data::Get<CommandListData>(cmd_list);
@@ -305,6 +401,8 @@ inline bool DumpPixelShaderIfLutSrvBound(reshade::api::command_list* cmd_list) {
 
   auto* pixel_state = renodx::utils::shader::GetCurrentPixelState(shader_state);
   const auto shader_hash = renodx::utils::shader::GetCurrentPixelShaderHash(pixel_state);
+  auto signals = GetDetectionSignals(cmd_list, data->pixel_srv_binds);
+  signals.is_fullscreen_draw = is_fullscreen_draw;
   DumpCurrentShader(
       cmd_list,
       pixel_state,
@@ -312,6 +410,7 @@ inline bool DumpPixelShaderIfLutSrvBound(reshade::api::command_list* cmd_list) {
       reshade::api::pipeline_subobject_type::pixel_shader,
       shader_hash,
       match.value(),
+      signals,
       "pixel");
   return false;
 }
@@ -330,6 +429,7 @@ inline bool DumpComputeShaderIfLutSrvBound(reshade::api::command_list* cmd_list)
 
   auto* compute_state = renodx::utils::shader::GetCurrentComputeState(shader_state);
   const auto shader_hash = renodx::utils::shader::GetCurrentComputeShaderHash(compute_state);
+  const auto signals = GetDetectionSignals(cmd_list, data->compute_srv_binds);
   DumpCurrentShader(
       cmd_list,
       compute_state,
@@ -337,27 +437,32 @@ inline bool DumpComputeShaderIfLutSrvBound(reshade::api::command_list* cmd_list)
       reshade::api::pipeline_subobject_type::compute_shader,
       shader_hash,
       match.value(),
+      signals,
       "compute");
   return false;
 }
 
 inline bool OnDraw(
     reshade::api::command_list* cmd_list,
-    std::uint32_t /*vertex_count*/,
-    std::uint32_t /*instance_count*/,
+    std::uint32_t vertex_count,
+    std::uint32_t instance_count,
     std::uint32_t /*first_vertex*/,
     std::uint32_t /*first_instance*/) {
-  return DumpPixelShaderIfLutSrvBound(cmd_list);
+  const bool is_fullscreen_draw = instance_count == 1u
+                                  && (vertex_count == 3u || vertex_count == 4u || vertex_count == 6u);
+  return DumpPixelShaderIfLutSrvBound(cmd_list, is_fullscreen_draw);
 }
 
 inline bool OnDrawIndexed(
     reshade::api::command_list* cmd_list,
-    std::uint32_t /*index_count*/,
-    std::uint32_t /*instance_count*/,
+    std::uint32_t index_count,
+    std::uint32_t instance_count,
     std::uint32_t /*first_index*/,
     std::int32_t /*vertex_offset*/,
     std::uint32_t /*first_instance*/) {
-  return DumpPixelShaderIfLutSrvBound(cmd_list);
+  const bool is_fullscreen_draw = instance_count == 1u
+                                  && (index_count == 3u || index_count == 6u);
+  return DumpPixelShaderIfLutSrvBound(cmd_list, is_fullscreen_draw);
 }
 
 inline bool OnDispatch(
@@ -378,6 +483,7 @@ inline void Use(DWORD fdw_reason) {
   renodx::utils::pipeline_layout::Use(fdw_reason);
   renodx::utils::descriptor::Use(fdw_reason);
   renodx::utils::state::Use(fdw_reason);
+  renodx::utils::swapchain::Use(fdw_reason);
 
   switch (fdw_reason) {
     case DLL_PROCESS_ATTACH:
