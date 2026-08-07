@@ -7,6 +7,8 @@
 
 #define DEBUG_LEVEL_0
 
+#include <chrono>
+
 #include <deps/imgui/imgui.h>
 #include <embed/shaders.h>
 #include <include/reshade.hpp>
@@ -23,7 +25,19 @@
 namespace {
 
 float unityTonemapper = 0.f; // 1 = none, 2 = neutral/sapphire/custom, 3 = ACES
-float g_dump_shaders = 0.f;
+constexpr auto DUMP_UBER_INITIAL_WINDOW = std::chrono::seconds(1);
+constexpr auto DUMP_UBER_PERIODIC_INTERVAL = std::chrono::seconds(5);
+
+enum class DumpUberScheduleState : std::uint8_t {
+  IDLE,
+  INITIAL_WINDOW,
+  COOLDOWN,
+  PERIODIC_FRAME,
+};
+
+DumpUberScheduleState dump_uber_schedule_state = DumpUberScheduleState::IDLE;
+std::chrono::steady_clock::time_point dump_uber_schedule_deadline = {};
+bool dump_uber_schedule_observed = false;
 float g_use_swapchain_proxy = 0.f;
 float g_upgrade_internal_lut = 1.f;
 float countMid = 0.f;
@@ -1117,6 +1131,10 @@ const ShaderItem INITIAL_SHADERS[] = {
     UberGammaOnDraw(0x5B5616C8),
     UberGammaOnDraw(0x8F947DFD),
     UberGammaOnDraw(0xAB1DCA6C),
+    UberGammaOnDraw(0xF69ABF2A),
+    UberGammaOnDraw(0x08DE4385),
+    UberGammaOnDraw(0xDCB65C99),
+    UberGammaOnDraw(0x893ACDCC),
         // Neutral
     UberNeutralLinearOnDraw(0x0B383A2F),
     UberNeutralGammaOnDraw(0x0EA73DAA),
@@ -2759,7 +2777,7 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "Missing output shader, dump required (can be done with devkit)."
+        .label = "Missing output shader. Automatic shader dump requested."
                  "\nSet LUT Shaper to Vanilla for correct output. (may clamp to SDR)",
         .section = "Warning",
         .tint = 0xD82D19,
@@ -3966,31 +3984,6 @@ void AddAdvancedSettings() {
     renodx::mods::swapchain::prevent_full_screen = (setting->GetValue() == 1.f);
   }
   {
-    auto* uber_dump_setting = new renodx::utils::settings::Setting{
-        .key = "DumpUberShaders",
-        .binding = &g_dump_shaders,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Dump Uber Shaders",
-        .section = "Development",
-        .tooltip = "Traces and dumps uber shaders that sample a 1024x32 or 256x16 internal LUT.",
-        .labels = {
-            "Off",
-            "On",
-        },
-        .tint = 0x452F7A,
-        .is_global = true,
-        .is_visible = []() { return settings[0]->GetValue() >= 2; },
-    };
-    add_setting(uber_dump_setting);
-    uber_dump_setting->on_change_value = [uber_dump_setting](float /*previous*/, float current) {
-      uber_dump_setting->tint = (current == 1.f) ? 0xD82D19u : 0x896895u;
-    };
-    uber_dump_setting->tint = (uber_dump_setting->GetValue() == 1.f) ? 0xD82D19u : 0x896895u;
-
-    g_dump_shaders = uber_dump_setting->GetValue();
-  }
-  {
     add_setting(new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
         .label = "Version: " + std::string(renodx::utils::date::ISO_DATE),
@@ -4035,6 +4028,57 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
   }
 }
 
+void UpdateDumpUberSchedule(float previous_internal_lut_check) {
+  if (!dump_uber_schedule_observed || previous_internal_lut_check != InternalLutCheck) {
+    std::stringstream message;
+    message << "[DUMP OUTPUT] InternalLutCheck "
+            << (dump_uber_schedule_observed ? "changed" : "observed")
+            << ": " << previous_internal_lut_check << " -> " << InternalLutCheck;
+    reshade::log::message(reshade::log::level::info, message.str().c_str());
+    dump_uber_schedule_observed = true;
+  }
+
+  if (InternalLutCheck != 1.f) {
+    dump_uber::SetDumpEnabled(false, "InternalLutCheck changed away from 1");
+    dump_uber_schedule_state = DumpUberScheduleState::IDLE;
+    dump_uber_schedule_deadline = {};
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  if (previous_internal_lut_check == 0.f) {
+    dump_uber::SetDumpEnabled(true, "InternalLutCheck changed from 0 to 1");
+    dump_uber_schedule_state = DumpUberScheduleState::INITIAL_WINDOW;
+    dump_uber_schedule_deadline = now + DUMP_UBER_INITIAL_WINDOW;
+    return;
+  }
+
+  switch (dump_uber_schedule_state) {
+    case DumpUberScheduleState::INITIAL_WINDOW:
+      if (now >= dump_uber_schedule_deadline) {
+        dump_uber::SetDumpEnabled(false, "initial one-second search window elapsed");
+        dump_uber_schedule_state = DumpUberScheduleState::COOLDOWN;
+        dump_uber_schedule_deadline = now + DUMP_UBER_PERIODIC_INTERVAL;
+      }
+      break;
+    case DumpUberScheduleState::COOLDOWN:
+      if (now >= dump_uber_schedule_deadline) {
+        dump_uber::SetDumpEnabled(true, "periodic retry while InternalLutCheck remains 1");
+        dump_uber_schedule_state = DumpUberScheduleState::PERIODIC_FRAME;
+      }
+      break;
+    case DumpUberScheduleState::PERIODIC_FRAME:
+      dump_uber::SetDumpEnabled(false, "periodic one-frame search completed");
+      dump_uber_schedule_state = DumpUberScheduleState::COOLDOWN;
+      dump_uber_schedule_deadline = now + DUMP_UBER_PERIODIC_INTERVAL;
+      break;
+    case DumpUberScheduleState::IDLE:
+      dump_uber_schedule_state = DumpUberScheduleState::COOLDOWN;
+      dump_uber_schedule_deadline = now + DUMP_UBER_PERIODIC_INTERVAL;
+      break;
+  }
+}
+
 void OnPresent(
     reshade::api::command_queue* queue,
     reshade::api::swapchain* swapchain,
@@ -4042,6 +4086,7 @@ void OnPresent(
     const reshade::api::rect* dest_rect,
     uint32_t dirty_rect_count,
     const reshade::api::rect* dirty_rects) {
+      const float previous_internal_lut_check = InternalLutCheck;
         if(unityTonemapper != shader_injection.tonemapCheck){
             if(trunc(unityTonemapper) == 3){
         settings[1]->labels = {"Vanilla", "None", "ACES", "RenoDRT (Daniele)", "RenoDRT (Reinhard)"};
@@ -4087,6 +4132,7 @@ void OnPresent(
           InternalLutCheck = 0.f;
           sneakyBuilder = false;
         }
+        UpdateDumpUberSchedule(previous_internal_lut_check);
         shader_injection.countOld = fmax(1.f, countMid - countOffset);
         shader_injection.count2Old = fmax(1.f, count2Mid - count2Offset);
         countMid = 0.f;
@@ -4179,11 +4225,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   renodx::mods::shader::Use(fdw_reason, custom_shaders, &shader_injection);
   renodx::utils::random::Use(fdw_reason);
 
-  if (g_dump_shaders != 0.f) {
-    dump_uber::SetDumpShadersBinding(&g_dump_shaders);
-    dump_uber::SetShaderInAddonCallback(&IsCustomShader);
-    dump_uber::Use(fdw_reason);
-  }
+  dump_uber::SetShaderInAddonCallback(&IsCustomShader);
+  dump_uber::Use(fdw_reason);
 
   return TRUE;
 }

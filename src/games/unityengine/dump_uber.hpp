@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <limits>
 #include <map>
@@ -26,15 +27,29 @@
 
 namespace dump_uber {
 
-inline float* dump_shaders_binding = nullptr;
-inline std::unordered_set<std::uint32_t> dumped_shaders = {};
+inline std::atomic_bool dump_enabled = false;
+inline std::atomic_uint64_t activation_generation = 0u;
+inline std::unordered_set<std::uint32_t> checked_shaders = {};
 inline bool (*is_shader_in_addon)(std::uint32_t shader_hash) = nullptr;
 
 inline constexpr const char* DUMP_PREFIX_KNOWN = "uber_old_";
 inline constexpr const char* DUMP_PREFIX_NEW = "uber_new_";
 
-inline void SetDumpShadersBinding(float* binding) {
-  dump_shaders_binding = binding;
+inline void SetDumpEnabled(bool enabled, const char* reason) {
+  const bool was_enabled = dump_enabled.load(std::memory_order_acquire);
+  if (was_enabled == enabled) return;
+
+  if (enabled) {
+    activation_generation.fetch_add(1u, std::memory_order_release);
+  }
+  dump_enabled.store(enabled, std::memory_order_release);
+
+  std::stringstream message;
+  message << "[DUMP OUTPUT] Unity uber dump search " << (enabled ? "started" : "stopped");
+  if (reason != nullptr && reason[0] != '\0') {
+    message << ": " << reason;
+  }
+  reshade::log::message(reshade::log::level::info, message.str().c_str());
 }
 
 inline void SetShaderInAddonCallback(bool (*callback)(std::uint32_t shader_hash)) {
@@ -42,7 +57,7 @@ inline void SetShaderInAddonCallback(bool (*callback)(std::uint32_t shader_hash)
 }
 
 inline bool IsDumpEnabled() {
-  return dump_shaders_binding != nullptr && *dump_shaders_binding != 0.f;
+  return dump_enabled.load(std::memory_order_acquire);
 }
 
 inline bool IsShaderInAddon(std::uint32_t shader_hash) {
@@ -67,6 +82,7 @@ struct DetectionSignals {
 };
 
 struct __declspec(uuid("a4c8e2f1-6b3d-4a9e-8f7c-1d2e3b4c5d6e")) CommandListData {
+  std::uint64_t activation_generation = 0u;
   std::map<std::pair<std::uint32_t, std::uint32_t>, reshade::api::resource_view> pixel_srv_binds;
   std::map<std::pair<std::uint32_t, std::uint32_t>, reshade::api::resource_view> compute_srv_binds;
 };
@@ -135,16 +151,24 @@ inline CommandListData* GetOrCreateCommandListData(reshade::api::command_list* c
   if (data == nullptr) {
     data = renodx::utils::data::Create<CommandListData>(cmd_list);
   }
+  if (data == nullptr) return nullptr;
+
+  const auto current_generation = activation_generation.load(std::memory_order_acquire);
+  if (data->activation_generation != current_generation) {
+    data->activation_generation = current_generation;
+    data->pixel_srv_binds.clear();
+    data->compute_srv_binds.clear();
+  }
   return data;
 }
 
 inline void OnInitCommandList(reshade::api::command_list* cmd_list) {
-  renodx::utils::data::Create<CommandListData>(cmd_list);
+  if (IsDumpEnabled()) GetOrCreateCommandListData(cmd_list);
 }
 
 inline void OnResetCommandList(reshade::api::command_list* cmd_list) {
   renodx::utils::data::Delete<CommandListData>(cmd_list);
-  renodx::utils::data::Create<CommandListData>(cmd_list);
+  if (IsDumpEnabled()) GetOrCreateCommandListData(cmd_list);
 }
 
 inline void OnDestroyCommandList(reshade::api::command_list* cmd_list) {
@@ -329,8 +353,6 @@ inline void DumpCurrentShader(
 
   const bool is_known_shader = IsShaderInAddon(shader_hash);
   if (!is_known_shader && !signals.IsConfirmed()) return;
-  if (dumped_shaders.contains(shader_hash)) return;
-  dumped_shaders.emplace(shader_hash);
 
   const char* dump_prefix = is_known_shader ? DUMP_PREFIX_KNOWN : DUMP_PREFIX_NEW;
   const char* classification = is_known_shader ? "already in addon" : "new";
@@ -390,17 +412,19 @@ inline bool DumpPixelShaderIfLutSrvBound(
     bool is_fullscreen_draw) {
   if (!IsDumpEnabled()) return false;
 
-  auto* data = renodx::utils::data::Get<CommandListData>(cmd_list);
-  if (data == nullptr) return false;
-
-  auto match = FindInternalLutSrv(cmd_list->get_device(), data->pixel_srv_binds);
-  if (!match.has_value()) return false;
-
   auto* shader_state = renodx::utils::shader::GetCurrentState(cmd_list);
   if (shader_state == nullptr) return false;
 
   auto* pixel_state = renodx::utils::shader::GetCurrentPixelState(shader_state);
   const auto shader_hash = renodx::utils::shader::GetCurrentPixelShaderHash(pixel_state);
+  if (shader_hash == 0u || !checked_shaders.emplace(shader_hash).second) return false;
+
+  auto* data = GetOrCreateCommandListData(cmd_list);
+  if (data == nullptr) return false;
+
+  auto match = FindInternalLutSrv(cmd_list->get_device(), data->pixel_srv_binds);
+  if (!match.has_value()) return false;
+
   auto signals = GetDetectionSignals(cmd_list, data->pixel_srv_binds);
   signals.is_fullscreen_draw = is_fullscreen_draw;
   DumpCurrentShader(
@@ -418,17 +442,19 @@ inline bool DumpPixelShaderIfLutSrvBound(
 inline bool DumpComputeShaderIfLutSrvBound(reshade::api::command_list* cmd_list) {
   if (!IsDumpEnabled()) return false;
 
-  auto* data = renodx::utils::data::Get<CommandListData>(cmd_list);
-  if (data == nullptr) return false;
-
-  auto match = FindInternalLutSrv(cmd_list->get_device(), data->compute_srv_binds);
-  if (!match.has_value()) return false;
-
   auto* shader_state = renodx::utils::shader::GetCurrentState(cmd_list);
   if (shader_state == nullptr) return false;
 
   auto* compute_state = renodx::utils::shader::GetCurrentComputeState(shader_state);
   const auto shader_hash = renodx::utils::shader::GetCurrentComputeShaderHash(compute_state);
+  if (shader_hash == 0u || !checked_shaders.emplace(shader_hash).second) return false;
+
+  auto* data = GetOrCreateCommandListData(cmd_list);
+  if (data == nullptr) return false;
+
+  auto match = FindInternalLutSrv(cmd_list->get_device(), data->compute_srv_binds);
+  if (!match.has_value()) return false;
+
   const auto signals = GetDetectionSignals(cmd_list, data->compute_srv_binds);
   DumpCurrentShader(
       cmd_list,
@@ -474,8 +500,6 @@ inline bool OnDispatch(
 }
 
 inline void Use(DWORD fdw_reason) {
-  if (fdw_reason == DLL_PROCESS_ATTACH && !IsDumpEnabled()) return;
-
   renodx::utils::descriptor::trace_descriptor_tables = true;
   renodx::utils::shader::use_shader_cache = true;
   renodx::utils::shader::Use(fdw_reason);
@@ -494,7 +518,9 @@ inline void Use(DWORD fdw_reason) {
       reshade::register_event<reshade::addon_event::draw>(OnDraw);
       reshade::register_event<reshade::addon_event::draw_indexed>(OnDrawIndexed);
       reshade::register_event<reshade::addon_event::dispatch>(OnDispatch);
-      reshade::log::message(reshade::log::level::info, "DumpUberShaders enabled.");
+        reshade::log::message(
+          reshade::log::level::info,
+          "[DUMP OUTPUT] Unity uber dumper initialized and waiting for activation.");
       break;
     case DLL_PROCESS_DETACH:
       reshade::unregister_event<reshade::addon_event::init_command_list>(OnInitCommandList);
@@ -504,9 +530,10 @@ inline void Use(DWORD fdw_reason) {
       reshade::unregister_event<reshade::addon_event::draw>(OnDraw);
       reshade::unregister_event<reshade::addon_event::draw_indexed>(OnDrawIndexed);
       reshade::unregister_event<reshade::addon_event::dispatch>(OnDispatch);
-      dumped_shaders.clear();
+      dump_enabled.store(false, std::memory_order_release);
+      activation_generation.store(0u, std::memory_order_release);
+      checked_shaders.clear();
       is_shader_in_addon = nullptr;
-      dump_shaders_binding = nullptr;
       break;
   }
 }
