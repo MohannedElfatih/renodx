@@ -6,18 +6,20 @@
 #include <limits>
 #include <optional>
 #include <shared_mutex>
+#include <span>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <gtl/phmap.hpp>
 #include <include/reshade.hpp>
 
 #include "../../utils/bitwise.hpp"
-#include "../../utils/cross_addon.hpp"
 #include "../../utils/data.hpp"
 #include "../../utils/path.hpp"
 #include "../../utils/pipeline_layout.hpp"
+#include "../../utils/platform.hpp"
 #include "../../utils/resource.hpp"
 #include "../../utils/shader.hpp"
 #include "../../utils/shader_compiler_directx.hpp"
@@ -54,21 +56,22 @@ enum class ShaderInvestigationStatus : std::uint8_t {
 };
 
 inline constexpr std::size_t INITIAL_RESOURCE_COUNT = 64u;
-inline constexpr std::size_t INITIAL_DESCRIPTOR_COUNT = 256u;
-inline constexpr std::size_t INITIAL_SHADER_COUNT = 256u;
+inline constexpr std::size_t INITIAL_DESCRIPTOR_COUNT = 64u;
+inline constexpr std::size_t INITIAL_SHADER_COUNT = 64u;
 
-using TargetResourceMap = renodx::utils::cross_addon::parallel_flat_hash_map<
-    std::uint64_t,
-    std::uint8_t,
+template <typename Key, typename Value>
+using SingleShardMap = gtl::parallel_flat_hash_map<
+    Key,
+    Value,
+    gtl::Hash<Key>,
+    gtl::EqualTo<Key>,
+    renodx::utils::platform::ProcessAllocator<std::pair<const Key, Value>>,
+    0u,  // 2^0 = one submap.
     std::shared_mutex>;
-using TargetDescriptorMap = renodx::utils::cross_addon::parallel_flat_hash_map<
-    DescriptorLocation,
-    reshade::api::resource,
-    std::shared_mutex>;
-using InvestigatedShaderMap = renodx::utils::cross_addon::parallel_flat_hash_map<
-    std::uint32_t,
-    ShaderInvestigationStatus,
-    std::shared_mutex>;
+
+using TargetResourceMap = SingleShardMap<std::uint64_t, std::uint8_t>;
+using TargetDescriptorMap = SingleShardMap<DescriptorLocation, reshade::api::resource>;
+using InvestigatedShaderMap = SingleShardMap<std::uint32_t, ShaderInvestigationStatus>;
 
 struct __declspec(uuid("b5350f9e-a521-4f4f-8f76-0f870bb1c923")) DeviceData {
   TargetResourceMap target_resources{INITIAL_RESOURCE_COUNT};
@@ -91,6 +94,19 @@ inline void SetEnabled(bool value) {
 
 inline bool IsEnabled() {
   return enabled.load(std::memory_order_acquire);
+}
+
+inline bool EraseTargetDescriptor(DeviceData* data, const DescriptorLocation& location) {
+  return data != nullptr && data->target_uav_descriptors.erase(location) != 0u;
+}
+
+inline bool SetTargetDescriptor(
+    DeviceData* data,
+    const DescriptorLocation& location,
+    reshade::api::resource resource) {
+  if (data == nullptr || location.first == 0u) return false;
+  if (resource.handle == 0u) return EraseTargetDescriptor(data, location);
+  return data->target_uav_descriptors.insert_or_assign(location, resource).second;
 }
 
 #ifdef DEBUG_LEVEL_1
@@ -190,6 +206,37 @@ inline CommandListData* GetCommandListData(reshade::api::command_list* cmd_list)
   return data;
 }
 
+inline bool HasPixelLutBuilderSignature(std::span<std::uint8_t> shader_data) {
+  const auto disassembly =
+      renodx::utils::shader::compiler::directx::DisassembleShader(shader_data);
+  const auto input_signature = disassembly.find("Input signature:");
+  if (input_signature == std::string::npos) return false;
+
+  const auto output_signature = disassembly.find("Output signature:", input_signature);
+  if (output_signature == std::string::npos) return false;
+
+  const auto semantic = disassembly.find("SV_RenderTargetArrayIndex", input_signature);
+  if (semantic == std::string::npos || semantic >= output_signature) return false;
+
+  std::uint32_t render_target_count = 0u;
+  std::size_t position = output_signature;
+  while ((position = disassembly.find("SV_Target", position)) != std::string::npos) {
+    const auto line_start = disassembly.rfind('\n', position);
+    const auto first_token = disassembly.find_first_not_of(
+        " \t\r/;",
+        line_start == std::string::npos ? output_signature : line_start + 1u);
+    const auto semantic_end = position + sizeof("SV_Target") - 1u;
+    if (first_token == position
+        && (semantic_end == disassembly.size()
+            || disassembly[semantic_end] == ' '
+            || disassembly[semantic_end] == '\t')) {
+      ++render_target_count;
+    }
+    position = semantic_end;
+  }
+  return render_target_count == 1u;
+}
+
 inline void DumpCurrentShader(
     renodx::utils::shader::StageState* stage_state,
     std::int32_t shader_stage_index,
@@ -199,16 +246,23 @@ inline void DumpCurrentShader(
     const char* stage_name) {
   if (shader_hash == 0u || HasInvestigatedShader(shader_hash)) return;
 
-  bool investigation_started = false;
+  const bool investigation_started = TryBeginShaderInvestigation(shader_hash);
+  if (!investigation_started) return;
   try {
     auto shader_data = renodx::utils::shader::GetShaderData(stage_state, shader_stage_index);
-    if (!shader_data.has_value()) return;
-    investigation_started = TryBeginShaderInvestigation(shader_hash);
-    if (!investigation_started) return;
+    if (!shader_data.has_value()) {
+      SetShaderInvestigationStatus(shader_hash, ShaderInvestigationStatus::REJECTED);
+      return;
+    }
 
     const auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(
         shader_data.value());
     if (shader_version.GetMajor() == 0u) {
+      SetShaderInvestigationStatus(shader_hash, ShaderInvestigationStatus::REJECTED);
+      return;
+    }
+    if (shader_type == reshade::api::pipeline_subobject_type::pixel_shader
+        && !HasPixelLutBuilderSignature(shader_data.value())) {
       SetShaderInvestigationStatus(shader_hash, ShaderInvestigationStatus::REJECTED);
       return;
     }
@@ -241,24 +295,60 @@ inline void DumpCurrentShader(
 
 #ifdef DEBUG_LEVEL_0
     if (dumped) {
+      reshade::api::resource_desc resource_desc = {};
+      reshade::api::resource_desc original_resource_desc = {};
+      float resource_tag = -1.f;
+      const bool found_resource_info =
+          renodx::utils::resource::GetResourceInfo(
+              match.resource,
+              [&](const renodx::utils::resource::ResourceInfo& resource_info) {
+                resource_desc = resource_info.desc;
+                original_resource_desc =
+                    resource_info.fallback_desc.type
+                            != reshade::api::resource_type::unknown
+                        ? resource_info.fallback_desc
+                        : resource_info.desc;
+                resource_tag = resource_info.resource_tag;
+              });
       std::stringstream message;
-      message << "DX12 LUT builder dumped: " << stage_name << " shader "
+      message << "DX12 LUT builder candidate passed and dumped: "
+              << stage_name << " shader "
               << PRINT_CRC32(shader_hash)
               << (is_known_shader ? " (already in addon)" : " (new)")
-              << " with Texture3D 0x" << std::hex << match.resource.handle << std::dec
-              << " via " << match.binding
-              << (renodx::utils::resource::GetResourceTag(match.resource) == RESOURCE_TAG
-                      ? " by resource tag"
-                      : " by exact 32x32x32 dimensions");
+              << "; output resource 0x" << std::hex << match.resource.handle << std::dec
+              << " is currently bound via " << match.binding
+              << ", Texture3D "
+              << resource_desc.texture.width << 'x'
+              << resource_desc.texture.height << 'x'
+              << resource_desc.texture.depth_or_layers
+              << ", format " << resource_desc.texture.format
+              << ", tag " << resource_tag;
+      if (found_resource_info) {
+        message << "; original Texture3D "
+                << original_resource_desc.texture.width << 'x'
+                << original_resource_desc.texture.height << 'x'
+                << original_resource_desc.texture.depth_or_layers
+                << ", format " << original_resource_desc.texture.format;
+      } else {
+        message << "; original resource description unavailable";
+      }
+      message << "; passed because the output resource is tracked "
+              << (resource_tag == RESOURCE_TAG
+                      ? "by resource tag"
+                      : "by exact 32x32x32 dimensions");
+      if (shader_type == reshade::api::pipeline_subobject_type::pixel_shader) {
+        message << " and the pixel input signature contains "
+                   "SV_RenderTargetArrayIndex and has exactly one render target output";
+      } else {
+        message << " and the compute output binding resolves to this exact resource";
+      }
       reshade::log::message(reshade::log::level::info, message.str().c_str());
     }
 #else
     (void)stage_name;
 #endif
   } catch (...) {
-    if (investigation_started) {
-      SetShaderInvestigationStatus(shader_hash, ShaderInvestigationStatus::REJECTED);
-    }
+    SetShaderInvestigationStatus(shader_hash, ShaderInvestigationStatus::REJECTED);
     std::stringstream message;
     message << "DX12 LUT builder candidate failed to dump shader " << PRINT_CRC32(shader_hash);
     reshade::log::message(reshade::log::level::warning, message.str().c_str());
@@ -380,7 +470,7 @@ inline void OnDestroyResource(
     if (pair.second == resource) descriptors.push_back(pair.first);
   });
   for (const auto& descriptor : descriptors) {
-    data->target_uav_descriptors.erase(descriptor);
+    EraseTargetDescriptor(data, descriptor);
   }
 }
 
@@ -402,31 +492,62 @@ inline bool OnUpdateDescriptorTables(
 #endif
   for (std::uint32_t i = 0u; i < count; ++i) {
     const auto& update = updates[i];
+    if (update.count == 0u) continue;
+
+    const auto* views = IsUavDescriptorType(update.type)
+                            ? static_cast<const reshade::api::resource_view*>(update.descriptors)
+                            : nullptr;
+    std::vector<std::pair<std::uint32_t, reshade::api::resource>> target_updates;
+    if (views != nullptr) {
+      for (std::uint32_t descriptor_index = 0u;
+           descriptor_index < update.count;
+           ++descriptor_index) {
+        const auto resource = GetTargetResourceFromView(device, views[descriptor_index]);
+        if (resource.handle != 0u) {
+          target_updates.emplace_back(descriptor_index, resource);
+        }
+      }
+    }
+
+    if (target_updates.empty() && data->target_uav_descriptors.empty()) continue;
+
     const auto first = GetDescriptorLocation(
         device,
         update.table,
         update.binding,
         update.array_offset);
     if (first.first == 0u) continue;
-
-    const auto* views = IsUavDescriptorType(update.type)
-                            ? static_cast<const reshade::api::resource_view*>(update.descriptors)
-                            : nullptr;
-    for (std::uint32_t descriptor_index = 0u;
-         descriptor_index < update.count;
-         ++descriptor_index) {
-      const DescriptorLocation location = {
-          first.first,
-          first.second + descriptor_index,
-      };
-      const auto resource = views == nullptr
-                                ? reshade::api::resource{0u}
-                                : GetTargetResourceFromView(device, views[descriptor_index]);
-      if (resource.handle == 0u) {
-        data->target_uav_descriptors.erase(location);
-      } else {
-        data->target_uav_descriptors.insert_or_assign(location, resource);
+    // O(C) vs O(N)
+    if (static_cast<std::size_t>(update.count) <= data->target_uav_descriptors.size()) {
+      for (std::uint32_t descriptor_index = 0u;
+           descriptor_index < update.count;
+           ++descriptor_index) {
+        EraseTargetDescriptor(
+            data,
+            DescriptorLocation{first.first, first.second + descriptor_index});
       }
+    } else {
+      std::vector<DescriptorLocation> destination_targets;
+      const auto end = static_cast<std::uint64_t>(first.second) + update.count;
+      data->target_uav_descriptors.for_each([&](const auto& pair) {
+        const auto& location = pair.first;
+        if (location.first == first.first
+            && location.second >= first.second
+            && static_cast<std::uint64_t>(location.second) < end) {
+          destination_targets.push_back(location);
+        }
+      });
+      for (const auto& location : destination_targets) {
+        EraseTargetDescriptor(data, location);
+      }
+    }
+
+    for (const auto& [relative_offset, resource] : target_updates) {
+      if (!IsTargetResource(data, resource)) continue;
+      SetTargetDescriptor(
+          data,
+          DescriptorLocation{first.first, first.second + relative_offset},
+          resource);
     }
   }
   return false;
@@ -438,7 +559,12 @@ inline bool OnCopyDescriptorTables(
     const reshade::api::descriptor_table_copy* copies) {
   if (!IsEnabled()) return false;
   auto* data = IsD3D12(device) ? renodx::utils::data::Get<DeviceData>(device) : nullptr;
-  if (data == nullptr || count == 0u || copies == nullptr) return false;
+  if (data == nullptr
+      || count == 0u
+      || copies == nullptr
+      || data->target_uav_descriptors.empty()) {
+    return false;
+  }
 #ifdef DEBUG_LEVEL_1
   if (IsD3D12(device)) {
     std::uint64_t descriptor_count = 0u;
@@ -462,6 +588,39 @@ inline bool OnCopyDescriptorTables(
         copy.dest_array_offset);
     if (destination.first == 0u) continue;
 
+    // Copy count is O(2C) while other path is O(N) where N is the number of tracked descriptors. Use the faster path if the copy count is small enough.
+    if (static_cast<std::uint64_t>(copy.count) * 2u
+        <= data->target_uav_descriptors.size()) {
+      std::vector<reshade::api::resource> source_resources(copy.count);
+      if (source.first != 0u) {
+        for (std::uint32_t descriptor_index = 0u;
+             descriptor_index < copy.count;
+             ++descriptor_index) {
+          data->target_uav_descriptors.if_contains(
+              DescriptorLocation{source.first, source.second + descriptor_index},
+              [&](const auto& pair) {
+                source_resources[descriptor_index] = pair.second;
+              });
+        }
+      }
+
+      for (std::uint32_t descriptor_index = 0u;
+           descriptor_index < copy.count;
+           ++descriptor_index) {
+        const DescriptorLocation location = {
+            destination.first,
+            destination.second + descriptor_index,
+        };
+        const auto resource = source_resources[descriptor_index];
+        if (resource.handle != 0u && IsTargetResource(data, resource)) {
+          SetTargetDescriptor(data, location, resource);
+        } else {
+          EraseTargetDescriptor(data, location);
+        }
+      }
+      continue;
+    }
+
     std::vector<DescriptorLocation> destination_targets;
     std::vector<std::pair<std::uint32_t, reshade::api::resource>> source_targets;
     const auto source_end = static_cast<std::uint64_t>(source.second) + copy.count;
@@ -483,14 +642,15 @@ inline bool OnCopyDescriptorTables(
     });
 
     for (const auto& location : destination_targets) {
-      data->target_uav_descriptors.erase(location);
+      EraseTargetDescriptor(data, location);
     }
     for (const auto& [relative_offset, resource] : source_targets) {
       if (!IsTargetResource(data, resource)) continue;
-      data->target_uav_descriptors.insert_or_assign(
+      SetTargetDescriptor(
+          data,
           DescriptorLocation{
-            destination.first,
-            destination.second + relative_offset,
+              destination.first,
+              destination.second + relative_offset,
           },
           resource);
     }
@@ -807,7 +967,7 @@ inline void Use(DWORD fdw_reason) {
 
       // I doubt lutbuilders use Copy or push descriptors, but for completeness
       reshade::register_event<reshade::addon_event::copy_descriptor_tables>(OnCopyDescriptorTables);
-      reshade::register_event<reshade::addon_event::push_descriptors>(OnPushDescriptors);
+      // reshade::register_event<reshade::addon_event::push_descriptors>(OnPushDescriptors);
 
       reshade::register_event<reshade::addon_event::draw>(OnDraw);
       // reshade::register_event<reshade::addon_event::draw_indexed>(OnDrawIndexed);
@@ -830,12 +990,12 @@ inline void Use(DWORD fdw_reason) {
       reshade::unregister_event<reshade::addon_event::begin_render_pass>(OnBeginRenderPass);
       reshade::unregister_event<reshade::addon_event::end_render_pass>(OnEndRenderPass);
       reshade::unregister_event<reshade::addon_event::bind_descriptor_tables>(OnBindDescriptorTables);
-      
+
       reshade::unregister_event<reshade::addon_event::copy_descriptor_tables>(OnCopyDescriptorTables);
-      reshade::unregister_event<reshade::addon_event::push_descriptors>(OnPushDescriptors);
+      // reshade::unregister_event<reshade::addon_event::push_descriptors>(OnPushDescriptors);
 
       reshade::unregister_event<reshade::addon_event::draw>(OnDraw);
-      // reshade::unregister_event<reshade::addon_event::draw_indexed>(OnDrawIndexed);
+      reshade::unregister_event<reshade::addon_event::draw_indexed>(OnDrawIndexed);
       reshade::unregister_event<reshade::addon_event::dispatch>(OnDispatch);
       ClearInvestigatedShaders();
       is_shader_in_addon = nullptr;
