@@ -368,16 +368,6 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "HDR Den Discord",
-        .section = "Links",
-        .group = "button-line-1",
-        .tint = 0x5865F2,
-        .on_change = []() {
-          renodx::utils::platform::LaunchURL("https://discord.gg/XUhv", "tR54yc");
-        },
-    },
-    new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Github",
         .section = "Links",
         .group = "button-line-1",
@@ -403,16 +393,6 @@ renodx::utils::settings::Settings settings = {
         .tint = 0xFF5F5F,
         .on_change = []() {
           renodx::utils::platform::LaunchURL("https://ko-fi.com/shortfuse");
-        },
-    },
-    new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "HDR Den's Ko-Fi",
-        .section = "Links",
-        .group = "button-line-1",
-        .tint = 0xFF5F5F,
-        .on_change = []() {
-          renodx::utils::platform::LaunchURL("https://ko-fi.com/hdrden");
         },
     },
     new renodx::utils::settings::Setting{
@@ -499,7 +479,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       renodx::mods::swapchain::use_resource_cloning = true;
 
       // renodx::utils::descriptor::trace_descriptor_tables = true;
-      renodx::utils::shader::use_shader_cache = true;
+      // renodx::utils::shader::use_shader_cache = true;
       // renodx::mods::shader::use_pipeline_layout_cloning = false;
 
       renodx::mods::swapchain::resource_upgrade_infos.push_back({
